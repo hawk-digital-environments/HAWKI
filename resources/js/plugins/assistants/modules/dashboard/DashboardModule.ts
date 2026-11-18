@@ -1,9 +1,21 @@
 import {HawkiCoreModule} from "$lib/kernel/modules/types";
+import type {Translator} from '$lib/kernel/localization/translator.js';
+import type {IconComponent} from '$lib/components/ui/icons/index.js';
+import type {Component} from 'svelte';
+import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
 import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
 export class DashboardModule implements HawkiCoreModule {
     public readonly name = 'dashboard';
     public readonly pluginNameInRoutes = true;
+
+    public title(translate: Translator['translate']): string {
+        return translate('assistants.assistants');
+    }
+
+    public icon(): string | IconComponent | Component {
+        return BotIcon;
+    }
 
     routes(registrar: RouteRegistrar): void | Promise<void> {
         // Landing route for the module itself (the module selector navigates

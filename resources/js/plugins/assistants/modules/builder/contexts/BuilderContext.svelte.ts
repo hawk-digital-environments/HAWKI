@@ -268,7 +268,6 @@ export class BuilderContext {
     this.isNewDraft = true;
 
     try {
-      console.log("start building assistant...");
       this.removeStoredData();
 
       const assistant = await createAssistant(createEmptyAssistant());

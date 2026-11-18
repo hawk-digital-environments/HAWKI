@@ -6,7 +6,6 @@ import { ResourceSchemaRegistrar } from '$lib/kernel/resources/resourceSchemaReg
 import { StoreRegistrar } from '$lib/kernel/stores/storeRegistrar';
 import type { HookRegistrar } from '$lib/kernel/hooks/hookRegistrar.js';
 import { getModuleRouteGroupName } from '$lib/kernel/routing/routeInflection.js';
-import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
 import Store01Icon from '$lib/components/ui/icons/iconset/Store01Icon.svelte';
 import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
 import StarIcon from '$lib/components/ui/icons/iconset/StarIcon.svelte';
@@ -49,38 +48,15 @@ export default class AssistantsPlugin implements HawkiPlugin {
 
     /**
      * Contributes the assistants feature's sidebar UI via the sidebar hooks:
-     * one module selector entry and one sidebar panel (the panel is active
-     * while dashboard *or* builder routes are shown; inside the builder the
-     * module selector is removed entirely, the sidebar is the wizard's step
-     * list there), plus the assistants sidebar's standard nav rows
-     * (see `hooks/assistantMenuHooks.svelte.ts`).
+     * one sidebar panel (active while dashboard *or* builder routes are
+     * shown — inside the builder the sidebar is the wizard's step list),
+     * plus the assistants sidebar's standard nav rows
+     * (see `hooks/assistantMenuHooks.svelte.ts`). The dashboard's space tab
+     * comes from its module declaration (see DashboardModule).
      */
     public hooks(registrar: HookRegistrar): void {
         const dashboardGroup = getModuleRouteGroupName('assistants', 'dashboard');
         const builderGroup = getModuleRouteGroupName('assistants', 'builder');
-
-        registrar.add('moduleSelectorEntries', (entries, ctx) => [
-            ...entries,
-            {
-                id: 'assistants:dashboard',
-                label: ctx.translate('assistants.assistants'),
-                icon: BotIcon,
-                onSelect: (selectCtx) => {
-                    void selectCtx.router.goToRoute('assistants.dashboard.index');
-                },
-                active: ctx.router.isRouteActive(dashboardGroup)
-            }
-        ]);
-
-        // The builder is a wizard: its sidebar only holds the steps and the
-        // way back, so the module selector is emptied (which hides it, see
-        // AppSidebar) for as long as a builder route is shown. Runs last so
-        // it also covers entries of plugins registered after this one.
-        registrar.add(
-            'moduleSelectorEntries',
-            (entries, ctx) => ctx.router.isRouteActive(builderGroup) ? [] : entries,
-            { order: 1000 }
-        );
 
         registrar.add('sidebarSlots', (slots, ctx) => [
             ...slots,

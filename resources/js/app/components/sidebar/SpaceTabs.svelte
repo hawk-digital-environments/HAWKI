@@ -27,6 +27,7 @@
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
+    import type {HawkiCoreModule} from '$lib/kernel/modules/types.js';
     import {useModuleSelectorEntries} from '$lib/app/ui/useSidebarHooks.svelte.js';
     import type {SidebarContext} from '$lib/app/ui/sidebarHooks.js';
 
@@ -64,7 +65,12 @@
                 // The tabs render icons as components; a string (URL) icon has no slot here.
                 icon: typeof icon === 'string' ? undefined : icon as IconComponent | undefined,
                 onSelect: (ctx: SidebarContext) => {
-                    const prefix = getModuleRoutePrefix(module.plugin.name, module.name, module.plugin.isCorePlugin);
+                    const prefix = getModuleRoutePrefix(
+                        module.plugin.name,
+                        module.name,
+                        module.plugin.isCorePlugin,
+                        (module as HawkiCoreModule).pluginNameInRoutes
+                    );
                     void ctx.router.goTo(ctx.router.p(prefix));
                 }
             });
