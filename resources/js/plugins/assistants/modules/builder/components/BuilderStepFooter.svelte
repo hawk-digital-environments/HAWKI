@@ -29,12 +29,21 @@
     const index = $derived(Math.max(0, BUILDER_STEPS.findIndex(step => router.isRouteActive(routeOf(step)))));
     const current = $derived(BUILDER_STEPS[index]);
     const isLast = $derived(index === BUILDER_STEPS.length - 1);
-    const continueText = $derived(isLast ? '' : __('assistants.builder.steps.continue_to', {step: __(`assistants.builder.sidebar.${BUILDER_STEPS[index + 1]}`)}));
+    const continueText = $derived.by(() => {
+        if (isLast) return '';
+        // A co-editor's flow ends before publish: their Continue closes the
+        // session instead of leading into the creator-only step.
+        if (BUILDER_STEPS[index + 1] === 'publish' && !builderProgress.canRelease) {
+            return __('assistants.builder.publish.finish');
+        }
+        return __('assistants.builder.steps.continue_to', {step: __(`assistants.builder.sidebar.${BUILDER_STEPS[index + 1]}`)});
+    });
     let continueWidth = $state<number>();
 
     // Last step: the release action (moved here from the publish page). A
-    // permanently denied assistant can't be resubmitted, so no action then.
-    const canRelease = $derived(builder.draft.review?.status !== ReviewStage.DENIED);
+    // permanently denied assistant can't be resubmitted, so no action then —
+    // and only the creator may release at all (co-editors never get here).
+    const canRelease = $derived(builderProgress.canRelease && builder.draft.review?.status !== ReviewStage.DENIED);
     const releaseText = $derived.by(() => {
         switch (builder.draft.releaseStage) {
             case ReleaseMode.PRIVATE:
@@ -60,6 +69,14 @@
             toast.error(__(rejected ? 'assistants.builder.steps.invalid' : 'assistants.builder.steps.incomplete'));
             return;
         }
+        // A co-editor's journey ends here: publishing is the creator's call,
+        // so Continue leaves the builder for the detail page instead.
+        if (BUILDER_STEPS[index + 1] === 'publish' && !builderProgress.canRelease) {
+            toast.info(__('assistants.builder.publish.not_allowed'));
+            const id = builder.draft.id;
+            if (id) void router.goToRoute('assistants.dashboard.details', {id});
+            return;
+        }
         goTo(BUILDER_STEPS[index + 1]);
     }
 
@@ -75,6 +92,12 @@
     // locked steps; reset when the builder unmounts.
     $effect(() => {
         builderProgress.reachable = builder.validator.firstIncompleteStep;
+    });
+    // Whether this session's user may release: the creator's ALLOWED/DENIED
+    // verdict from the assistant's action links (edit sessions), defaulting
+    // to allowed for sessions without a verdict yet (new, remix).
+    $effect(() => {
+        builderProgress.canRelease = builder.draft.actionPermissions?.release !== false;
     });
     // Per-step completeness and the furthest step opened feed the sidebar's
     // step checklist.
@@ -98,6 +121,7 @@
     });
     $effect(() => () => {
         builderProgress.reachable = BUILDER_STEPS.length;
+        builderProgress.canRelease = true;
         builderProgress.complete = {};
         builderProgress.ratio = {};
         builderProgress.furthest = 0;
@@ -110,6 +134,13 @@
         return router.registerNavigationGuard(async ({to}) => {
             const target = stepIndexOf(to);
             if (target === -1 || target <= index) return true;
+
+            // The publish step is the creator's alone: a co-editor arriving
+            // by URL or history is bounced back with a notice.
+            if (BUILDER_STEPS[target] === 'publish' && !builderProgress.canRelease) {
+                toast.error(__('assistants.builder.publish.not_allowed'));
+                return false;
+            }
 
             // Moving forward: see `next()` for why pending edits land first.
             await builder.flushSave();

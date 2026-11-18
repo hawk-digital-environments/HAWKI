@@ -50,9 +50,15 @@ class AssistantPolicy implements DefinesSensitiveIncludes
         return $this->isVisibleTo($assistant, $user);
     }
 
+    /**
+     * Editing an assistant sits with its creator or with users the
+     * assistant is shared with under the edit grant. Org admins stay out:
+     * their tier decides reviews and rollbacks, not content edits.
+     */
     public function update(User $user, Assistant $assistant): bool
     {
-        return $user->id === $assistant->creator_id;
+        return $user->id === $assistant->creator_id
+            || $this->repository->canEditViaShare($user, $assistant);
     }
 
     public function delete(User $user, Assistant $assistant): bool
@@ -91,6 +97,20 @@ class AssistantPolicy implements DefinesSensitiveIncludes
     public function removeFavorite(User $user, Assistant $assistant): bool
     {
         return $this->view($user, $assistant);
+    }
+
+    /**
+     * Managing the share list is a creator-only concern: sharees use (or
+     * edit) the assistant but never re-distribute it.
+     */
+    public function listShares(User $user, Assistant $assistant): bool
+    {
+        return $user->id === $assistant->creator_id;
+    }
+
+    public function syncShares(User $user, Assistant $assistant): bool
+    {
+        return $user->id === $assistant->creator_id;
     }
 
     /**
@@ -202,21 +222,6 @@ class AssistantPolicy implements DefinesSensitiveIncludes
     }
 
     public function viewSharedUsers(User $user, Assistant $assistant): bool
-    {
-        return $user->id === $assistant->creator_id;
-    }
-
-    public function updateSharedUsers(User $user, Assistant $assistant): bool
-    {
-        return $user->id === $assistant->creator_id;
-    }
-
-    public function attachSharedUsers(User $user, Assistant $assistant): bool
-    {
-        return $user->id === $assistant->creator_id;
-    }
-
-    public function detachSharedUsers(User $user, Assistant $assistant): bool
     {
         return $user->id === $assistant->creator_id;
     }

@@ -71,6 +71,8 @@
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
     import TaskEdit01Icon from '$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte';
+    import Share01Icon from '$lib/components/ui/icons/iconset/Share01Icon.svelte';
+    import ShareDialog from '$plugins/assistants/modules/dashboard/components/shareDialog/ShareDialog.svelte';
     import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
     import CheckmarkBadge01Icon from '$lib/components/ui/icons/iconset/CheckmarkBadge01Icon.svelte';
     import Loader from '$lib/components/ui/loader/Loader.svelte';
@@ -266,6 +268,9 @@
      *  closes on a resolving confirmation); success returns to the store. */
     let deleteConfirmOpen = $state(false);
 
+    /** Share manager: opened from the menu, creator-only via `listShares`. */
+    let shareOpen = $state(false);
+
     async function onDeleteConfirm(): Promise<void> {
         if (!assistant?.id) return;
         try {
@@ -434,6 +439,13 @@
                     />
                 {/if}
 
+                {#if assistant.actionPermissions?.listShares === true}
+                    <ShareDialog
+                        bind:open={shareOpen}
+                        {assistant}
+                    />
+                {/if}
+
                 <!-- data-assistant-cover: the store card's morph waits for it (morphToDetail). -->
                 <!-- Carries the avatar's CSS, so the top bar and the title inherit its
              foreground shade (`color`) on the flat background. -->
@@ -471,7 +483,7 @@
                                 >
                             {/if}
 
-                            {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true || assistant.actionPermissions?.delete === true}
+                            {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true || assistant.actionPermissions?.delete === true || assistant.actionPermissions?.listShares === true}
                                 <DropdownMenu
                                     align="end"
                                     bind:open={menuOpen}
@@ -527,8 +539,16 @@
                                             </DropdownMenuSub>
                                         {/if}
                                     {/if}
+                                    {#if assistant.actionPermissions?.listShares === true}
+                                        <DropdownMenuItem
+                                            iconLeft={Share01Icon}
+                                            onclick={() => (shareOpen = true)}
+                                        >
+                                            {__('assistants.detail.share')}
+                                        </DropdownMenuItem>
+                                    {/if}
                                     {#if assistant.actionPermissions?.delete === true}
-                                        {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true}
+                                        {#if assistant.actionPermissions?.update === true || assistant.actionPermissions?.release === true || assistant.actionPermissions?.listShares === true}
                                             <DropdownMenuSeparator />
                                         {/if}
                                         <DropdownMenuItem

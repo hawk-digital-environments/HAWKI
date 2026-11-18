@@ -32,7 +32,7 @@ import AssistantFeedbackSchema from '$plugins/assistants/api/schemas/resources/a
 import AssistantCategoriesSchema from '$plugins/assistants/api/schemas/resources/assistant-categories.schema';
 import AssistantTagsSchema from '$plugins/assistants/api/schemas/resources/assistant-tags.schema';
 import AssistantSettingsSchema from '$plugins/assistants/api/schemas/resources/assistant-settings.schema';
-import { isBuilderStepLocked } from '$plugins/assistants/modules/builder/contexts/builderProgress.svelte.js';
+import { isBuilderStepLocked, isPublishStepUnavailable } from '$plugins/assistants/modules/builder/contexts/builderProgress.svelte.js';
 import { BuilderModule } from '$plugins/assistants/modules/builder/BuilderModule';
 import { AssistantAdminModule } from '$plugins/assistants/admin/AssistantAdminModule';
 import { probeReviewPermission } from '$plugins/assistants/admin/reviewPermission.svelte.js';
@@ -230,7 +230,7 @@ export default class AssistantsPlugin implements HawkiPlugin {
                 icon: SentIcon,
                 route: 'assistants.builder.publish',
                 active: ctx.router.isRouteActive('assistants.builder.publish'),
-                disabled: isBuilderStepLocked('publish')
+                disabled: isPublishStepUnavailable()
             }
         ]);
     }

@@ -67,7 +67,7 @@ final class AssistantApiRoutes
                 $relationships->hasOne('assistant_review')->readOnly();
                 $relationships->hasMany('assistant_tags');
                 $relationships->hasMany('assistant_feedback')->readOnly();
-                $relationships->hasMany('shared_users');
+                $relationships->hasMany('shared_users')->readOnly();
                 $relationships->hasMany('assistant_attachments')->readOnly();
             })
             ->actions(static function (ActionRegistrar $actions): void {
@@ -80,6 +80,8 @@ final class AssistantApiRoutes
                 $actions->withId()->post('actions/rollback', 'rollback');
                 $actions->withId()->post('actions/favorite', 'addFavorite');
                 $actions->withId()->delete('actions/favorite', 'removeFavorite');
+                $actions->withId()->get('actions/share', 'listShares');
+                $actions->withId()->post('actions/share', 'syncShares');
                 $actions->withId()->post('actions/attachment', 'uploadAttachment');
                 $actions->withId()->delete('actions/attachment', 'deleteAttachment');
             });

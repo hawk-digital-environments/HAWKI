@@ -5,16 +5,27 @@ declare(strict_types=1);
 namespace App\Services\Assistant\Repositories;
 
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantSharedUser;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Assistant\Exceptions\UnshareableUserException;
 use App\Services\Assistant\Values\AssistantReleaseStage;
+use App\Services\Assistant\Values\AssistantShare;
+use App\Services\Assistant\Values\AssistantShareGrant;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
+use App\Services\Users\Repositories\UserRepository;
 use Illuminate\Database\Eloquent\Builder;
 
 #[UseModel(Assistant::class)]
 class AssistantRepository extends AbstractRepository
 {
+    public function __construct(
+        private readonly UserRepository $users,
+    ) {
+    }
+
     public function filterByCategoryText(Builder $query, string $text): Builder
     {
         return $query->whereHas('assistantCategory', static function ($q) use ($text): void {
@@ -88,9 +99,11 @@ class AssistantRepository extends AbstractRepository
     }
 
     /**
-     * "Privileged" tier (M): the assistant's creator or an admin of the
-     * assistant's organization. Used for sensitive relationships
-     * (assistant_tags, assistant_feedback, assistant_review, assistant_setting_values, ai_tools).
+     * "Privileged" tier (M): the assistant's creator, an admin of the
+     * assistant's organization, or a user the assistant is shared with under
+     * the edit grant. Used for sensitive relationships (assistant_tags,
+     * assistant_feedback, assistant_review, assistant_setting_values,
+     * ai_tools).
      */
     public function isPrivileged(User $user, Assistant $assistant): bool
     {
@@ -98,14 +111,18 @@ class AssistantRepository extends AbstractRepository
             return true;
         }
 
-        return $this->isAdminOf($user, $assistant->organization_id);
+        if ($this->isAdminOf($user, $assistant->organization_id)) {
+            return true;
+        }
+
+        return $this->canEditViaShare($user, $assistant);
     }
 
     /**
      * Query scope equivalent of the privileged tier, for scoping collections of
      * assistants (or child resources via whereHas('assistant', ...)) to those the
-     * user may manage: assistants they created or that belong to an organization
-     * they administer.
+     * user may manage: assistants they created, that belong to an organization
+     * they administer, or that are shared with them under the edit grant.
      */
     public function filterPrivilegedForUser(Builder $query, User $user): Builder
     {
@@ -116,8 +133,104 @@ class AssistantRepository extends AbstractRepository
                         $userQuery->where('users.id', $user->id)
                             ->where('organization_user.role', 'admin');
                     });
+                })
+                ->orWhereHas('sharedUsers', static function (Builder $shareQuery) use ($user): void {
+                    $shareQuery->where('user_id', $user->id)
+                        ->where('assistant_shared_users.can_edit', true);
                 });
         });
+    }
+
+    /**
+     * Whether the assistant is shared with the user under the edit grant.
+     * Uses the schema-eager-loaded pivots when present, else one exists()
+     * query (see AssistantSchema::with()).
+     */
+    public function canEditViaShare(User $user, Assistant $assistant): bool
+    {
+        if ($assistant->relationLoaded('sharedUserPivots')) {
+            return $assistant->sharedUserPivots->contains(
+                static fn (AssistantSharedUser $pivot): bool => $pivot->user_id === $user->id && $pivot->can_edit,
+            );
+        }
+
+        return $assistant->sharedUsers()
+            ->where('user_id', $user->id)
+            ->where('assistant_shared_users.can_edit', true)
+            ->exists();
+    }
+
+    /**
+     * The assistant's current share list, newest share first.
+     *
+     * Deliberately without the User model's global scopes: the `access`
+     * scope would hide freshly shared strangers from the very list that
+     * shared them.
+     *
+     * @return list<AssistantShare>
+     */
+    public function listShares(Assistant $assistant): array
+    {
+        return $assistant->sharedUsers()
+            ->withoutGlobalScopes()
+            ->orderByPivot('created_at', 'desc')
+            ->orderByPivot('user_id')
+            ->get()
+            ->map(static fn (User $user) => new AssistantShare(
+                userId: $user->id,
+                displayName: $user->name ?: $user->username,
+                username: $user->username,
+                canEdit: (bool) ($user->getRelation('pivot')->can_edit ?? false),
+                avatar: StoredFileIdentifier::tryFromUserAvatar($user)?->__toString(),
+            ))
+            ->all();
+    }
+
+    /**
+     * Replaces the assistant's share list with the given set — attach new,
+     * update changed `can_edit` flags, detach absent. Returns the resulting
+     * list so callers need no follow-up fetch.
+     *
+     * @param list<AssistantShareGrant> $shares
+     * @return list<AssistantShare>
+     * @throws UnshareableUserException when a target cannot be shared with
+     */
+    public function syncShares(Assistant $assistant, array $shares): array
+    {
+        $pivotData = [];
+        foreach ($shares as $share) {
+            $pivotData[$share->userId] = ['can_edit' => $share->canEdit];
+        }
+
+        $this->assertShareableTargets($assistant, array_keys($pivotData));
+
+        $assistant->sharedUsers()->sync($pivotData);
+
+        return $this->listShares($assistant);
+    }
+
+    /**
+     * Every target must be a real human user (not removed, not a system/app
+     * account) and not the creator, who already owns the assistant.
+     *
+     * @param list<int> $userIds
+     */
+    private function assertShareableTargets(Assistant $assistant, array $userIds): void
+    {
+        if ([] === $userIds) {
+            return;
+        }
+
+        $validIds = $this->users->findShareableIds($userIds);
+
+        $invalid = array_values(array_diff($userIds, $validIds));
+        if (\in_array($assistant->creator_id, $userIds, true)) {
+            $invalid[] = $assistant->creator_id;
+        }
+
+        if ([] !== $invalid) {
+            throw UnshareableUserException::forIds($invalid);
+        }
     }
 
     public function clone(Assistant $source, int $creatorId, ?int $organizationId = null): Assistant

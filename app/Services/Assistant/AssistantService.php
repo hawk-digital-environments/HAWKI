@@ -15,6 +15,8 @@ use App\Services\Assistant\Repositories\AssistantRepository;
 use App\Services\Assistant\Repositories\AssistantReviewRepository;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\AssistantReviewStatus;
+use App\Services\Assistant\Values\AssistantShare;
+use App\Services\Assistant\Values\AssistantShareGrant;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\FileReference;
 use App\Services\Storage\Values\StoredFileCategory;
@@ -75,6 +77,23 @@ readonly class AssistantService
     public function setFavorite(Assistant $assistant, User $user, bool $isFavorite): void
     {
         $this->repository->setFavorite($assistant, $user, $isFavorite);
+    }
+
+    /**
+     * @return list<AssistantShare>
+     */
+    public function listShares(Assistant $assistant): array
+    {
+        return $this->repository->listShares($assistant);
+    }
+
+    /**
+     * @param list<AssistantShareGrant> $shares
+     * @return list<AssistantShare>
+     */
+    public function syncShares(Assistant $assistant, array $shares): array
+    {
+        return $this->repository->syncShares($assistant, $shares);
     }
 
     public function release(Assistant $assistant, AssistantReleaseStage $target, ?string $note = null): Assistant

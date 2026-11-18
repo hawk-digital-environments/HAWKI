@@ -44,7 +44,6 @@ class AssistantRequest extends ResourceRequest
             'top_p' => ['numeric', 'min:0', 'max:1'],
             'ai_tools' => [JsonApiRule::toMany()],
             'assistant_tags' => [JsonApiRule::toMany()],
-            'shared_users' => [JsonApiRule::toMany()],
         ];
 
         if (! $this->isUpdating()) {
