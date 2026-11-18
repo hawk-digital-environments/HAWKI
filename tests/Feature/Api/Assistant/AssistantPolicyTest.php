@@ -232,6 +232,25 @@ class AssistantPolicyTest extends TestCase
             ->assertOk();
     }
 
+    public function testOnlyAuthorMayUpdateOrDeleteFeedback(): void
+    {
+        [$assistant, $users] = $this->stakeholderAssistant();
+        $assistant->sharedUsers()->sync([$users['shared']->id => ['can_edit' => true]]);
+
+        $feedback = AssistantFeedback::forceCreate([
+            'assistant_id' => $assistant->id,
+            'user_id' => $users['member']->id,
+            'text' => 'nice',
+        ]);
+
+        foreach (['update', 'delete'] as $ability) {
+            self::assertTrue($users['member']->can($ability, $feedback), "author {$ability}");
+            self::assertFalse($users['owner']->can($ability, $feedback), "creator {$ability}");
+            self::assertFalse($users['shared']->can($ability, $feedback), "editor {$ability}");
+            self::assertFalse($users['admin']->can($ability, $feedback), "org admin {$ability}");
+        }
+    }
+
     /**
      * Build an organizational (public-stage) assistant with a full set of
      * stakeholders: owner (creator), org admin, org member, shared user, and

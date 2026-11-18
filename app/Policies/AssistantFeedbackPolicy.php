@@ -29,12 +29,12 @@ class AssistantFeedbackPolicy
 
     public function update(User $user, AssistantFeedback $feedback): bool
     {
-        return $this->assistant()->update($user, $feedback->assistant);
+        return $feedback->user_id === $user->id;
     }
 
     public function delete(User $user, AssistantFeedback $feedback): bool
     {
-        return $this->assistant()->update($user, $feedback->assistant);
+        return $feedback->user_id === $user->id;
     }
 
     private function assistant(): AssistantPolicy
