@@ -67,7 +67,7 @@ final class AssistantApiRoutes
                 $relationships->hasOne('assistant_review')->readOnly();
                 $relationships->hasMany('assistant_tags');
                 $relationships->hasMany('assistant_feedback')->readOnly();
-                $relationships->hasMany('shared_users');
+                $relationships->hasMany('shared_users')->readOnly();
                 $relationships->hasMany('assistant_attachments')->readOnly();
             })
             ->actions(static function (ActionRegistrar $actions): void {

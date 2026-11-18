@@ -195,7 +195,7 @@ class AssistantController extends Controller
         ListSharesAssistantRequest $request,
         Assistant $assistant,
     ): JsonResponse {
-        return response()->json(['data' => $this->assistantService->listShares($assistant)]);
+        return $this->shareDocument($this->assistantService->listShares($assistant));
     }
 
     /**
@@ -207,9 +207,33 @@ class AssistantController extends Controller
         SyncSharesAssistantRequest $request,
         Assistant $assistant,
     ): JsonResponse {
-        $shares = $this->assistantService->syncShares($assistant, $request->shares());
+        return $this->shareDocument($this->assistantService->syncShares($assistant, $request->shares()));
+    }
 
-        return response()->json(['data' => $shares]);
+    /**
+     * Renders shares as a JSON:API relationship document: linkage `meta`
+     * carries the per-member edit grant, `included` carries the user stubs.
+     *
+     * @param list<AssistantShare> $shares
+     */
+    private function shareDocument(array $shares): JsonResponse
+    {
+        return response()->json([
+            'data' => array_map(static fn (AssistantShare $share): array => [
+                'type' => 'users',
+                'id' => (string) $share->userId,
+                'meta' => ['can_edit' => $share->canEdit],
+            ], $shares),
+            'included' => array_map(static fn (AssistantShare $share): array => [
+                'type' => 'users',
+                'id' => (string) $share->userId,
+                'attributes' => [
+                    'display_name' => $share->displayName,
+                    'username' => $share->username,
+                    'avatar' => $share->avatar,
+                ],
+            ], $shares),
+        ]);
     }
 
     /**

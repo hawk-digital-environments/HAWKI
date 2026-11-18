@@ -72,7 +72,7 @@ class AssistantSchema extends Schema
             BelongsTo::make('organization')->type('organizations')->readOnly(),
             HasOne::make('assistant_review', 'assistantReview')->type('assistant-reviews')->readOnly(),
             HasMany::make('assistant_feedback', 'assistantFeedback')->type('assistant-feedback')->readOnly(),
-            BelongsToMany::make('shared_users', 'sharedUsers')->type('users'),
+            BelongsToMany::make('shared_users', 'sharedUsers')->type('users')->readOnly(),
             HasMany::make('assistant_attachments', 'assistantAttachments')->type('assistant-attachments')->readOnly(),
         ];
     }

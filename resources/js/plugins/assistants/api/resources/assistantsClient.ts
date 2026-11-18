@@ -402,22 +402,45 @@ export interface AssistantShareEntry {
     avatar: string | null;
 }
 
+// The share action answers a JSON:API relationship document: linkage with
+// the per-member `can_edit` meta, plus `included` user stubs. Joining them
+// yields the dialog's flat share entries.
 const SharesResponseSchema = z.object({
     data: z.array(
         z.object({
-            user_id: z.number(),
-            display_name: z.string(),
-            username: z.string(),
-            can_edit: z.boolean(),
-            avatar: z.string().nullable()
-        }).transform((wire): AssistantShareEntry => ({
-            userId: wire.user_id,
-            displayName: wire.display_name,
-            username: wire.username,
-            canEdit: wire.can_edit,
-            avatar: wire.avatar
-        }))
+            type: z.literal('users'),
+            id: z.string(),
+            meta: z.object({can_edit: z.boolean()})
+        })
+    ),
+    included: z.array(
+        z.object({
+            type: z.literal('users'),
+            id: z.string(),
+            attributes: z.object({
+                display_name: z.string(),
+                username: z.string(),
+                avatar: z.string().nullable()
+            })
+        })
     )
+}).transform((wire): {data: AssistantShareEntry[]} => {
+    const attributesById = new Map(wire.included.map((user) => [user.id, user.attributes]));
+
+    return {
+        data: wire.data.flatMap((identifier) => {
+            const attributes = attributesById.get(identifier.id);
+            if (!attributes) return [];
+
+            return [{
+                userId: Number(identifier.id),
+                displayName: attributes.display_name,
+                username: attributes.username,
+                canEdit: identifier.meta.can_edit,
+                avatar: attributes.avatar
+            }];
+        })
+    };
 });
 
 /**
@@ -438,8 +461,9 @@ export async function listAssistantShares(id: string, signal?: AbortSignal): Pro
 
 /**
  * Replaces the share list wholesale: attach new, update `canEdit` flags,
- * detach absent. Answers with the resulting list, so the caller can adopt
- * the server's state without a follow-up fetch.
+ * detach absent. Sends a JSON:API relationship document (linkage with the
+ * per-member `can_edit` meta) and answers with the resulting list, so the
+ * caller can adopt the server's state without a follow-up fetch.
  */
 export async function syncAssistantShares(
     id: string,
@@ -450,12 +474,11 @@ export async function syncAssistantShares(
             ASSISTANTS,
             `${id}/actions/share`,
             {
-                data: {
-                    shares: shares.map((share) => ({
-                        user_id: share.userId,
-                        can_edit: share.canEdit
-                    }))
-                }
+                data: shares.map((share) => ({
+                    type: 'users',
+                    id: String(share.userId),
+                    meta: {can_edit: share.canEdit}
+                }))
             },
             { schema: SharesResponseSchema }
         );

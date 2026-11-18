@@ -20,9 +20,10 @@ class SyncSharesAssistantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'data.shares' => ['present', 'array'],
-            'data.shares.*.user_id' => ['required', 'integer', 'distinct'],
-            'data.shares.*.can_edit' => ['sometimes', 'boolean'],
+            'data' => ['present', 'array'],
+            'data.*.type' => ['required', 'string', 'in:users'],
+            'data.*.id' => ['required', 'integer', 'distinct'],
+            'data.*.meta.can_edit' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -31,9 +32,9 @@ class SyncSharesAssistantRequest extends FormRequest
      */
     public function shares(): array
     {
-        /** @var array<int, array{user_id: int, can_edit?: bool}> $shares */
-        $shares = $this->validated('data.shares', []);
+        /** @var array<int, array{type: string, id: int|string, meta?: array{can_edit?: bool}}> $identifiers */
+        $identifiers = $this->validated('data', []);
 
-        return array_values(array_map(AssistantShareGrant::fromArray(...), $shares));
+        return array_values(array_map(AssistantShareGrant::fromArray(...), $identifiers));
     }
 }

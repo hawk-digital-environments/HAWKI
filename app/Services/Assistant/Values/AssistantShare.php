@@ -6,10 +6,10 @@ namespace App\Services\Assistant\Values;
 
 /**
  * One entry of an assistant's share list: the user it is shared with, and
- * whether they may edit on top of using it. Wire shape of the share
- * actions — serialised as-is, never hydrated back.
+ * whether they may edit on top of using it. Read model for the share
+ * actions' relationship document (see AssistantController::shareDocument).
  */
-final readonly class AssistantShare implements \JsonSerializable
+final readonly class AssistantShare
 {
     public function __construct(
         public int $userId,
@@ -18,19 +18,5 @@ final readonly class AssistantShare implements \JsonSerializable
         public bool $canEdit,
         public string|null $avatar,
     ) {
-    }
-
-    /**
-     * @return array{user_id: int, display_name: string, username: string, can_edit: bool, avatar: string|null}
-     */
-    public function jsonSerialize(): array
-    {
-        return [
-            'user_id' => $this->userId,
-            'display_name' => $this->displayName,
-            'username' => $this->username,
-            'can_edit' => $this->canEdit,
-            'avatar' => $this->avatar,
-        ];
     }
 }

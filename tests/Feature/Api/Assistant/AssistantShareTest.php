@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature\Api\Assistant;
 
 use App\Models\Assistants\Assistant;
+use App\Models\Organization;
 use App\Models\User;
+use App\Services\Assistant\Events\AssistantCreatedEvent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
 
@@ -15,67 +18,6 @@ use Tests\TestCase;
 class AssistantShareTest extends TestCase
 {
     use RefreshDatabase;
-
-    public function testOwnerCanAttachSharedUser(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'private',
-        ]);
-
-        $alice = User::factory()->create();
-        $bob = User::factory()->create();
-
-        $this->actingAsUser($owner);
-
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users", [
-            'data' => [
-                ['type' => 'users', 'id' => (string) $alice->id],
-                ['type' => 'users', 'id' => (string) $bob->id],
-            ],
-        ])->assertSuccessful();
-
-        $this->assertDatabaseHas('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $alice->id,
-        ]);
-        $this->assertDatabaseHas('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $bob->id,
-        ]);
-    }
-
-    public function testOwnerCanDetachSharedUser(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'private',
-        ]);
-
-        $alice = User::factory()->create();
-        $bob = User::factory()->create();
-
-        $assistant->sharedUsers()->sync([$alice->id, $bob->id]);
-
-        $this->actingAsUser($owner);
-
-        $this->jsonApiRaw('delete', "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users", [
-            'data' => [
-                ['type' => 'users', 'id' => (string) $alice->id],
-            ],
-        ])->assertSuccessful();
-
-        $this->assertDatabaseMissing('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $alice->id,
-        ]);
-        $this->assertDatabaseHas('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $bob->id,
-        ]);
-    }
 
     public function testOwnerCanListSharedUsers(): void
     {
@@ -94,97 +36,6 @@ class AssistantShareTest extends TestCase
         self::assertContains((string) $alice->id, $ids);
     }
 
-    public function testOwnerCanReplaceSharedUsers(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
-
-        $alice = User::factory()->create();
-        $bob = User::factory()->create();
-        $assistant->sharedUsers()->sync([$alice->id]);
-
-        $this->actingAsUser($owner);
-
-        $this->jsonApiRaw('patch', "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users", [
-            'data' => [
-                ['type' => 'users', 'id' => (string) $bob->id],
-            ],
-        ])->assertSuccessful();
-
-        $this->assertDatabaseMissing('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $alice->id,
-        ]);
-        $this->assertDatabaseHas('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $bob->id,
-        ]);
-    }
-
-    public function testAttachIsIdempotent(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
-
-        $alice = User::factory()->create();
-
-        $this->actingAsUser($owner);
-
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users", [
-            'data' => [['type' => 'users', 'id' => (string) $alice->id]],
-        ])->assertSuccessful();
-
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users", [
-            'data' => [['type' => 'users', 'id' => (string) $alice->id]],
-        ])->assertSuccessful();
-
-        self::assertEquals(1, $assistant->sharedUsers()->count());
-    }
-
-    public function testNonOwnerCannotAttach(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'organizational',
-        ]);
-
-        $intruder = User::factory()->create();
-        $target = User::factory()->create();
-
-        $this->actingAsUser($intruder);
-
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users", [
-            'data' => [['type' => 'users', 'id' => (string) $target->id]],
-        ])->assertForbidden();
-
-        $this->assertDatabaseMissing('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $target->id,
-        ]);
-    }
-
-    public function testNonOwnerCannotDetach(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
-
-        $intruder = User::factory()->create();
-        $target = User::factory()->create();
-        $assistant->sharedUsers()->sync([$target->id]);
-
-        $this->actingAsUser($intruder);
-
-        $this->jsonApiRaw('delete', "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users", [
-            'data' => [['type' => 'users', 'id' => (string) $target->id]],
-        ])->assertForbidden();
-
-        $this->assertDatabaseHas('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $target->id,
-        ]);
-    }
-
     public function testNonOwnerCannotListSharedUsers(): void
     {
         $owner = User::factory()->create();
@@ -198,33 +49,29 @@ class AssistantShareTest extends TestCase
             ->assertForbidden();
     }
 
-    public function testGuestCannotAttach(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'organizational',
-        ]);
-
-        $target = User::factory()->create();
-
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users", [
-            'data' => [['type' => 'users', 'id' => (string) $target->id]],
-        ])->assertStatus(401);
-    }
-
-    public function testAttachRequiresDataArray(): void
+    /**
+     * Share writes live on actions/share alone: POST/PATCH/DELETE on the
+     * relationship are not routes (only the read-only GETs remain).
+     */
+    public function testSharedUsersRelationshipWritesHaveNoRoutes(): void
     {
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+        $target = User::factory()->create();
 
         $this->actingAsUser($owner);
 
-        // to-many relationship expects data as an array; a single object is a
-        // structural error (400), not a validation error.
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users", [
-            'data' => ['type' => 'users', 'id' => '1'],
-        ])->assertStatus(400);
+        $uri = "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users";
+        $payload = ['data' => [['type' => 'users', 'id' => (string) $target->id]]];
+
+        $this->jsonApiRaw('post', $uri, $payload)->assertStatus(405);
+        $this->jsonApiRaw('patch', $uri, $payload)->assertStatus(405);
+        $this->jsonApiRaw('delete', $uri, $payload)->assertStatus(405);
+
+        $this->assertDatabaseMissing('assistant_shared_users', [
+            'assistant_id' => $assistant->id,
+            'user_id' => $target->id,
+        ]);
     }
 
     public function testSharedUserCanListPrivateAssistant(): void
@@ -347,8 +194,8 @@ class AssistantShareTest extends TestCase
 
         $this->actingAsUser($owner);
 
-        $this->jsonApiRaw('delete', "/api/hawki/v1/assistants/{$assistant->id}/relationships/shared-users", [
-            'data' => [['type' => 'users', 'id' => (string) $viewer->id]],
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+            'data' => [],
         ])->assertSuccessful();
 
         $this->actingAsUser($viewer);
@@ -378,11 +225,20 @@ class AssistantShareTest extends TestCase
             ->assertJson([
                 'data' => [
                     [
-                        'user_id' => $alice->id,
-                        'display_name' => 'Alice',
-                        'username' => $alice->username,
-                        'can_edit' => true,
-                        'avatar' => null,
+                        'type' => 'users',
+                        'id' => (string) $alice->id,
+                        'meta' => ['can_edit' => true],
+                    ],
+                ],
+                'included' => [
+                    [
+                        'type' => 'users',
+                        'id' => (string) $alice->id,
+                        'attributes' => [
+                            'display_name' => 'Alice',
+                            'username' => $alice->username,
+                            'avatar' => null,
+                        ],
                     ],
                 ],
             ]);
@@ -411,16 +267,20 @@ class AssistantShareTest extends TestCase
 
         $this->actingAsUser($owner);
 
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+        $response = $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
             'data' => [
-                'shares' => [
-                    ['user_id' => $alice->id, 'can_edit' => true],
-                    ['user_id' => $bob->id],
-                ],
+                ['type' => 'users', 'id' => (string) $alice->id, 'meta' => ['can_edit' => true]],
+                ['type' => 'users', 'id' => (string) $bob->id],
             ],
         ])
             ->assertOk()
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2, 'data')
+            ->assertJsonCount(2, 'included');
+
+        // Absent meta means the use-only grant on the wire too.
+        $canEditById = collect($response->json('data'))->pluck('meta.can_edit', 'id');
+        self::assertTrue($canEditById[(string) $alice->id]);
+        self::assertFalse($canEditById[(string) $bob->id]);
 
         $this->assertDatabaseHas('assistant_shared_users', [
             'assistant_id' => $assistant->id,
@@ -443,12 +303,40 @@ class AssistantShareTest extends TestCase
         $this->actingAsUser($owner);
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => ['shares' => []],
+            'data' => [],
         ])
             ->assertOk()
-            ->assertJsonCount(0, 'data');
+            ->assertJsonCount(0, 'data')
+            ->assertJsonCount(0, 'included');
 
         self::assertSame(0, $assistant->sharedUsers()->count());
+    }
+
+    public function testSyncDetachesAbsentUsers(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+
+        $alice = User::factory()->create();
+        $bob = User::factory()->create();
+        $assistant->sharedUsers()->sync([$alice->id, $bob->id]);
+
+        $this->actingAsUser($owner);
+
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+            'data' => [['type' => 'users', 'id' => (string) $bob->id]],
+        ])
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->assertDatabaseMissing('assistant_shared_users', [
+            'assistant_id' => $assistant->id,
+            'user_id' => $alice->id,
+        ]);
+        $this->assertDatabaseHas('assistant_shared_users', [
+            'assistant_id' => $assistant->id,
+            'user_id' => $bob->id,
+        ]);
     }
 
     public function testNonCreatorCannotSyncShares(): void
@@ -462,8 +350,35 @@ class AssistantShareTest extends TestCase
         $this->actingAsUser(User::factory()->create());
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => ['shares' => [['user_id' => User::factory()->create()->id]]],
+            'data' => [['type' => 'users', 'id' => (string) User::factory()->create()->id]],
         ])->assertForbidden();
+    }
+
+    public function testGuestCannotSyncShares(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+
+        // The FormRequest gate answers before auth middleware: 403, not 401.
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+            'data' => [['type' => 'users', 'id' => '1']],
+        ])->assertForbidden();
+    }
+
+    /**
+     * The relationship document expects data as an array of identifiers; a
+     * single object is a validation error.
+     */
+    public function testSyncRequiresDataArray(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+
+        $this->actingAsUser($owner);
+
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+            'data' => ['type' => 'users', 'id' => '1'],
+        ])->assertStatus(422);
     }
 
     public function testSyncRejectsCreatorAsTarget(): void
@@ -474,7 +389,7 @@ class AssistantShareTest extends TestCase
         $this->actingAsUser($owner);
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => ['shares' => [['user_id' => $owner->id]]],
+            'data' => [['type' => 'users', 'id' => (string) $owner->id]],
         ])->assertStatus(422);
 
         $this->assertDatabaseMissing('assistant_shared_users', [
@@ -493,7 +408,7 @@ class AssistantShareTest extends TestCase
         $this->actingAsUser($owner);
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => ['shares' => [['user_id' => $removed->id]]],
+            'data' => [['type' => 'users', 'id' => (string) $removed->id]],
         ])->assertStatus(422);
     }
 
@@ -507,7 +422,7 @@ class AssistantShareTest extends TestCase
         $this->actingAsUser($owner);
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => ['shares' => [['user_id' => $app->id]]],
+            'data' => [['type' => 'users', 'id' => (string) $app->id]],
         ])->assertStatus(422);
     }
 
@@ -521,10 +436,10 @@ class AssistantShareTest extends TestCase
         $this->actingAsUser($owner);
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => ['shares' => [
-                ['user_id' => $alice->id, 'can_edit' => false],
-                ['user_id' => $alice->id, 'can_edit' => true],
-            ]],
+            'data' => [
+                ['type' => 'users', 'id' => (string) $alice->id, 'meta' => ['can_edit' => false]],
+                ['type' => 'users', 'id' => (string) $alice->id, 'meta' => ['can_edit' => true]],
+            ],
         ])->assertStatus(422);
 
         $this->assertDatabaseMissing('assistant_shared_users', [
@@ -568,11 +483,20 @@ class AssistantShareTest extends TestCase
                 ->assertJson([
                     'data' => [
                         [
-                            'user_id' => $stranger->id,
-                            'display_name' => 'Stranger',
-                            'username' => $stranger->username,
-                            'can_edit' => false,
-                            'avatar' => null,
+                            'type' => 'users',
+                            'id' => (string) $stranger->id,
+                            'meta' => ['can_edit' => false],
+                        ],
+                    ],
+                    'included' => [
+                        [
+                            'type' => 'users',
+                            'id' => (string) $stranger->id,
+                            'attributes' => [
+                                'display_name' => 'Stranger',
+                                'username' => $stranger->username,
+                                'avatar' => null,
+                            ],
                         ],
                     ],
                 ]);
@@ -591,10 +515,10 @@ class AssistantShareTest extends TestCase
 
         $this->actingAsUser($owner);
 
-        $payload = ['data' => ['shares' => [
-            ['user_id' => $alice->id, 'can_edit' => true],
-            ['user_id' => $bob->id, 'can_edit' => false],
-        ]]];
+        $payload = ['data' => [
+            ['type' => 'users', 'id' => (string) $alice->id, 'meta' => ['can_edit' => true]],
+            ['type' => 'users', 'id' => (string) $bob->id, 'meta' => ['can_edit' => false]],
+        ]];
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", $payload)
             ->assertOk()
@@ -617,6 +541,75 @@ class AssistantShareTest extends TestCase
             'user_id' => $bob->id,
             'can_edit' => false,
         ]);
+    }
+
+    // --- write-path regressions: shares are action-writable only ---
+
+    /**
+     * The resource update hydrates no shares: an editor may rename, but a
+     * `shared_users` relationship in the payload must not rewrite the list.
+     */
+    public function testEditorCannotRewriteSharesViaResourceUpdate(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+
+        $editor = User::factory()->create();
+        $alice = User::factory()->create();
+        $assistant->sharedUsers()->sync([
+            $editor->id => ['can_edit' => true],
+            $alice->id,
+        ]);
+
+        $this->actingAsUser($editor);
+
+        $this->jsonApiRaw('patch', "/api/hawki/v1/assistants/{$assistant->id}", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => ['name' => 'Renamed by sharee'],
+                'relationships' => [
+                    'shared_users' => ['data' => []],
+                ],
+            ],
+        ])->assertSuccessful();
+
+        $this->assertDatabaseHas('assistants', [
+            'id' => $assistant->id,
+            'name' => 'Renamed by sharee',
+        ]);
+        self::assertSame(2, $assistant->sharedUsers()->count());
+    }
+
+    /**
+     * The resource create hydrates no shares: a `shared_users` relationship
+     * in the payload is either rejected at the document layer (404, when the
+     * identifier does not resolve) or ignored (201) — never a pivot row.
+     */
+    public function testCreateRejectsSharedUsersRelationship(): void
+    {
+        Event::fake(AssistantCreatedEvent::class);
+
+        $owner = User::factory()->create();
+        $org = Organization::create(['name' => 'Test Org']);
+        $org->users()->attach($owner);
+
+        $alice = User::factory()->create();
+
+        $this->actingAsUser($owner);
+
+        $response = $this->jsonApiRaw('post', '/api/hawki/v1/assistants', [
+            'data' => [
+                'type' => 'assistants',
+                'relationships' => [
+                    'shared_users' => ['data' => [['type' => 'users', 'id' => (string) $alice->id]]],
+                ],
+            ],
+        ]);
+
+        self::assertContains($response->status(), [201, 404]);
+
+        $this->assertDatabaseMissing('assistant_shared_users', ['user_id' => $alice->id]);
     }
 
     // --- edit grant policy tier ---

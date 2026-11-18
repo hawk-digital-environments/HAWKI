@@ -226,21 +226,6 @@ class AssistantPolicy implements DefinesSensitiveIncludes
         return $user->id === $assistant->creator_id;
     }
 
-    public function updateSharedUsers(User $user, Assistant $assistant): bool
-    {
-        return $user->id === $assistant->creator_id;
-    }
-
-    public function attachSharedUsers(User $user, Assistant $assistant): bool
-    {
-        return $user->id === $assistant->creator_id;
-    }
-
-    public function detachSharedUsers(User $user, Assistant $assistant): bool
-    {
-        return $user->id === $assistant->creator_id;
-    }
-
     public function viewAiTools(User $user, Assistant $assistant): bool
     {
         return $this->isPrivileged($user, $assistant);

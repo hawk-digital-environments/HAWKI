@@ -26,17 +26,21 @@ class AssistantShareGrantTest extends TestCase
         self::assertFalse($sut->canEdit);
     }
 
-    public function testItMapsValidatedRows(): void
+    public function testItMapsResourceIdentifiers(): void
     {
-        $sut = AssistantShareGrant::fromArray(['user_id' => 12, 'can_edit' => true]);
+        $sut = AssistantShareGrant::fromArray([
+            'type' => 'users',
+            'id' => '12',
+            'meta' => ['can_edit' => true],
+        ]);
 
         self::assertSame(12, $sut->userId);
         self::assertTrue($sut->canEdit);
     }
 
-    public function testItMapsRowsWithoutCanEdit(): void
+    public function testItMapsIdentifiersWithoutMeta(): void
     {
-        $sut = AssistantShareGrant::fromArray(['user_id' => 12]);
+        $sut = AssistantShareGrant::fromArray(['type' => 'users', 'id' => 12]);
 
         self::assertSame(12, $sut->userId);
         self::assertFalse($sut->canEdit);

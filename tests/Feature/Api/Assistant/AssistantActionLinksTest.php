@@ -32,8 +32,8 @@ class AssistantActionLinksTest extends TestCase
             ->assertJson([
                 'data' => [
                     'links' => [
-                        // Three distinct detach links must coexist (no collision).
-                        'detachSharedUsers' => [
+                        // Distinct per-relation links must coexist (no collision).
+                        'viewSharedUsers' => [
                             'href' => "{$base}/relationships/shared-users",
                             'meta' => ['message' => 'ALLOWED'],
                         ],
@@ -46,11 +46,7 @@ class AssistantActionLinksTest extends TestCase
                             'meta' => ['message' => 'ALLOWED'],
                         ],
                         // Attach / update verbs resolve to the correct relation too.
-                        'attachSharedUsers' => [
-                            'href' => "{$base}/relationships/shared-users",
-                            'meta' => ['message' => 'ALLOWED'],
-                        ],
-                        'updateAssistantTags' => [
+                        'attachAssistantTags' => [
                             'href' => "{$base}/relationships/assistant-tags",
                             'meta' => ['message' => 'ALLOWED'],
                         ],
@@ -87,7 +83,7 @@ class AssistantActionLinksTest extends TestCase
             ->assertJson([
                 'data' => [
                     'links' => [
-                        'detachSharedUsers' => [
+                        'viewSharedUsers' => [
                             'href' => "{$base}/relationships/shared-users",
                             'meta' => ['message' => 'DENIED'],
                         ],
