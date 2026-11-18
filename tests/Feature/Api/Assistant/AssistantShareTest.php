@@ -741,12 +741,12 @@ class AssistantShareTest extends TestCase
     {
         $removed = User::factory()->create(['name' => 'Gone Soon', 'isRemoved' => true]);
         $system = User::factory()->create(['name' => 'System Clone', 'employeetype' => 'system']);
-        $app = User::factory()->create(['name' => 'Robot', 'employeetype' => 'app']);
+        $app = User::factory()->create(['name' => 'Robot One', 'employeetype' => 'app']);
 
         $this->actingAsUser(User::factory()->create());
 
         $ids = collect(
-            $this->jsonApiRaw('get', '/api/hawki/v1/users?filter[search]=o')
+            $this->jsonApiRaw('get', '/api/hawki/v1/users?filter[search]=one')
                 ->assertOk()
                 ->json('data'),
         )->pluck('id')->map(static fn (string $id): int => (int) $id);
@@ -754,6 +754,60 @@ class AssistantShareTest extends TestCase
         self::assertNotContains($removed->id, $ids);
         self::assertNotContains($system->id, $ids);
         self::assertNotContains($app->id, $ids);
+    }
+
+    public function testUserSearchRequiresMinimumLength(): void
+    {
+        User::factory()->create(['name' => 'Ada Lovelace', 'username' => 'ada']);
+
+        $this->actingAsUser(User::factory()->create());
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/users?filter[search]=ad')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/users?filter[search]=' . urlencode('  ad  '))
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function testUserSearchTreatsLikeWildcardsLiterally(): void
+    {
+        User::factory()->create(['name' => 'Ada Lovelace', 'username' => 'ada']);
+        User::factory()->create(['name' => '100% Real', 'username' => 'percent_user']);
+
+        $this->actingAsUser(User::factory()->create());
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/users?filter[search]=' . urlencode('%%%'))
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/users?filter[search]=___')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/users?filter[search]=' . urlencode('0% R'))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.username', 'percent_user');
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/users?filter[search]=' . urlencode('t_u'))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.username', 'percent_user');
+    }
+
+    public function testUserSearchIsCappedEvenWithLargePageSize(): void
+    {
+        User::factory()->count(8)->sequence(
+            static fn ($seq): array => ['name' => "Searchable {$seq->index}", 'username' => "searchable{$seq->index}"],
+        )->create();
+
+        $this->actingAsUser(User::factory()->create());
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/users?filter[search]=searchable&page[number]=1&page[size]=50')
+            ->assertOk()
+            ->assertJsonCount(5, 'data');
     }
 
     // --- is_creator filter ---
