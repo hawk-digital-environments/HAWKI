@@ -143,6 +143,22 @@ test('a send uses the same validated tool/settings snapshot for dispatch and per
     assert.equal(f.generations(), 0);
 });
 
+test('a stream error carrying a tool code shows the translated tool message', async () => {
+    const f = fixture();
+    f.setPacket({ type: 'error', isDone: true, code: 'TOOL_UNAVAILABLE', content: 'The selected tool is currently unavailable.' });
+    await f.transport.sendMessage(f.options);
+    await f.finish();
+    assert.deepEqual(f.errors, ['chat.tools.unavailable']);
+});
+
+test('a stream error without a code keeps the server text', async () => {
+    const f = fixture();
+    f.setPacket({ type: 'error', isDone: true, content: 'Server said no.' });
+    await f.transport.sendMessage(f.options);
+    await f.finish();
+    assert.deepEqual(f.errors, ['Server said no.']);
+});
+
 test('regeneration uses the validated historical tool/settings snapshot', async () => {
     const f = fixture();
     await f.transport.regenerateMessage(

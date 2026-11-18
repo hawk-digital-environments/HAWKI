@@ -525,8 +525,12 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 { signal: controller.signal }
             )) {
                 responseWriter.triggerBodyChunk(JSON.stringify(packet));
-                if (packet.type === 'error')
-                    throw new Error(String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
+                if (packet.type === 'error') {
+                    // A tool code is translated by `errorMessage`; any other error keeps the server text.
+                    const toolCode =
+                        packet.code === 'TOOL_UNAVAILABLE' || packet.code === 'TOOL_ACCESS_DENIED' ? packet.code : null;
+                    throw new Error(toolCode ?? String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
+                }
                 if (
                     packet.type === 'reasoning_start' ||
                     packet.type === 'reasoning_delta' ||

@@ -7,6 +7,7 @@ namespace Tests\Feature\Services\Ai\Agents;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiTool;
 use App\Models\Ai\McpServer;
+use App\Http\Controllers\StreamController;
 use App\Models\User;
 use App\Services\Ai\Agents\Exceptions\InvalidToolTransferStringException;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
@@ -31,6 +32,7 @@ use App\Services\Storage\Values\FileType;
 use App\Services\Storage\Values\StoredFile;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\Request;
 use Laravel\Ai\Gateway\OpenAi\OpenAiGateway;
 use Laravel\Ai\Messages\UserMessage;
 use Laravel\Ai\Providers\OpenAiProvider;
@@ -107,6 +109,35 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
             static::assertSame('TOOL_UNAVAILABLE', $response->getData(true)['code']);
             static::assertStringContainsString('No tool found with name "test_tool"', $exception->getMessage());
         }
+    }
+
+    public function testAStreamedRunWithAnUnavailableToolEndsWithACodedErrorPacket(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->mockProviderInfrastructure(attachedTools: []);
+
+        $request = Request::create('/req/streamAI', 'POST', $this->regenPayload(
+            modelId: self::MODEL_ID,
+            tools: ['test_tool'],
+        ));
+        $response = $this->app->make(StreamController::class)->handleAiConnectionRequest($request);
+
+        // The stream has already started with a 200, so the code rides on the last packet.
+        // The streamed response flushes each chunk, so the buffer callback collects them.
+        $output = '';
+        ob_start(static function (string $chunk) use (&$output): string {
+            $output .= $chunk;
+            return '';
+        });
+        $response->sendContent();
+        ob_end_clean();
+        $lines = array_values(array_filter(explode("\n", $output)));
+        $last = json_decode(end($lines), true, flags: JSON_THROW_ON_ERROR);
+
+        static::assertSame(200, $response->getStatusCode());
+        static::assertSame('error', $last['type']);
+        static::assertSame('TOOL_UNAVAILABLE', $last['code']);
+        static::assertTrue($last['isDone']);
     }
 
     public function testAModelWithoutToolCallingRejectsAnyRequestedTool(): void
