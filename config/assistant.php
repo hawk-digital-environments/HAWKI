@@ -31,6 +31,6 @@ return [
      */
 
     'builder' => [
-        'guide_model' => env('ASSISTANT_GUIDE_MODEL', 'gpt-5.6-luna'),
+        'guide_model' => env('ASSISTANT_GUIDE_MODEL', env('DEFAULT_MODEL', 'gpt-6.1-terra')),
     ],
 ];
