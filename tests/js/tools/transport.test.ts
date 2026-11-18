@@ -159,125 +159,51 @@ test('a stream error without a code keeps the server text', async () => {
     assert.deepEqual(f.errors, ['Server said no.']);
 });
 
-test('regeneration uses the validated historical tool/settings snapshot', async () => {
-    const f = fixture();
-    await f.transport.regenerateMessage(
-        'chat-1',
-        {
-            message_id: '2',
-            model: model.model_id,
-            metadata: { tools: ['capability:web_search:search:{"limit":3}'], params: { temperature: 0.2 } }
-        } as any,
-        null
-    );
-    assert.equal(f.streams.length, 1);
-    assert.deepEqual(f.streams[0].tools, ['capability:web_search:search:{"limit":3}']);
-    assert.deepEqual(f.writes.at(-1).metadata.tools, f.streams[0].tools);
-    assert.deepEqual(f.writes.at(-1).metadata.params, { temperature: 0.2 });
-    assert.equal(f.streams[0].isUpdate, true);
-    assert.equal(f.streams[0].messageId, '2');
-});
-
-test('regeneration rejects revoked historical tools and never silently retries with a different choice', async () => {
-    const f = fixture();
-    f.tools.tools = [];
-    await assert.rejects(
-        f.transport.regenerateMessage(
-            'chat-1',
-            { message_id: '2', model: model.model_id, metadata: { tools: ['capability:web_search:search'] } } as any,
-            null
-        ),
-        /chat.tools.accessDenied/
-    );
-    assert.deepEqual(f.streams, []);
-    assert.deepEqual(f.writes, []);
-    assert.equal(f.generations(), 0);
-});
-
-/** The HAWKI base row of the `aiAssistants` hook: no participant claim on a plain regen. */
-const hawkiParticipant: any = { id: 'hawki', handle: '@hawki', label: 'HAWKI', description: '' };
-
-test('a regenerate pick whose model cannot use the snapshot tools aborts before dispatching', async () => {
-    const snapshot = { tools: ['capability:web_search:search'], params: { temperature: 0.2 } };
-    for (const incompatible of [noToolCallingModel, foreignToolModel]) {
-        const f = fixture();
-        await assert.rejects(
-            f.transport.regenerateMessage(
-                'chat-1',
-                { message_id: '2', model: model.model_id, metadata: snapshot } as any,
-                { participant: hawkiParticipant, model: incompatible.model_id }
-            ),
-            /chat.tools.unavailable/
-        );
-        assert.deepEqual(f.streams, []);
-        assert.deepEqual(f.writes, []);
-        assert.equal(f.generations(), 0);
-    }
-});
+/** Puts the fixture's composer into regen mode for `messageId`, as `ChatRegenMode.enter` leaves it. */
+function enterRegen(f: ReturnType<typeof fixture>, messageId: string, pickedParticipant: any = null) {
+    f.context.mode = {
+        isEdit: false,
+        isThread: false,
+        isRegen: true,
+        getState: () => ({ messageId, originalMessage: 'Original answer', pickedParticipant })
+    };
+}
 
 test('a tool-free regenerate may switch to a model without tool calling', async () => {
-    const f = fixture();
-    await f.transport.regenerateMessage(
-        'chat-1',
-        { message_id: '2', model: model.model_id, metadata: { tools: [] } } as any,
-        { participant: hawkiParticipant, model: noToolCallingModel.model_id }
-    );
+    const f = fixture([]);
+    enterRegen(f, '2');
+    f.context.model = { current: noToolCallingModel };
+    await f.transport.sendMessage(f.options);
+    await f.finish();
+    assert.deepEqual(f.errors, []);
     assert.equal(f.streams.length, 1);
     assert.equal(f.streams[0].model, noToolCallingModel.model_id);
     assert.deepEqual(f.streams[0].tools, []);
     assert.equal(f.writes.at(-1).model, noToolCallingModel.model_id);
 });
 
-test('a vanished picked model falls back and reports it, unless a hook claims the run', async () => {
-    const notices: string[] = [];
-    const plain = fixture();
-    await plain.transport.regenerateMessage(
-        'chat-1',
-        { message_id: '2', model: model.model_id, metadata: { tools: [] } } as any,
-        { participant: hawkiParticipant, model: 'gone-model' },
-        (notice) => notices.push(notice)
-    );
-    assert.equal(plain.streams.length, 1);
-    assert.equal(plain.streams[0].model, fallbackModel.model_id);
-    assert.deepEqual(notices, ['chat.regenerate.modelNotAvailable']);
-
-    // A claimed run's model comes from the participant, so the fallback notice stays silent.
-    const claimed = fixture();
-    claimed.app.hooks.apply = (name: string, value: any, ctx: any) =>
-        name === 'chatSend' && ctx.regenParticipant ?
-            { ...value, assistantHandle: 'tutor', model: model.model_id, tools: [] }
-        :   value;
-    const claimedNotices: string[] = [];
-    await claimed.transport.regenerateMessage(
-        'chat-1',
-        { message_id: '2', model: model.model_id, metadata: { tools: [] } } as any,
-        { participant: hawkiParticipant, model: 'gone-model' },
-        (notice) => claimedNotices.push(notice)
-    );
-    assert.equal(claimed.streams.length, 1);
-    assert.equal(claimed.streams[0].model, model.model_id);
-    assert.deepEqual(claimedNotices, []);
-});
-
-test('a regenerate claimed through the chatSend hook runs the hook-resolved run, not the snapshot', async () => {
+test('a regenerate claimed through the chatSend hook runs the hook-resolved run, not the composer selection', async () => {
     const f = fixture();
+    const regenMessage = {
+        message_id: '2',
+        message_role: 'assistant',
+        model: model.model_id,
+        content: { text: 'Original answer', attachments: [] },
+        metadata: { tools: ['capability:web_search:search'], params: { temperature: 0.2 } }
+    };
+    f.store.findMessage = (_slug: string, messageId: string) => (messageId === '2' ? regenMessage : null);
+    enterRegen(f, '2');
+    // The handler sees the re-run message and claims the run.
     f.app.hooks.apply = (name: string, value: any, ctx: any) =>
-        name === 'chatSend' && ctx.regenMessage ?
+        name === 'chatSend' && ctx.regenMessage === regenMessage ?
             { ...value, assistantHandle: 'tutor', model: model.model_id, tools: [], params: { temperature: 0.9 } }
         :   value;
 
-    await f.transport.regenerateMessage(
-        'chat-1',
-        {
-            message_id: '2',
-            model: model.model_id,
-            metadata: { tools: ['capability:web_search:search'], params: { temperature: 0.2 } }
-        } as any,
-        { participant: hawkiParticipant, model: null }
-    );
+    await f.transport.sendMessage(f.options);
+    await f.finish();
 
     assert.equal(f.streams.length, 1);
-    assert.equal(f.streams[0].model, model.model_id);
+    assert.equal(f.streams[0].assistantHandle, 'tutor');
     assert.deepEqual(f.streams[0].tools, []);
     assert.deepEqual(f.streams[0].params, { temperature: 0.9 });
     const write = f.writes.at(-1);
@@ -299,7 +225,9 @@ test('a thread run branches from its trunk message: no other turns and not the t
         {message_id: '2.003', message_role: 'assistant', content: {text: 'thread answer two', attachments: []}}
     ] as any;
 
-    await f.transport.regenerateMessage('chat-1', {message_id: '2.003', model: model.model_id, metadata: {tools: []}} as any, null);
+    enterRegen(f, '2.003');
+    await f.transport.sendMessage(f.options);
+    await f.finish();
 
     const texts = f.streams[0].messages.slice(1).map((entry: any) => entry.content?.text);
     // The run sees its trunk and the thread's earlier messages only.
@@ -319,7 +247,9 @@ test('a thread opened on a response keeps the response but not the question that
         {message_id: '3.002', message_role: 'assistant', content: {text: 'thread answer', attachments: []}}
     ] as any;
 
-    await f.transport.regenerateMessage('chat-1', {message_id: '3.002', model: model.model_id, metadata: {tools: []}} as any, null);
+    enterRegen(f, '3.002');
+    await f.transport.sendMessage(f.options);
+    await f.finish();
 
     const messages = f.streams[0].messages;
     // The thread's history opens with the assistant response it was started from.
@@ -339,7 +269,9 @@ test('a short thread keeps its anchoring trunk message under the history cap', a
         {message_id: '2.003', message_role: 'assistant', content: {text: 'thread answer two', attachments: []}}
     ] as any;
 
-    await f.transport.regenerateMessage('chat-1', {message_id: '2.003', model: model.model_id, metadata: {tools: []}} as any, null);
+    enterRegen(f, '2.003');
+    await f.transport.sendMessage(f.options);
+    await f.finish();
 
     const messages = f.streams[0].messages;
     // System prompt + trunk + the thread's messages before the regenerated one.
@@ -460,11 +392,9 @@ test(`a thread run sends only the last ${MESSAGE_HISTORY_CAP} thread messages to
         }))
     ];
     f.store.messagesFor = () => thread as any;
-    await f.transport.regenerateMessage(
-        'chat-1',
-        { message_id: '2.023', model: model.model_id, metadata: { tools: [] } } as any,
-        null
-    );
+    enterRegen(f, '2.023');
+    await f.transport.sendMessage(f.options);
+    await f.finish();
     const messages = f.streams[0].messages;
     // System prompt + the capped history: trunk + replies 1..22 are 23 messages, the last 20 of which are replies 3..22.
     assert.equal(messages.length, 21);

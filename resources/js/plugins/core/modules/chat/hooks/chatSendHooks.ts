@@ -9,8 +9,9 @@ import type { AiAssistant } from '$plugins/core/stores/AiHandleStore.svelte.js';
  * the response.
  *
  * The chat module fills in the composer's own selection (model, active
- * tools, parameter list) — or, for a regenerate, the message's snapshot and
- * the picked participant (see `chatRegenerateHooks.ts`); handlers may
+ * tools, parameter list) — in regen mode pre-filled from the message's
+ * snapshot, with the picked participant in the context (see
+ * `chatRegenerateHooks.ts`); handlers may
  * rewrite the run (e.g. a plugin pins model/tools/params to the addressed
  * assistant's configuration and supplies its display identity) and mark the
  * exchange as bound to an assistant handle. The handle travels as
@@ -20,7 +21,7 @@ import type { AiAssistant } from '$plugins/core/stores/AiHandleStore.svelte.js';
  *
  * Core registers no handler — with none registered, every send and
  * regenerate runs as the plain, user-configured request the transport
- * assembled. The hook is the contract plugins build assistant-style runs on.
+ * assembled (a regenerate keeps the regen mode's own logic). The hook is the contract plugins build assistant-style runs on.
  */
 export interface ChatSendDescriptor {
     /**
@@ -44,11 +45,11 @@ export interface ChatSendDescriptor {
 
 /** Context for the `chatSend` hook. */
 export interface ChatSendContext {
-    /** The composer the send originates from; null for a regenerate. */
-    composer: ComposerContext | null;
+    /** The composer the send originates from. */
+    composer: ComposerContext;
     /** The conversation the send goes into; null while the first message creates it. */
     conversation: ChatConversation | null;
-    /** The assistant message a regenerate overwrites; null on composer sends. */
+    /** The assistant message a regenerate overwrites; null outside regen mode. */
     regenMessage: ChatMessage | null;
     /** The participant a regenerate is addressed to; null on composer sends. Handlers
      *  claim it through its `chatBinding` — unclaimed stays a plain run. */
