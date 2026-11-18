@@ -14,7 +14,7 @@
  * unmounted subtree's scopes are unreachable and collected. Nothing has to be
  * de-registered.
  */
-import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
+import {createStableContext} from '$lib/utils/stableContext.js';
 import type {RouterHandle} from '$lib/components/ui/routing/logistics/router.js';
 
 /**
@@ -46,7 +46,7 @@ export interface RouterScope {
     names: () => string[];
 }
 
-const [getRouterScope, setRouterScope] = createHmrSafeContext<RouterScope>('hawki.router-scope');
+const [getRouterScope, setRouterScope] = createStableContext<RouterScope>('hawki.router-scope');
 
 /**
  * Publishes the scope covering `handle` and everything already reachable.

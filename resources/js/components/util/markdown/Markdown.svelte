@@ -35,9 +35,10 @@
     import katexWorkerUrl from '$lib/components/util/markdown/workers/katexRenderer.worker?worker&url';
     import mermaidWorkerUrl from 'markstream-svelte/workers/mermaidParser.worker?worker&url';
     import {MarkdownRender, setDefaultI18nMap, setKaTeXWorker, setMermaidWorker} from 'markstream-svelte';
-    import type {CodeBlockMonacoOptions, NodeRendererCodeBlockProps} from 'markstream-svelte';
+    import type {CodeBlockOptions, NodeRendererCodeBlockProps} from 'markstream-svelte';
     import ExtendedLinkNode from '$lib/components/util/markdown/extension/ExtendedLinkNode.svelte';
     import HeadingNode from '$lib/components/util/markdown/extension/HeadingNode.svelte';
+    import MathNode from '$lib/components/util/markdown/extension/MathNode.svelte';
     import TableNode from '$lib/components/util/markdown/extension/TableNode.svelte';
     import {provideMarkdownHeadingBaseLevel} from '$lib/components/util/markdown/extension/headingBaseLevel.js';
     import 'katex/dist/katex.min.css';
@@ -45,6 +46,7 @@
     import 'markstream-svelte/index.css';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {loadWorker} from "$lib/components/util/markdown/workers/workerLoader";
 
     const themeStore = useStore('theme');
     const {getTranslationsFlat} = useTranslator();
@@ -76,29 +78,13 @@
 
     provideMarkdownHeadingBaseLevel(() => headingBaseLevel);
 
-    // @see https://github.com/vitejs/vite/issues/13680
-    function loadWorker(url: string) {
-        const blob = new Blob(
-            [`import ${JSON.stringify(new URL(url, import.meta.url))}`],
-            {type: 'application/javascript'}
-        );
-        const objURL = URL.createObjectURL(blob);
-        const worker = new Worker(objURL, {type: 'module'});
-        worker.addEventListener('error', () => URL.revokeObjectURL(objURL));
-        return worker;
-    }
-
     setKaTeXWorker(loadWorker(katexWorkerUrl));
     setMermaidWorker(loadWorker(mermaidWorkerUrl));
     setDefaultI18nMap(getTranslationsFlat('markdown.markstream'));
 
-    // Snippets are read-only: no current-line highlight or cursor mark in the
-    // overview ruler, and an even inset (--space-3) above and below the code.
-    const codeBlockMonacoOptions: CodeBlockMonacoOptions = {
-        renderLineHighlight: 'none',
-        hideCursorInOverviewRuler: true,
-        overviewRulerBorder: false,
-        padding: {top: 12, bottom: 12}
+    // An even inset (--space-3) above and below the code.
+    const codeBlockOptions: CodeBlockOptions = {
+        padding: 12
     };
 
     // Copy, expand and collapse are enough; the font-size stepper is noise.
@@ -110,8 +96,8 @@
     isDark={themeStore.theme === 'dark'}
     final={!isStreaming}
     showTooltips={false}
-    customComponents={{link: ExtendedLinkNode, heading: HeadingNode, table: TableNode}}
-    codeBlockMonacoOptions={codeBlockMonacoOptions}
+    customComponents={{link: ExtendedLinkNode, heading: HeadingNode, math_block: MathNode, table: TableNode}}
+    codeBlockOptions={codeBlockOptions}
     codeBlockProps={codeBlockProps}
     typewriter={!!isStreaming}
 />
@@ -194,7 +180,7 @@
         }
 
         :global(mark) {
-            background: var(--color-active-surface);
+            background: var(--color-accent-100);
             color: inherit;
         }
 
@@ -285,6 +271,47 @@
             box-shadow: none;
         }
 
+        /* Top-level tables scroll via their node-slot wrapper above. Nested
+           tables (e.g. inside a blockquote) render directly inside their
+           parent with no slot wrapper, so wide ones overflow the message
+           column and get clipped by the chat panel (overflow-x: hidden).
+           Make the blockquote their scroll container, mirroring the
+           top-level behavior. */
+        :global(blockquote) {
+            overflow-x: auto;
+
+            :global(table td) {
+                min-width: 200px;
+            }
+        }
+
+        /* Task-list checkboxes are native controls; the app reset's `font:
+           inherit` (via svelte-snippet) scales them up against the text.
+           Render them GitHub-style: native ~13px size (0.8em at the 16px
+           message font), middle-aligned on the line, tinted with the theme
+           accent instead of the UA gray. The explicit minimums guard against
+           page-wide input rules (style.css gives every input min-width:10rem
+           / min-height:2.5rem — min-* clamp width/height regardless of
+           importance, which once rendered these at 160×40px). */
+        :global(input[type='checkbox'].checkbox-node) {
+            width: 0.8em;
+            height: 0.8em;
+            min-width: 0.8em;
+            min-height: 0.8em;
+            margin: 0 0.35em 0 0;
+            vertical-align: middle;
+            accent-color: var(--accent-color);
+        }
+
+        /* Task items carry both their list marker and the checkbox — a
+           double indicator (worst at deep nesting where markers shrink to
+           squares). GitHub-style: drop the marker, the checkbox IS the
+           marker. The direct-child chain keeps ancestor items of nested
+           task lists unaffected. */
+        :global(li:has(> p > .checkbox-node)) {
+            list-style: none;
+        }
+
         /* markstream-svelte sizes headings by tag. With `headingBaseLevel`
            a `#` may render as h4 (and `##` as h5 with the browser default
            size), so size by the markdown level instead. Values mirror the
@@ -338,9 +365,41 @@
         /* Collapsed, the header would stack its divider on the outline. */
         :global(.code-block-header:last-child) { border-bottom: none; }
 
+        /* mermaid-preview has default overflow:clip, which clips the edge of the diagram.
+        This element is the one that moves when dragging the diagram.*/
+        :global(.mermaid-preview) { overflow: visible; }
+
         :global(:is(.code-block-header__label, .mermaid-title__text)) {
             font: var(--font-weight-medium) var(--font-size-xs) / var(--line-height-tight) var(--font-family-base);
             color: var(--color-text-muted);
+        }
+
+        /* The HTML/SVG preview frame ships viewport-sized (80vw × 70vh,
+           max-width 960px) but renders inline below the code block, so it
+           overflows the message column. Fit it to the container instead;
+           the iframe scrolls its own content. Drop this once the upstream
+           fix is released and the dependency bumped (see MARKSTREAM-SVELTE.md). */
+        :global(.html-preview-frame) {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 10;
+            min-height: 16rem;
+            max-height: 70vh;
+            margin-top: 0.5rem;
+        }
+
+        /* The component emits `is-dark` but the package CSS targets `--dark`,
+           so dark rules never apply: the frame stays white while its text
+           inherits the light chat color. Restyle until fixed upstream. */
+        :global(.html-preview-frame.is-dark) {
+            background-color: var(--color-surface);
+            color: var(--color-text);
+            box-shadow: none;
+        }
+
+        :global(.html-preview-frame.is-dark .html-preview-frame__header) {
+            border-bottom-color: var(--color-border);
         }
 
         :global(span.code-block-language-icon) { color: var(--color-text-muted); }

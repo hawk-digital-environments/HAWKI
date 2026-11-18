@@ -7,12 +7,12 @@
 -->
 <script module lang="ts">
     /** A settings section the dialog can be opened on. */
-    export type {SettingsSection} from './types.js';
+    export type {SettingsSection} from '$plugins/core/modules/settings/SettingsModule.js';
 </script>
 
 <script lang="ts">
     import type {Attachment} from 'svelte/attachments';
-    import type {SettingsSection} from './types.js';
+    import type {SettingsSection} from '$plugins/core/modules/settings/SettingsModule.js';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import MenuList from '$lib/components/ui/menu-list/MenuList.svelte';
@@ -20,6 +20,7 @@
     import Tabs from '$lib/components/ui/tabs/Tabs.svelte';
     import RouterView from '$lib/components/ui/routing/RouterView.svelte';
     import {createRouter} from '$lib/components/ui/routing/index.js';
+    import {untrack} from 'svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
     import FlaskConicalIcon from '$lib/components/ui/icons/iconset/FlaskConicalIcon.svelte';
@@ -29,7 +30,6 @@
     import ExperimentsSettings from '$lib/app/components/settings/pages/ExperimentsSettings.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
-    import {untrack} from 'svelte';
 
     interface Props {
         open?: boolean;
@@ -43,8 +43,6 @@
     }
 
     let {open = $bindable(false), onOpenChange, section = null}: Props = $props();
-    const uid = $props.id();
-    const titleId = `${uid}-title`;
     const {__} = useTranslator();
 
     const breakpoint = useBreakpoint();
@@ -75,16 +73,6 @@
         void settingsRouter.handle.goTo(path);
     }
 
-    // Point the hash router at the requested section before the RouterView
-    // mounts; the strategy writes the hash, and the view resolves from it.
-    // `untrack` keeps the router's own state out of this effect's dependencies
-    // so only `open`/`section` re-run it.
-    $effect(() => {
-        if (open && section) {
-            untrack(() => void settingsRouter.handle.goTo(`/${section}`, {replace: true}));
-        }
-    });
-
     // The panel follows its content's measured height so a section switch
     // resizes the dialog (or sheet) smoothly; an `auto` height can't transition.
     let contentHeight = $state<number | null>(null);
@@ -113,6 +101,16 @@
         if (event.target === event.currentTarget) resizing = false;
     }
 
+    // Point the hash router at the requested section before the RouterView
+    // mounts; the strategy writes the hash, and the view resolves from it.
+    // `untrack` keeps the router's own state out of this effect's dependencies
+    // so only `open`/`section` re-run it.
+    $effect(() => {
+        if (open && section) {
+            untrack(() => void settingsRouter.handle.goTo(`/${section}`, {replace: true}));
+        }
+    });
+
     function handleOpenChange(isOpen: boolean): void {
         open = isOpen;
         onOpenChange?.(isOpen);
@@ -123,10 +121,8 @@
     <div
         class="settings-panel"
         class:resizing
-        aria-labelledby={titleId}
-        style:--settings-content-height={contentHeight === null ? undefined : `${contentHeight}px`}
         ontransitionend={endResize}
-        ontransitioncancel={endResize}
+        style:--settings-content-height={contentHeight === null ? undefined : `${contentHeight}px`}
     >
         <div {@attach measureContent}>
             <RouterView router={settingsRouter} loadingLabel={__('ui.loading')}/>
@@ -147,7 +143,6 @@
         onOpenChange={handleOpenChange}
         contentProps={{class: 'settings-dialog-content'}}
         headerProps={{class: 'settings-dialog-header'}}
-        titleProps={{id: titleId}}
     >
         {#snippet title()}
             <span class="settings-title">{__('ui.settings.title')}</span>
@@ -155,28 +150,24 @@
 
         <nav class="settings-nav" aria-label={__('ui.settings.navLabel')}>
             <MenuList>
-                <ul class="settings-nav-list">
-                    {#each navItems as item (item.path)}
-                        {@const Icon = item.icon}
-                        {@const active = activePath === item.path}
-                        <li>
-                            <MenuListItem {active}>
-                                {#snippet children({attach})}
-                                    <button
-                                        type="button"
-                                        {@attach attach}
-                                        class:active
-                                        aria-current={active ? 'page' : undefined}
-                                        onclick={() => goTo(item.path)}
-                                    >
-                                        <Icon size={18} strokeWidth={2} aria-hidden="true"/>
-                                        <span>{item.label}</span>
-                                    </button>
-                                {/snippet}
-                            </MenuListItem>
-                        </li>
-                    {/each}
-                </ul>
+                {#each navItems as item (item.path)}
+                    {@const Icon = item.icon}
+                    {@const active = activePath === item.path}
+                    <MenuListItem {active}>
+                        {#snippet children({attach})}
+                            <button
+                                type="button"
+                                {@attach attach}
+                                class:active
+                                aria-current={active ? 'page' : undefined}
+                                onclick={() => goTo(item.path)}
+                            >
+                                <Icon size={18} strokeWidth={2} aria-hidden="true"/>
+                                <span>{item.label}</span>
+                            </button>
+                        {/snippet}
+                    </MenuListItem>
+                {/each}
             </MenuList>
         </nav>
 
@@ -185,12 +176,10 @@
 {/if}
 
 <style>
-    /* One surface, two rows: the header on top and the dialog body as a
-       nav/page row below it (the nav on the left, the page scrolling on its
-       own on the right, beside the close button inset by --space-4). Every
-       edge — and the gap under the header — shares that one inset, and the
-       corner radius is the frames' radius plus it, so the 8px fields inside
-       sit concentric with it.
+    /* One grid on a single surface: the nav on the left, the page scrolling on
+       its own on the right, both below a header row holding the title and the
+       dialog's close button (a 24px box inset by --space-4). Every edge — and
+       the gap under the header — shares that one inset.
 
        The dialog is as tall as the current page and hangs from a fixed top
        edge, so switching to a shorter or taller section never moves the nav.
@@ -203,24 +192,19 @@
         width: min(48rem, calc(100vw - 2 * var(--space-4)));
         max-width: none;
         max-height: calc(100dvh - var(--settings-top) - var(--space-4));
+        grid-template-columns: 11rem minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
         overflow: hidden;
         padding: 0;
         gap: 0;
-        border-radius: var(--corner-lg);
+        border-radius: calc(var(--corner-lg) - var(--space-1));
     }
 
     /* A 24px title line under the shared inset centres the title on the close
        button; on the left it lines up with the nav icons below it. */
     :global(.settings-dialog-header.settings-dialog-header) {
+        grid-column: 1 / -1;
         padding: var(--space-4) var(--space-12) 0 calc(var(--space-4) + var(--space-2_5));
-    }
-
-    /* The dialog's body region is the nav/page row: a fixed nav rail beside
-       the page. The base `.dialog-body` scroll is replaced by the panel's own
-       scroller, so only the page scrolls. */
-    :global(.settings-dialog-content .dialog-body) {
-        display: flex;
-        overflow: hidden;
     }
 
     .settings-title {
@@ -230,19 +214,9 @@
 
     .settings-nav {
         display: flex;
-        flex: 0 0 11rem;
         flex-direction: column;
         min-height: 0;
         padding: var(--space-4) 0 var(--space-4) var(--space-4);
-    }
-
-    .settings-nav-list {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1);
-        margin: 0;
-        padding: 0;
-        list-style: none;
     }
 
     .settings-nav button {
@@ -278,11 +252,12 @@
     }
 
     .settings-panel {
-        flex: 1 1 auto;
         min-width: 0;
         min-height: 0;
         max-height: 100%;
         overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         /* A little more air towards the nav than on the outer edges. */
         padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
         /* Until the first measurement the property is unset, which makes this
@@ -291,6 +266,11 @@
         transition: height var(--duration-extra-fast) var(--easing-default);
     }
 
+    .settings-panel::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* While the height animates the panel's own scrollbar would flash. */
     .settings-panel.resizing {
         overflow-y: hidden;
     }

@@ -18,8 +18,8 @@ const SystemModelsSchema = z.object({
     model_type: z.enum(WellKnownSystemModelTypes).or(z.string()),
     /** The deployment/integration context this assignment applies to (e.g. the main HAWKI app vs. an embedding external app); see the analogous field on `system-prompts.schema.ts` for details. Together with `model_type` it forms the unique key for an assignment. */
     usage_type: z.string(),
-    /** The `ai-models` resource id (`AiModel.id`) assigned to this purpose. */
-    model_id: z.string()
+    /** The provider-qualified model id (`<provider_id>/<model_id>`) assigned to this purpose; `null` when the linked model is not visible to the user. */
+    model_id: z.string().nullable()
 }).strict();
 
 export default SystemModelsSchema;

@@ -1,6 +1,13 @@
 name: Deploy to Testing
 on:
   workflow_dispatch:
+    inputs:
+      instance:
+        description: 'Testing instance to deploy (1, 2 or 3). Always deploys that instance''s hawk/test-N ref, regardless of the branch you run this workflow from.'
+        required: true
+        type: choice
+        options: [ '1', '2', '3' ]
+        default: '1'
   push:
     branches:
       - 'hawk/test-1'
@@ -15,7 +22,18 @@ jobs:
     steps:
       - name: Determine testing instance number
         id: instance
-        run: echo "number=${GITHUB_REF_NAME##*-}" >> "$GITHUB_OUTPUT"
+        env:
+          INSTANCE_INPUT: ${{ inputs.instance }}
+        run: |
+          # On a push to hawk/test-N the instance comes from the pushed
+          # branch. On a manual dispatch the "Use workflow from" dropdown
+          # only picks which workflow file runs and defaults to
+          # development, so the instance must come from the input.
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "number=$INSTANCE_INPUT" >> "$GITHUB_OUTPUT"
+          else
+            echo "number=${GITHUB_REF_NAME##*-}" >> "$GITHUB_OUTPUT"
+          fi
 
   build-and-push:
     runs-on: ubuntu-latest
@@ -27,8 +45,21 @@ jobs:
       packages: write
 
     steps:
-      - name: Check out the repo
+      - name: Check out the deploy ref
         uses: actions/checkout@v7
+        with:
+          # Always deploy the ref of this instance, no matter which ref the
+          # workflow was dispatched from: the "Use workflow from" dropdown
+          # of a manual run only picks which workflow file runs and
+          # defaults to development, it does not pick the deployed code.
+          ref: hawk/test-${{ needs.setup.outputs.number }}
+
+      # github.sha belongs to the ref the workflow was dispatched from, not
+      # to the instance ref, so resolve the actually checked-out commit for
+      # the image tags and the cache buster below.
+      - name: Resolve the deployed commit
+        id: build_info
+        run: echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Log in to the Container registry
         uses: docker/login-action@v4
@@ -43,7 +74,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=test-${{ needs.setup.outputs.number }}-${{ github.sha }}
+            type=raw,value=test-${{ needs.setup.outputs.number }}-${{ steps.build_info.outputs.head_sha }}
             type=raw,value=test-${{ needs.setup.outputs.number }}-latest
 
       - name: Build and push Docker image
@@ -57,7 +88,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            CACHE_BUSTER=${{ github.sha }}
+            CACHE_BUSTER=${{ steps.build_info.outputs.head_sha }}
 
   deploy:
     runs-on: ubuntu-latest

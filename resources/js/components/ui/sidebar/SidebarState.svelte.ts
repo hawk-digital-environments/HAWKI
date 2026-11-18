@@ -1,4 +1,4 @@
-import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
+import {createStableContext} from '$lib/utils/stableContext.js';
 import {
     type BreakpointState,
     useBreakpoint
@@ -32,7 +32,7 @@ class SidebarState {
     }
 }
 
-const [getSidebarContext, setSidebarContext] = createHmrSafeContext<SidebarState>('hawki.sidebar');
+const [getSidebarContext, setSidebarContext] = createStableContext<SidebarState>('hawki.sidebar');
 
 export function createSidebarContext(breakpoints: BreakpointState = useBreakpoint()): SidebarState {
     const sidebar = new SidebarState(breakpoints);

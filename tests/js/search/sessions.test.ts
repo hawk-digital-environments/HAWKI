@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SearchSessionManager} from '$lib/kernel/search/SearchSessionManager.svelte.js';
+import {SEARCH_WORKER_PROVIDER_ID, SearchSessionManager} from '$lib/kernel/search/SearchSessionManager.svelte.js';
 import {documentKey} from '$lib/kernel/search/sharedIndex.js';
-import {TestSearchHost, staticSourceOf, entry, tick, rowTitles} from './harness.js';
+import {SEARCH_LOCAL_PENDING_DELAY_MS} from '$lib/kernel/search/types.js';
+import {TestSearchHost, staticSourceOf, entry, tick, rowTitles, type WorkerReply} from './harness.js';
 
 function manager(host: TestSearchHost) {
     const result = new SearchSessionManager(host);
@@ -49,14 +50,12 @@ test('server groups publish together, use Fuse scores, and retain server-only ma
     try {
         const session = api.createSession();
         session.setInput({query: 'design'});
-        await tick(280);
+        await host.schedulerTimers.advance(250);
         assert.deepEqual(session.state.groups, []);
         slow.resolve([entry('second', 'Unrelated')]);
         await tick();
         assert.deepEqual(rowTitles(session.state.groups), ['Design', 'Roadmap', 'Unrelated']);
         assert.equal(session.state.remotePending, false);
-        session.select('entity/strong');
-        assert.equal(host.storage.items.size, 0);
     } finally {api.dispose();}
 });
 
@@ -70,7 +69,7 @@ test('disabled dynamic callbacks cannot return into the current query', async ()
     try {
         const session = api.createSession();
         session.setInput({query: 'design'});
-        await tick(280);
+        await host.schedulerTimers.advance(250);
         host.deactivate('core:test.remote'); api.invalidate();
         pending.resolve([entry('old', 'Design old')]);
         await tick();
@@ -80,7 +79,7 @@ test('disabled dynamic callbacks cannot return into the current query', async ()
     } finally {api.dispose();}
 });
 
-test('a server-only match uses an available static copy and records static history', async () => {
+test('a server-only match uses an available static copy', async () => {
     const host = new TestSearchHost();
     host.register('core:test', 'core', ({group}) => {
         group('local', {kind: 'static', label: () => 'Local'}).add('local', staticSourceOf([entry('local', 'Roadmap', {entityKey:'shared'})]));
@@ -89,13 +88,9 @@ test('a server-only match uses an available static copy and records static histo
     const api = manager(host);
     try {
         const session = api.createSession();
-        session.setInput({query: 'design'}); await tick(280);
+        session.setInput({query: 'design'}); await host.schedulerTimers.advance(250);
         assert.equal(session.state.groups[0].id, 'core:test.local');
         assert.equal(session.select('shared')!.kind, 'static');
-        const history = JSON.parse([...host.storage.items.values()][0]);
-        assert.deepEqual(Object.keys(history[0]).sort(), ['at', 'entityKey']);
-        const second = api.createSession();
-        assert.deepEqual(rowTitles(second.state.groups), ['Roadmap']);
     } finally {api.dispose();}
 });
 
@@ -108,9 +103,9 @@ test('IME composition cancels in-flight results and resumes the current query', 
     const api = manager(host);
     try {
         const session = api.createSession();
-        session.setInput({query: 'before'}); await tick(280);
+        session.setInput({query: 'before'}); await host.schedulerTimers.advance(250);
         session.suspend(); session.setInput({query: 'after'});
-        old.resolve([entry('old','before')]); await tick(280);
+        old.resolve([entry('old','before')]); await tick();
         assert.equal(calls, 1);
         assert.deepEqual(session.state.groups, []);
         session.suspend(false); await tick();
@@ -123,7 +118,7 @@ test('worker replies from an old revision cannot restore a removed document', as
     const replies: {revision:number; result:ReturnType<typeof deferred<any>>}[] = [];
     host.worker = () => {const result = deferred<any>(); replies.push({revision:host.index.revision,result}); return result.promise;};
     const rows = [entry('one', 'Design')];
-    host.register('core:test', 'core', ({group}) => group('worker', {kind:'static',label:()=> 'Worker'}).add('worker', staticSourceOf(rows,'worker')));
+    host.register('core:test', 'core', ({group}) => group('worker', {kind:'static',label:()=> 'Worker'}).add('worker', staticSourceOf(rows)));
     const api = manager(host);
     try {
         const session = api.createSession(); session.setInput({query:'design'});
@@ -141,7 +136,88 @@ test('unknown and conflicting scopes issue no requests', async () => {
     const api = manager(host);
     try {
         const session=api.createSession({allowedScope:{pluginId:'other'}});
-        session.setInput({query:'design',scope:{moduleId:'core:test'}}); await tick(280);
+        session.setInput({query:'design',scope:{moduleId:'core:test'}}); await host.schedulerTimers.advance(250);
         assert.equal(calls,0); assert.deepEqual(session.state.groups,[]);
+    } finally {api.dispose();}
+});
+
+function registerTitles(host: TestSearchHost) {
+    host.register('core:chat', 'core', ({group}) => group('titles', {kind: 'static', label: () => 'Titles'})
+        .add('titles', staticSourceOf([entry('a', 'Design review'), entry('b', 'Release plan')])));
+}
+
+test('a blank query lists every source, and a pick adds nothing to it', () => {
+    const host = new TestSearchHost();
+    registerTitles(host);
+    const api = manager(host);
+    try {
+        const session = api.createSession();
+        assert.deepEqual(session.state.groups.map(group => group.id), ['core:chat.titles']);
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review', 'Release plan']);
+
+        session.select('entity/a')!.onSelect();
+
+        assert.deepEqual(session.state.groups.map(group => group.id), ['core:chat.titles']);
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review', 'Release plan']);
+    } finally {api.dispose();}
+});
+
+test('static rows come from the worker, and the previous rows hold until it answers', async () => {
+    const host = new TestSearchHost();
+    host.answerFromEngine();
+    const answer = host.worker;
+    const gates: (() => void)[] = [];
+    host.worker = (query, signal) => answer(query, signal)
+        .then(reply => new Promise<WorkerReply>(resolve => gates.push(() => resolve(reply))));
+    registerTitles(host);
+    const api = manager(host);
+    try {
+        const session = api.createSession();
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review', 'Release plan']);
+        session.setInput({query: 'design'});
+        // Held: the blank-query list stays until the worker has answered.
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review', 'Release plan']);
+        assert.equal(session.state.localPending, false);
+        session.freezeOrder();
+        assert.equal(session.state.frozen, false);
+        await tick();
+        gates.shift()!();
+        await tick();
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review']);
+    } finally {api.dispose();}
+});
+
+test('a slow worker releases the hold after the delay and reports localPending', async () => {
+    const host = new TestSearchHost();
+    registerTitles(host);
+    const api = manager(host);
+    try {
+        const session = api.createSession();
+        session.setInput({query: 'design'});
+        assert.equal(session.state.groups.length, 1);
+        await host.schedulerTimers.advance(SEARCH_LOCAL_PENDING_DELAY_MS);
+        assert.equal(session.state.localPending, true);
+        assert.deepEqual(session.state.groups, []);
+    } finally {api.dispose();}
+});
+
+test('a worker failure publishes a retryable error instead of static rows', async () => {
+    const host = new TestSearchHost();
+    host.worker = () => Promise.reject(new Error('Worker crashed'));
+    registerTitles(host);
+    const api = manager(host);
+    try {
+        const session = api.createSession();
+        session.setInput({query: 'design'});
+        await tick();
+        assert.deepEqual(session.state.groups, []);
+        assert.deepEqual(session.state.providerErrors.map(error => error.providerId), [SEARCH_WORKER_PROVIDER_ID]);
+
+        host.answerFromEngine();
+        session.retry(SEARCH_WORKER_PROVIDER_ID);
+        await tick();
+        assert.equal(host.retriedWorker, 1);
+        assert.deepEqual(session.state.providerErrors, []);
+        assert.deepEqual(rowTitles(session.state.groups), ['Design review']);
     } finally {api.dispose();}
 });

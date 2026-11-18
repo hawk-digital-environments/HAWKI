@@ -12,8 +12,15 @@
   ```svelte
   <MenuSearchField bind:value={query} placeholder={__('…searchPlaceholder')}/>
   ```
+
+  An optional `action` snippet renders a trailing shortcut next to the field, e.g. a
+  button that leads to the full model or assistant overview.
+
+  A `hidden` field stays mounted — a remount would re-run the focus-claim effect below
+  and steal focus from the row restored on detail close.
 -->
 <script lang="ts">
+    import type {Snippet} from 'svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
 
     interface Props {
@@ -21,9 +28,13 @@
         value?: string;
         /** Placeholder and accessible label of the field. */
         placeholder: string;
+        /** Optional trailing shortcut rendered after the field. */
+        action?: Snippet;
+        /** Hides the field without unmounting it (see component doc). */
+        hidden?: boolean;
     }
 
-    let {value = $bindable(''), placeholder}: Props = $props();
+    let {value = $bindable(''), placeholder, action, hidden = false}: Props = $props();
 
     let inputEl = $state<HTMLInputElement | null>(null);
 
@@ -41,14 +52,19 @@
     }
 
     // The field mounts with the menu, and bits-ui focuses the content on open — so claim
-    // focus back after that, letting the user type straight into the filter.
+    // focus back after that, letting the user type straight into the filter. Not in a bottom
+    // sheet, which opens with the on-screen keyboard down (see `DropdownMenu`).
     $effect(() => {
-        const frame = requestAnimationFrame(() => inputEl?.focus());
+        const frame = requestAnimationFrame(() => {
+            if (!inputEl?.closest('.dropdown-content--sheet')) {
+                inputEl?.focus();
+            }
+        });
         return () => cancelAnimationFrame(frame);
     });
 </script>
 
-<div class="menu-search">
+<div class="menu-search" hidden={hidden || undefined}>
     <Search01Icon class="menu-search-icon" size={16}/>
     <input
         bind:this={inputEl}
@@ -59,6 +75,9 @@
         aria-label={placeholder}
         placeholder={placeholder}
         onkeydown={onkeydown}/>
+    {#if action}
+        <div class="menu-search-action">{@render action()}</div>
+    {/if}
 </div>
 
 <style>
@@ -74,6 +93,9 @@
         border: none;
         flex: 0 0 auto;
     }
+
+    /* display:flex above would override the UA's [hidden] rule. */
+    .menu-search[hidden] { display: none; }
 
     /*
       The legacy global stylesheet (`public/css/style.css`) still gives every bare `input`
@@ -99,6 +121,21 @@
     .menu-search :global(.menu-search-icon) {
         flex: 0 0 auto;
         color: var(--color-text-muted, var(--color-text));
+        opacity: 0.7;
+    }
+
+    .menu-search-action {
+        display: flex;
+        flex: 0 0 auto;
+        /* Pull the icon button into the padding, so its glyph lines up with the rows'
+           trailing icons instead of the field's inset. */
+        margin-block: calc(-1 * var(--space-1));
+        margin-inline-end: calc(-1 * var(--space-1));
+    }
+
+    /* Muted like the search glyph at rest; the button's own hover restores full contrast. */
+    .menu-search-action :global(.btn--ghost:not(:hover):not(:focus-visible)) {
+        --btn-color: var(--color-text-muted, var(--color-text));
         opacity: 0.7;
     }
 

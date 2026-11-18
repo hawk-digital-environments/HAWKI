@@ -23,7 +23,6 @@ class AiModelSettingsTest extends TestCase
         $registry = new AiModelSettingRegistry();
         $registry->declare(WellKnownModelSettings::TOOL_CALLING, false);
         $registry->declare(WellKnownModelSettings::FILE_UPLOAD, false);
-        $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING, 0);
         $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS, 0);
         foreach ($extra as $key => $default) {
             $registry->declare($key, $default);
@@ -46,21 +45,18 @@ class AiModelSettingsTest extends TestCase
     {
         $registry = new AiModelSettingRegistry();
         $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS, 5);
-        $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING, 3);
 
         $settings = AiModelSettings::fromArray([]);
         $settings->setService(AiModelSettingRegistry::class, $registry);
 
-        static::assertSame(5, $settings->getMaxToolCallingRounds(false));
-        static::assertSame(3, $settings->getMaxToolCallingRounds(true));
+        static::assertSame(5, $settings->getMaxToolCallingRounds());
 
         $overridden = AiModelSettings::fromArray([
             WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => 8,
         ]);
         $overridden->setService(AiModelSettingRegistry::class, $registry);
 
-        static::assertSame(8, $overridden->getMaxToolCallingRounds(false));
-        static::assertSame(3, $overridden->getMaxToolCallingRounds(true));
+        static::assertSame(8, $overridden->getMaxToolCallingRounds());
     }
 
     public function testItConstructs(): void
@@ -131,49 +127,23 @@ class AiModelSettingsTest extends TestCase
     // getMaxToolCallingRounds / setMaxToolCallingRounds
     // =========================================================================
 
-    public function testItGetMaxToolCallingRoundsStreamingDefaultsToZero(): void
+    public function testItGetMaxToolCallingRoundsDefaultsToZero(): void
     {
         $sut = $this->makeSettings();
-        static::assertSame(0, $sut->getMaxToolCallingRounds(true));
+        static::assertSame(0, $sut->getMaxToolCallingRounds());
     }
 
-    public function testItGetMaxToolCallingRoundsNonStreamingDefaultsToZero(): void
+    public function testItGetMaxToolCallingRoundsReturnsConfiguredValue(): void
     {
-        $sut = $this->makeSettings();
-        static::assertSame(0, $sut->getMaxToolCallingRounds(false));
+        $sut = $this->makeSettings([WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => 5]);
+        static::assertSame(5, $sut->getMaxToolCallingRounds());
     }
 
-    public function testItGetMaxToolCallingRoundsStreamingReturnsConfiguredValue(): void
-    {
-        $sut = $this->makeSettings([WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING => 5]);
-        static::assertSame(5, $sut->getMaxToolCallingRounds(true));
-    }
-
-    public function testItGetMaxToolCallingRoundsNonStreamingReturnsConfiguredValue(): void
-    {
-        $sut = $this->makeSettings([WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => 3]);
-        static::assertSame(3, $sut->getMaxToolCallingRounds(false));
-    }
-
-    public function testItSetMaxToolCallingRoundsStreamingStoresValue(): void
+    public function testItSetMaxToolCallingRoundsStoresValue(): void
     {
         $sut = $this->makeSettings();
         $sut->setMaxToolCallingRounds(7);
-        static::assertSame(7, $sut->getMaxToolCallingRounds(true));
-    }
-
-    public function testItSetMaxToolCallingRoundsNonStreamingStoresValue(): void
-    {
-        $sut = $this->makeSettings();
-        $sut->setMaxToolCallingRounds(4, false);
-        static::assertSame(4, $sut->getMaxToolCallingRounds(false));
-    }
-
-    public function testItSetMaxToolCallingRoundsDoesNotAffectOtherVariant(): void
-    {
-        $sut = $this->makeSettings();
-        $sut->setMaxToolCallingRounds(10, true);
-        static::assertSame(0, $sut->getMaxToolCallingRounds(false));
+        static::assertSame(7, $sut->getMaxToolCallingRounds());
     }
 
     public function testItSetMaxToolCallingRoundsReturnsSelf(): void
@@ -308,7 +278,6 @@ class AiModelSettingsTest extends TestCase
         static::assertTrue($serialized[WellKnownModelSettings::TOOL_CALLING]);
         static::assertFalse($serialized[WellKnownModelSettings::FILE_UPLOAD]);
         static::assertSame(0, $serialized[WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS]);
-        static::assertSame(0, $serialized[WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING]);
     }
 
     public function testItJsonSerializesViaJsonEncode(): void
@@ -321,7 +290,6 @@ class AiModelSettingsTest extends TestCase
             WellKnownModelSettings::TOOL_CALLING => true,
             WellKnownModelSettings::FILE_UPLOAD => false,
             WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => 0,
-            WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING => 0,
         ];
         static::assertSame(json_encode($expected), json_encode($sut));
     }
@@ -331,7 +299,7 @@ class AiModelSettingsTest extends TestCase
         $data = [
             WellKnownModelSettings::TOOL_CALLING => true,
             WellKnownModelSettings::FILE_UPLOAD => false,
-            WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING => 5,
+            WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => 5,
         ];
         $sut = $this->makeSettings($data);
         static::assertSame($data, $sut->toArray());

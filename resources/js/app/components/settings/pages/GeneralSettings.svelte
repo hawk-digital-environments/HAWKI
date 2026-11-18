@@ -19,6 +19,7 @@
     import {useRestApi} from '$lib/app/hooks/useApi.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useLocaleSwitch} from '$lib/app/hooks/useLocaleSwitch.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
     import type {RouteProps} from '$lib/components/ui/routing/index.js';
@@ -41,27 +42,9 @@
         label: locale.nameInLanguage
     }));
 
-    let localeValue = $state(app.localization.locale.lang);
-    let localeSaving = $state(false);
-    const localeLabel = $derived(localeItems.find((item) => item.value === localeValue)?.label ?? localeValue);
-
-    async function changeLocale(lang: string): Promise<void> {
-        if (!lang || lang === app.localization.locale.lang) return;
-
-        localeSaving = true;
-        try {
-            await restApi.postToResourceAction('users', 'actions/locale', {locale: lang});
-            await app.localization.setLocale(lang);
-            // Keep subsequent API requests sending the new locale header.
-            app.connection.locale = lang;
-        } catch (error) {
-            console.error('Failed to change the locale', error);
-            localeValue = app.localization.locale.lang;
-            toast.error(__('ui.settings.general.languageError'));
-        } finally {
-            localeSaving = false;
-        }
-    }
+    // Shared with the auth pages' language switch: server persistence plus locale rollout.
+    const locale = useLocaleSwitch(() => { toast.error(__('ui.settings.general.languageError')); });
+    const localeLabel = $derived(localeItems.find((item) => item.value === locale.value)?.label ?? locale.value);
 
     // $derived so the labels follow runtime locale switches.
     const themeItems = $derived([
@@ -96,21 +79,21 @@
             description={__('ui.settings.general.languageHint')}
         >
             {#snippet control({labelId})}
-                <DropdownMenu align="end" disabled={localeSaving}>
+                <DropdownMenu align="end" disabled={locale.saving}>
                     {#snippet trigger({props})}
                         <Button
                             {...props}
                             variant="stroke"
-                            size="sm"
+                            size="xs"
                             iconRight={UnfoldMoreIcon}
-                            disabled={localeSaving}
+                            disabled={locale.saving}
                             aria-labelledby="{labelId} {localeValueId}"
                         >
                             <span id={localeValueId}>{localeLabel}</span>
                         </Button>
                     {/snippet}
 
-                    <DropdownMenuRadioGroup bind:value={localeValue} onValueChange={changeLocale}>
+                    <DropdownMenuRadioGroup bind:value={locale.value} onValueChange={(lang: string) => locale.change(lang)}>
                         {#each localeItems as item (item.value)}
                             <DropdownMenuRadioItem value={item.value} indicator="check">
                                 {item.label}
@@ -145,7 +128,7 @@
             description={__('ui.settings.general.deleteDataHint')}
         >
             {#snippet control()}
-                <Button size="sm" variant="delete" onclick={() => (confirmDeleteOpen = true)}>
+                <Button size="xs" variant="delete" onclick={() => (confirmDeleteOpen = true)}>
                     {__('ui.settings.general.deleteDataButton')}
                 </Button>
             {/snippet}

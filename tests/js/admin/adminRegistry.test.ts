@@ -9,11 +9,11 @@ import {AdminRegistry, providesAdminSections} from '../../../resources/js/plugin
  */
 
 /** A minimal module stub carrying plugin metadata like the real registrar does. */
-function module(plugin, name, adminSections) {
+function module(plugin: string, name: string, adminSections?: (registry: {section: (s: unknown) => void}) => void) {
     return {name, plugin: {name: plugin, isCorePlugin: true}, ...(adminSections ? {adminSections} : {})};
 }
 
-function section(id, visible = () => true) {
+function section(id: string, visible: () => boolean = () => true) {
     return {
         id,
         labelKey: `x.${id}`,
@@ -66,12 +66,12 @@ test('registry: collecting twice throws', () => {
 
 test('registry: registering outside collection throws', () => {
     const registry = new AdminRegistry();
-    let registrar;
+    let registrar: {section: (s: unknown) => void} | undefined;
     registry.collect([module('assistants', 'm', (r) => {
-        registrar = r;
+        registrar = r as {section: (s: unknown) => void};
     })]);
 
-    assert.throws(() => registrar.section(section('late')), /outside collection/);
+    assert.throws(() => registrar!.section(section('late')), /outside collection/);
 });
 
 test('registry: visibleSections applies each section\'s own gate', () => {

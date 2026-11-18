@@ -2,18 +2,12 @@
   @component Inline rename + actions dropdown for a chat's name.
 
   Shows the chat name as a `<span>` (or a click-to-rename button when
-  `nameClickRenames` is set) next to a `DropdownMenu` trigger. With
-  `showName={false}` the name is left to the parent — e.g. a sidebar row that
-  renders it as a sibling button/link — and only the trigger is rendered here,
-  so no interactive element ends up nested in another. When renaming is
-  active (`isRenaming` bindable), the name (or the trigger) is swapped for an
-  auto-focused text input that commits on Enter / blur and cancels on Escape;
-  Enter on an empty name marks the field invalid (`aria-invalid` plus a linked
-  message, and a toast) and stays in edit mode. Once renaming ends, focus goes
-  back to the element that started it — or to whatever `focusAfterRename`
-  returns. The default dropdown ships only a "Rename" item, but parent
-  components extend it by passing `children` (e.g. `RoomNameMenu` adds
-  manage/mark-read/leave/delete actions).
+  `nameClickRenames` is set) next to a `DropdownMenu` trigger. When renaming is
+  active (`isRenaming` bindable), the name is swapped for an auto-focused text
+  input that commits on Enter / blur and cancels on Escape; Enter on an empty
+  name shows an error toast and stays in edit mode. The default dropdown ships
+  only a "Rename" item, but parent components extend it by passing `children`
+  (e.g. `RoomNameMenu` adds manage/mark-read/leave/delete actions).
 
   Rename dispatches through `onNameChange(slug, newName)`; the default
   implementation forwards to `oldUiBridge.triggerRenameChat` so the legacy UI
@@ -34,14 +28,14 @@
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
-    import {tick, type ComponentProps} from 'svelte';
+    import type {ComponentProps} from 'svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
     import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
-    import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
+    import Edit03Icon from '$lib/components/ui/icons/iconset/Edit03Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const toastContext = useToastContext();
@@ -55,29 +49,12 @@
         allowRename?: boolean;
         nameClickRenames?: boolean;
         /**
-         * Whether the name itself is rendered here. Set to `false` when the parent
-         * shows the name (e.g. as a sibling row button) and only wants the actions
-         * trigger plus the inline rename field from this component.
-         */
-        showName?: boolean;
-        /**
          * Additional props forwarded to the ButtonWithTooltip that triggers the menu.
          * Be careful with this, overriding certain props (like `tooltip`) can break the component's functionality or accessibility.
          */
         buttonProps?: Partial<ComponentProps<typeof ButtonWithTooltip>>;
         isRenaming?: boolean;
-        /**
-         * Whether the actions dropdown is open. Bindable, so a parent can e.g. keep
-         * an otherwise hover-only trigger visible while its menu is showing.
-         */
-        open?: boolean;
         block?: boolean;
-        /**
-         * Where focus goes once renaming has ended and the input is gone. Defaults
-         * to the element that started the rename (name button or menu trigger);
-         * a parent that owns the row can point it at the row instead.
-         */
-        focusAfterRename?: () => HTMLElement | null | undefined;
     }
 
     let {
@@ -87,75 +64,45 @@
         triggerIcon = ChevronDownIcon,
         allowRename = true,
         nameClickRenames = false,
-        showName = true,
         buttonProps,
         isRenaming = $bindable(false),
-        open = $bindable(false),
         block = false,
-        focusAfterRename,
         children,
         ...restProps
     }: Props = $props();
 
     let renameInput: HTMLInputElement | null = $state(null);
     let renameHasIssue = $state(false);
-    let nameButton = $state<HTMLButtonElement | null>(null);
-    let triggerButton = $state<HTMLButtonElement | null>(null);
-    const id = $props.id();
-    const errorId = `${id}-rename-error`;
 
-    // Removing the focused rename field drops focus onto <body>. Hand it back
-    // to where the rename started — after a blur only when nothing else took
-    // it, since the user may have tabbed or clicked elsewhere on purpose.
-    async function finishRenaming(restoreFocus: boolean) {
-        isRenaming = false;
-        renameHasIssue = false;
-        await tick();
-        const focusLost = document.activeElement === null || document.activeElement === document.body;
-        if (!restoreFocus && !focusLost) {
-            return;
-        }
-        const target = focusAfterRename
-            ? focusAfterRename()
-            : (nameClickRenames && showName ? nameButton : triggerButton);
-        target?.focus();
-    }
-
-    function dispatchRename(newName: string, restoreFocus: boolean) {
+    function dispatchRename(newName: string) {
         if (!slug || !isRenaming) {
             return;
         }
-        void finishRenaming(restoreFocus);
         if (newName === name) {
+            isRenaming = false;
             return;
         }
         onNameChange(slug, newName);
+        isRenaming = false;
     }
 
-    function commitRename(newName: string, restoreFocus: boolean) {
-        const trimmedName = newName.trim();
-        if (!trimmedName) {
-            if (restoreFocus) {
+    function onRenameKeyDown(event: KeyboardEvent) {
+        if (event.key === ' ') {
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        }
+        if (event.key === 'Enter') {
+            event.stopPropagation();
+            const newName = (event.target as HTMLInputElement).value;
+            if (!newName.trim()) {
                 renameHasIssue = true;
                 toastContext.error(__('chat.nameMenu.emptyNameError'));
                 return;
             }
-
-            // An empty draft on blur cancels the rename. Do not trap focus or show a toast.
-            void finishRenaming(false);
-            return;
-        }
-
-        dispatchRename(trimmedName, restoreFocus);
-    }
-
-    function onRenameKeyDown(event: KeyboardEvent) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            commitRename((event.target as HTMLInputElement).value, true);
+            dispatchRename((event.target as HTMLInputElement).value);
         }
         if (event.key === 'Escape') {
-            void finishRenaming(true);
+            isRenaming = false;
         }
     }
 
@@ -174,53 +121,41 @@
 </script>
 
 <div {...mergeProps(
-    {class: ['chat-name-menu', block && 'block', !showName && 'no-name', isRenaming && 'renaming']},
+    {class: ['chat-name-menu', block && 'block']},
     restProps
 )}>
     {#if allowRename && isRenaming}
+        <!-- Stop clicks and focus events from bubbling to parent elements (e.g. sidebar buttons) while renaming-->
         <!-- svelte-ignore a11y_autofocus -->
         <input
             bind:this={renameInput}
-            onblur={(e) => commitRename((e.target as HTMLInputElement).value, false)}
-            oninput={() => renameHasIssue = false}
+            onclick={(e) => e.preventDefault()}
+            onblur={(e) => dispatchRename((e.target as HTMLInputElement).value)}
             onkeydown={onRenameKeyDown}
             autofocus
             aria-label={__('chat.nameMenu.newNameAriaLabel')}
-            aria-invalid={renameHasIssue || undefined}
-            aria-describedby={renameHasIssue ? errorId : undefined}
             value={name}
             class={[
                 "chat-name-input",
                 renameHasIssue ? 'has-issue' : ''
             ]}
         />
-        {#if renameHasIssue}
-            <span class="u-sr-only" id={errorId}>{__('chat.nameMenu.emptyNameError')}</span>
-        {/if}
     {:else}
-        {#if showName}
-            {#if nameClickRenames}
-                <button
-                    type="button"
-                    class="chat-name click-to-rename"
-                    bind:this={nameButton}
-                    aria-label={__('chat.nameMenu.renameAriaLabel', {name})}
-                    onclick={() => isRenaming = true}>
-                    {name}
-                </button>
-            {:else}
-                <span class="chat-name">{name}</span>
-            {/if}
+        {#if nameClickRenames}
+            <button class="chat-name click-to-rename" onclick={() => isRenaming = true}>
+                {name}
+            </button>
+        {:else}
+            <span class="chat-name">{name}</span>
         {/if}
-        <DropdownMenu bind:open>
+        <DropdownMenu>
             {#snippet trigger({props})}
-                <ButtonWithTooltip bind:ref={triggerButton} {...mergeProps(
+                <ButtonWithTooltip {...mergeProps(
                     {
                         variant: 'ghost',
                         size: 'sm',
                         iconLeft: triggerIcon,
                         tooltip: __('chat.nameMenu.actionsTooltip'),
-                        'aria-label': __('chat.nameMenu.actionsForChat', {name}),
                         highlight: props['data-state'],
                     },
                     props,
@@ -228,7 +163,7 @@
                 )}/>
             {/snippet}
             {#if allowRename && !!slug}
-                <DropdownMenuItem onclick={() => isRenaming = true} iconLeft={Edit02Icon}>
+                <DropdownMenuItem onclick={() => isRenaming = true} iconLeft={Edit03Icon}>
                     {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>
             {/if}
@@ -247,13 +182,6 @@
 
         &.block {
             justify-content: space-between;
-        }
-
-        /* Trigger-only mode sits next to the parent's own name element and
-           must not push it aside; the rename field still takes the full row. */
-        &.no-name:not(.renaming) {
-            width: auto;
-            flex-shrink: 0;
         }
     }
 

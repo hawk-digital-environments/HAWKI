@@ -40,7 +40,7 @@
  * </script>
  * ```
  */
-import { createHmrSafeContext } from '$lib/utils/hmrSafeContext.js';
+import { createStableContext } from '$lib/utils/stableContext.js';
 import type { Assistant } from "$plugins/assistants/types/assistant/Assistant";
 import type { Review } from "$plugins/assistants/types/assistant/Review";
 import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
@@ -1121,7 +1121,7 @@ export class BuilderContext {
 }
 
 // HMR-safe: a hot-reloaded builder module keeps talking to the mounted layout's session.
-const [get, set] = createHmrSafeContext<BuilderContext>('hawki.assistants.builder');
+const [get, set] = createStableContext<BuilderContext>('hawki.assistants.builder');
 
 /** Returns the builder session published by the nearest {@link createBuilderContext} ancestor. */
 export function useBuilderContext(): BuilderContext {

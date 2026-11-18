@@ -83,7 +83,7 @@ sequenceDiagram
 
     Client->>Controller: POST /room/{slug}/message
     Controller->>RoomService: sendMessage(data, slug, user)
-    RoomService->>DB: Room::where(slug)->firstOrFail()
+    RoomService->>DB: RoomRepository->findOneBySlugOrFail(slug)
     RoomService->>DB: members()->where(user_id)->firstOrFail()
     RoomService->>GroupMessageHandler: create(room, data, user)
     GroupMessageHandler->>DB: Message::create({iv, tag, content, ...})

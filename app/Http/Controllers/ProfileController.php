@@ -6,7 +6,6 @@ use App\Services\Profile\ApiTokenService;
 use App\Services\Profile\PasskeyService;
 use App\Services\Profile\ProfileService;
 use App\Services\Profile\Values\PasskeyBackupSecret;
-use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -159,7 +158,7 @@ class ProfileController extends Controller
                 'name' => $token->accessToken->name,
                 'id' => $token->accessToken->id,
             ]);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             Log::error($e->getMessage());
             throw $e;
         }

@@ -1,7 +1,7 @@
 <!--
   @component App-level layout assembly: the grid shell with the navigation
   sidebar in the `nav` column and the page content in the `main` column. The
-  layout mechanics (open/closed state, rail collapse, off-canvas behaviour)
+  layout mechanics (open/closed state, off-canvas behaviour)
   live in the components under components/ui/sidebar.
 -->
 <script lang="ts">
@@ -11,18 +11,23 @@
     import SidebarContent from '$lib/components/ui/sidebar/SidebarContent.svelte';
     import SidebarRoot from '$lib/components/ui/sidebar/SidebarRoot.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-    import Button from '$lib/components/ui/button/Button.svelte';
+    import {createKeyboardContext} from '$lib/components/ui/keyboard/KeyboardState.svelte.js';
     import Toaster from '$lib/components/ui/toast/Toaster.svelte';
+    import Button from '$lib/components/ui/button/Button.svelte';
+    import AnnouncementDialog from '$lib/app/components/announcements/AnnouncementDialog.svelte';
 
     interface Props {
         /** Page content, rendered in the layout's main column. */
         children: Snippet;
+        /** Meta of the matched route — `chrome: 'none'` renders the page without the app shell. */
         meta?: import('$lib/components/ui/routing/logistics/RouteRegistrar.js').RouteMeta;
     }
 
     const {children, meta}: Props = $props();
     const app = useApp();
     const {__} = useTranslator();
+
+    createKeyboardContext();
 </script>
 
 {#if app.logoutState !== 'idle'}
@@ -35,6 +40,9 @@
             <p role="status">{__('ui.session.loggingOut')}</p>
         {/if}
     </main>
+{:else if meta?.chrome === 'none' || !app.cryptoReady}
+    {@render children()}
+    <Toaster />
 {:else}
 <SidebarRoot>
     <a class="skip-link" href="#main-content">{__('ui.navigation.skipToContent')}</a>
@@ -44,6 +52,7 @@
     </SidebarContent>
 
     <Toaster />
+    <AnnouncementDialog />
 </SidebarRoot>
 {/if}
 
@@ -77,8 +86,8 @@
     }
 
     /* While the mobile drawer is open the main landmark is `inert`, so a skip
-       link pointing at it would be a focusable dead end: hide it along with
-       the content. `SidebarRoot` flags the open drawer on the grid root. */
+       link pointing at it would be a focusable dead end: hide it along with the
+       content. `SidebarRoot` flags the open drawer on the grid root. */
     @media (--bp-md-and-smaller) {
         :global(.sidebar-layout.nav-open) .skip-link {
             display: none;

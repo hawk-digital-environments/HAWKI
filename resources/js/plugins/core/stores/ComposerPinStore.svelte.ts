@@ -6,18 +6,19 @@ declare module '$lib/kernel/extendableTypes.js' {
     }
 }
 
-/** The two things the composer menus can pin: assistants (by id) and tools (by name). */
-export type ComposerPinKind = 'assistant' | 'tool';
+/** What the composer menus can pin: assistants (by id), tools (by name), and MCP
+ *  groups (by server id). Model favourites live in the `model-favorites` store. */
+export type ComposerPinKind = 'assistant' | 'tool' | 'mcp';
 
 const STORAGE_KEY = 'hawki.composer.pins';
 
 /**
- * Reactive store for the assistants and tools a user has pinned in the composer menus.
+ * Reactive store for assistants, tools, and MCP groups pinned in composer menus.
  *
  * Pins are a per-browser display preference, not chat state: they only reorder
- * `AssistantMenu`/`ToolMenu`, lifting pinned rows into a "Pinned" section at the top of
- * the list. They are therefore kept in `localStorage` rather than on the server, and a
- * missing/corrupt entry simply means "nothing pinned".
+ * `AssistantMenu`/`ToolMenu`, lifting pinned rows into a "Favorites" section at
+ * the top of the list. They are therefore kept in `localStorage` rather than on the server,
+ * and a missing/corrupt entry simply means "nothing pinned".
  *
  * Pinned ids are kept in insertion order, so the pinned section reflects the order in
  * which the user pinned things.
@@ -71,7 +72,7 @@ export class ComposerPinStore implements DataStore {
 
     /**
      * Splits `items` into the pinned ones (in pin order) and the rest (in their original
-     * order) — the shape both composer menus render.
+     * order) — the shape the composer menus render.
      */
     public partition<T>(kind: ComposerPinKind, items: T[], idOf: (item: T) => string): {pinned: T[], rest: T[]} {
         const order = this._pins[kind];
@@ -84,7 +85,7 @@ export class ComposerPinStore implements DataStore {
 }
 
 function emptyPins(): Record<ComposerPinKind, string[]> {
-    return {assistant: [], tool: []};
+    return {assistant: [], tool: [], mcp: []};
 }
 
 function readPins(): Record<ComposerPinKind, string[]> {
@@ -99,7 +100,8 @@ function readPins(): Record<ComposerPinKind, string[]> {
         const parsed = JSON.parse(raw) as Partial<Record<ComposerPinKind, unknown>>;
         return {
             assistant: toIdList(parsed.assistant),
-            tool: toIdList(parsed.tool)
+            tool: toIdList(parsed.tool),
+            mcp: toIdList(parsed.mcp)
         };
     } catch {
         // A user-editable storage key is never trusted: unreadable pins are simply no pins.

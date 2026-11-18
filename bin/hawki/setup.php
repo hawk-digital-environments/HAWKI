@@ -65,19 +65,10 @@ function initialize() {
     // Run initialization commands
     echo PHP_EOL . "Running initialization commands..." . PHP_EOL;
 
-    // Composer install
+    // Composer install (deterministic: installs exactly what composer.lock pins;
+    // updating packages is a deliberate `composer update` run, never part of setup)
     echo YELLOW . "Running composer install..." . RESET . PHP_EOL;
     passthru('composer install');
-
-    // Check if we need to update composer
-    echo YELLOW . "Checking for composer updates..." . RESET . PHP_EOL;
-    exec('composer outdated --direct', $outdatedOutput);
-    if (!empty($outdatedOutput) && count($outdatedOutput) > 1) { // First line is header
-        echo "Outdated packages found. Running composer update..." . PHP_EOL;
-        passthru('composer update');
-    } else {
-        echo GREEN . "✓ All composer packages are up to date" . RESET . PHP_EOL;
-    }
 
     // npm install
     echo YELLOW . "Running npm install..." . RESET . PHP_EOL;

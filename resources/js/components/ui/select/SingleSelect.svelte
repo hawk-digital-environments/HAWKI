@@ -262,7 +262,11 @@
         background: var(--color-bg-secondary);
         border: 1px solid transparent;
         border-radius: var(--corner-full);
-        padding: var(--space-1) var(--space-4) var(--space-1) var(--space-2);
+        /* The chevron leads, and its glyph box carries ~4px of transparent bearing at this
+           size, so the 8px of leading padding already reads as ~12px. The trailing padding
+           stops at the label's ink instead, so it takes the full step for both ends to read
+           as the same gap. */
+        padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
         align-items: center;
         gap: var(--space-1);
         color: var(--color-text);

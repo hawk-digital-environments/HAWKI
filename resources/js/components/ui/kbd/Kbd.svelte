@@ -36,7 +36,7 @@
 <script lang="ts">
     import {setContext, type Snippet} from 'svelte';
     import type {HTMLAttributes} from 'svelte/elements';
-    import {isApple} from '$lib/utils/platform.js';
+    import {useKeyboard} from '$lib/components/ui/keyboard/KeyboardState.svelte.js';
     import KbdIndicator, {KBD_CONTEXT_KEY, type KbdContext} from './KbdIndicator.svelte';
 
     interface Props extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
@@ -74,33 +74,13 @@
         ...restProps
     }: Props = $props();
 
-    // `ctrl` means Command on Apple platforms, which the DOM reports as the
-    // meta flag — so the required combination is matched against ctrlKey on
-    // Windows/Linux and metaKey on Apple.
-    const wantCtrl = $derived(ctrl && !isApple);
-    const wantMeta = $derived(ctrl && isApple);
+    const keyboard = useKeyboard();
 
-    // Which modifiers are held right now, mirrored from the last key event.
-    // Reset on window blur — a keyup fired in another window never reaches us,
-    // so a hint left behind by Alt-Tab would otherwise stick.
-    let held = $state({ctrl: false, shift: false, alt: false, meta: false});
-
-    function trackModifiers(event: KeyboardEvent) {
-        held.ctrl = event.ctrlKey;
-        held.shift = event.shiftKey;
-        held.alt = event.altKey;
-        held.meta = event.metaKey;
-    }
-
-    function resetModifiers() {
-        held = {ctrl: false, shift: false, alt: false, meta: false};
-    }
+    const shortcut = $derived({key, ctrl, shift, alt});
 
     // Exact match: extra held modifiers hide the hint too, so holding
     // Ctrl+Shift doesn't advertise the plain-Ctrl hotkeys alongside.
-    const active = $derived(
-        held.ctrl === wantCtrl && held.shift === shift && held.alt === alt && held.meta === wantMeta
-    );
+    const active = $derived(keyboard.modifiersHeld(shortcut));
 
     function isEditable(target: EventTarget | null): boolean {
         return (
@@ -113,17 +93,8 @@
     }
 
     function handleKeydown(event: KeyboardEvent) {
-        trackModifiers(event);
         if (!onPress || event.repeat) return;
-        if (
-            event.ctrlKey !== wantCtrl ||
-            event.shiftKey !== shift ||
-            event.altKey !== alt ||
-            event.metaKey !== wantMeta
-        ) {
-            return;
-        }
-        if (event.key.toLowerCase() !== key.toLowerCase()) return;
+        if (!keyboard.matches(event, shortcut)) return;
         // Bare-key hotkeys must not steal keystrokes from text entry; Shift
         // alone doesn't count as armor either (it just types capitals).
         if (!ctrl && !alt && isEditable(event.target)) return;
@@ -131,15 +102,7 @@
         onPress();
     }
 
-    const label = $derived.by(() => {
-        const keyLabel = keyText ?? (key.length === 1 ? key.toUpperCase() : key);
-        const parts: string[] = [];
-        if (ctrl) parts.push(isApple ? '⌘' : 'Ctrl');
-        if (alt) parts.push('Alt');
-        if (shift) parts.push('Shift');
-        parts.push(keyLabel);
-        return parts.join(' + ');
-    });
+    const label = $derived(keyboard.labelParts(shortcut, keyText).join(' + '));
 
     // The keycap itself is `KbdIndicator`, wired up through context so a
     // `children` snippet can drop it anywhere in its subtree.
@@ -153,7 +116,7 @@
     });
 </script>
 
-<svelte:window onkeydown={handleKeydown} onkeyup={trackModifiers} onblur={resetModifiers} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if children}
     {@render children(KbdIndicator)}

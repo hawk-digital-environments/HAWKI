@@ -13,7 +13,6 @@
             <CommandPaletteTrigger
                 label={activeItem.label}
                 icon={activeItem.icon}
-                collapsed={!sidebar.navOpen}
                 {...props}
             />
         {/snippet}
@@ -23,104 +22,84 @@
     import type {HTMLButtonAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
-    import UnfoldMoreIcon from '$lib/components/ui/icons/iconset/UnfoldMoreIcon.svelte';
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import ArrowDown01Icon from '$lib/components/ui/icons/iconset/ArrowDown01Icon.svelte';
+    import {iconSwap} from '$lib/utils/transitions/iconSwap.js';
+    import {textPopIn} from '$lib/utils/transitions/textPopIn.js';
+    import {textSlideIn} from '$lib/utils/transitions/textSlideIn.js';
 
     interface Props extends HTMLButtonAttributes {
         /** Text of the entry the trigger currently stands for. */
         label: string;
         /** Icon of that entry, shown before the label. */
         icon?: IconComponent;
-        /** Icon-only rail form: the label moves into a tooltip. */
-        collapsed?: boolean;
+        /** Shortcut of that entry; replaces the chevron while `.shortcuts-held`
+         *  is set on an ancestor. */
+        shortcut?: string;
     }
 
-    let {label, icon: Icon, collapsed = false, class: className, ...rest}: Props = $props();
-
-    // The rail trigger still spans the full panel width, so a tooltip anchored
-    // to the button would open a row's width away from the icon it describes.
-    // Anchor it to the icon instead.
-    let iconEl = $state<HTMLElement | null>(null);
+    let {label, icon: Icon, shortcut, class: className, ...rest}: Props = $props();
 </script>
 
-<!-- The tooltip is switched off rather than unmounted while expanded: one DOM
-     branch for both states keeps the button mounted across a collapse, so the
-     label and indicator fade out instead of the row being rebuilt mid-animation. -->
-<Tooltip
-    tooltip={label}
-    side="right"
-    sideOffset={24}
-    delayDuration={300}
-    customAnchor={iconEl}
-    disabled={!collapsed}
+<button
+    type="button"
+    {...mergeProps(rest, {class: ['section-trigger', className]})}
 >
-    {#snippet children({props})}
-        <button
-            type="button"
-            aria-label={collapsed ? label : undefined}
-            {...mergeProps(props, rest, {class: ['section-trigger', className]})}
-            class:collapsed
-        >
-            <span class="icon-wrap" bind:this={iconEl}>
-                {#if Icon}
+    <span class="icon-wrap">
+        {#key Icon}
+            {#if Icon}
+                <span class="icon" transition:iconSwap>
                     <Icon size={18} strokeWidth={2} aria-hidden="true" />
-                {/if}
-            </span>
-            <span class="label">{label}</span>
-            <!-- Double chevron: the trigger opens a list you pick from rather
-                 than a menu that drops down, so it points both ways. -->
-            <span class="indicator" aria-hidden="true">
-                <UnfoldMoreIcon size={16} strokeWidth={2} />
-            </span>
-        </button>
-    {/snippet}
-</Tooltip>
+                </span>
+            {/if}
+        {/key}
+    </span>
+    <span class="label" use:textSlideIn={label}></span>
+    <span class="indicator" aria-hidden="true">
+        <span class="chevron">
+            <ArrowDown01Icon size={16} strokeWidth={2} />
+        </span>
+        {#if shortcut}
+            <span class="shortcut" use:textPopIn={shortcut}></span>
+        {/if}
+    </span>
+</button>
 
 <style>
     .section-trigger {
         display: flex;
         align-items: center;
-        gap: var(--space-2_5);
-        width: 100%;
+        gap: var(--space-2);
+        /* Hugs its content; a long label ellipsizes once the container runs out. */
+        width: fit-content;
+        min-width: 0;
+        max-width: 100%;
         /* The shared row height, so the trigger sits in the same rhythm as the
            rows below it. */
         min-height: var(--nav-row-h);
-        /* Left padding lands the icon on the shared rail column. The stroke is
-           an outline inset by its full width, so it sits just inside the box
-           edge and takes no layout space and the full padding applies. Deliberately
-           unchanged in the rail: the icon keeps the exact same offset from the
-           panel edge in both states, so it never drifts sideways while the
-           column animates. */
-        padding: 0 var(--space-2) 0 var(--nav-item-pad-x);
+        padding: 0 var(--space-3) 0 var(--nav-item-pad-x);
         border: none;
-        outline: var(--divider);
-        outline-offset: calc(var(--divider-width) * -1);
-        background: transparent;
-        color: var(--color-text);
-        font-size: var(--font-size-xs);
+        /* The same colors as the sidebar's action button (SidebarButton). */
+        background: var(--color-accent-100);
+        color: var(--color-accent-text);
+        font-size: var(--nav-font-size);
         font-weight: var(--font-weight-medium);
         text-align: left;
         cursor: pointer;
         border-radius: var(--corner-sm);
         transition:
             background var(--duration-fast),
-            outline-color var(--duration-fast),
             color var(--duration-fast);
     }
 
-    /* Hover swaps the outline for the neutral wash — one emphasis at a time. */
-    .section-trigger:hover {
-        outline-color: transparent;
-        background: var(--color-hover);
+    /* An open palette holds the hover color. */
+    .section-trigger:hover,
+    .section-trigger[data-state='open'] {
+        background: color-mix(in oklab, var(--color-accent-100) 85%, var(--color-accent-text));
     }
 
-    /* Open: the trigger takes the same wash *and* text colour the sidebar gives
-       its active row, so an open palette reads as "you are here" in the nav's
-       own language. The outline drops out — the fill is the emphasis. */
-    .section-trigger[data-state='open'] {
-        outline-color: transparent;
-        background: var(--color-active-surface);
-        color: var(--color-active-text);
+    :global(html.darkMode) .section-trigger:hover,
+    :global(html.darkMode) .section-trigger[data-state='open'] {
+        background: var(--color-accent-fill-hover);
     }
 
     .section-trigger:focus-visible {
@@ -128,54 +107,69 @@
         outline-offset: 1px;
     }
 
+    /* Old and new icon overlap in one cell while they swap. */
     .icon-wrap {
-        display: inline-flex;
+        display: inline-grid;
         align-items: center;
+        justify-items: center;
         justify-content: center;
+        width: var(--nav-icon-size);
         flex-shrink: 0;
     }
 
+    .icon {
+        display: inline-flex;
+        grid-area: 1 / 1;
+    }
+
     .label {
-        flex: 1;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        /* Out fast, in late — matching the nav rows: the text is gone well
-           before the rail is narrow enough to squeeze it. */
-        transition: opacity 160ms ease 100ms;
     }
 
-    /* Open/close affordance. It recedes at rest so the label carries the row,
-       and comes forward once the row is hovered or the palette is open. */
+    /* The chevron and shortcut share one cell sized to the wider of the two, so
+       the trigger keeps its width when they swap. */
     .indicator {
-        display: inline-flex;
+        display: inline-grid;
         align-items: center;
-        justify-content: center;
+        justify-items: end;
         flex-shrink: 0;
-        color: var(--color-text-muted);
-        transition:
-            color var(--duration-fast),
-            opacity 160ms ease 100ms;
     }
 
-    .section-trigger[data-state='open'] .indicator,
-    .section-trigger:hover .indicator {
-        color: inherit;
+    .chevron {
+        display: inline-flex;
+        grid-area: 1 / 1;
     }
 
-    /* Rail: only the section icon shows. Label and indicator fade out and are
-       clipped by the panel rather than being pulled from the flow. */
-    .section-trigger.collapsed .label,
-    .section-trigger.collapsed .indicator {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 100ms ease;
+    .shortcut {
+        grid-area: 1 / 1;
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-normal);
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+        visibility: hidden;
     }
 
+    :global(.shortcuts-held) .shortcut {
+        visibility: visible;
+    }
+
+    :global(.shortcuts-held) .indicator:has(.shortcut) .chevron {
+        visibility: hidden;
+    }
+
+    /* Bumped up a notch for easier tapping on small screens, like the sidebar's
+       rows. The grown glyph spills out of its pinned column, so the margin returns
+       the spill. */
     @media (--bp-md-and-smaller) {
         .section-trigger {
             font-size: var(--font-size-sm);
+        }
+
+        .icon-wrap {
+            margin-right: calc((var(--space-5) - var(--nav-icon-size)) / 2);
         }
 
         .icon-wrap :global(svg) {

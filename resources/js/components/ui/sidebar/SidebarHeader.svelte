@@ -1,277 +1,112 @@
 <!--
-  @component Sidebar header row: a brand/logo slot, an optional search action and
-  the collapse toggle. In the rail there is only room for one icon per
-  line, so the logo fades out, the toggle rides the panel edge inward and the
-  search action glides down onto the icon column beneath it.
+  @component Sidebar header row: a brand/logo slot on the left, optional actions
+  (e.g. a search button) pushed to the right. On desktop the nav's toggle lives outside
+  it, in `SidebarContent`; only the mobile drawer, which covers that toggle, gets a
+  close button of its own here.
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
+    import SidebarIconButton from '$lib/components/ui/sidebar/SidebarIconButton.svelte';
     import PanelLeftIcon from '$lib/components/ui/icons/iconset/PanelLeftIcon.svelte';
-    import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
-        /** Brand/logo content, shown only while the nav is open. */
+        /** Brand/logo content. */
         children?: Snippet;
         /** Turns the brand box itself into a link to this target. */
         brandHref?: string;
         /** Click handler for the brand link, e.g. to route client-side. */
         onBrandClick?: (event: MouseEvent) => void;
-        /** Renders a search action left of the collapse toggle when provided.
-            In the rail it moves below the toggle, onto the icon column. */
-        onSearch?: () => void;
+        /** Controls placed between the brand and the toggle, on the row's right side. */
+        actions?: Snippet;
     }
 
-    const {children, brandHref, onBrandClick, onSearch, class: className, ...restProps}: Props = $props();
+    const {children: brand, brandHref, onBrandClick, actions, class: className, ...restProps}: Props = $props();
 
     const sidebar = useSidebar();
     const {__} = useTranslator();
 
-    // The header actions are full row-height squares, so a tooltip anchored to
-    // the button would open wider of the icon than the nav rows' tooltips do.
-    // Anchor to the icon box instead — same anchor the rows use, same gap.
-    let searchIconEl = $state<HTMLElement | null>(null);
-    let collapseIconEl = $state<HTMLElement | null>(null);
-    const open = $derived(sidebar.navOpen);
-
-    function toggleNavigation() {
-        const returnFocus = sidebar.mobile && sidebar.navOpen;
+    function closeNavigation() {
         sidebar.toggleNav();
-        if (returnFocus) {
-            setTimeout(() => document.getElementById('mobile-navigation-trigger')?.focus());
-        }
+        setTimeout(() => document.getElementById('mobile-navigation-trigger')?.focus());
     }
 </script>
 
-<div {...restProps} class={["sidebar-header", className]} class:open>
-    {#if children}
+<div {...restProps} class={["sidebar-header", className]}>
+    {#if brand}
         {#if brandHref}
-            <a class="brand" href={brandHref} onclick={onBrandClick} inert={!open}>{@render children()}</a>
+            <a class="brand" href={brandHref} onclick={onBrandClick}>{@render brand()}</a>
         {:else}
-            <div class="brand" inert={!open}>{@render children()}</div>
+            <div class="brand">{@render brand()}</div>
         {/if}
     {/if}
-    {#if onSearch}
-        <Tooltip
-            tooltip={__('ui.navigation.search')}
-            side="right"
-            sideOffset={open ? 12 : 24}
-            delayDuration={300}
-            customAnchor={searchIconEl}
-        >
-            {#snippet children({props})}
-                <button
-                    type="button"
-                    {...props}
-                    class="header-action search"
-                    aria-label={__('ui.navigation.search')}
-                    onclick={onSearch}
-                >
-                    <span class="icon-wrap" bind:this={searchIconEl}>
-                        <Search01Icon size={18} strokeWidth={2} aria-hidden="true" />
-                    </span>
-                </button>
-            {/snippet}
-        </Tooltip>
+    {#if actions}
+        <div class="actions">{@render actions()}</div>
     {/if}
-    <Tooltip
-        tooltip={open ? __('ui.navigation.collapse') : __('ui.navigation.expand')}
-        side="right"
-        sideOffset={open ? 12 : 24}
-        delayDuration={300}
-        customAnchor={collapseIconEl}
-    >
-        {#snippet children({props})}
-            <button
-                type="button"
-                {...props}
-                id="app-navigation-toggle"
-                class="header-action collapse"
-                aria-label={sidebar.mobile
-                    ? __('ui.navigation.close')
-                    : open
-                        ? __('ui.navigation.collapse')
-                        : __('ui.navigation.expand')}
-                aria-expanded={open}
-                aria-controls="app-navigation"
-                onclick={toggleNavigation}
-            >
-                <span class="icon-wrap" bind:this={collapseIconEl}>
-                    <PanelLeftIcon size={18} strokeWidth={2} aria-hidden="true" />
-                </span>
-            </button>
-        {/snippet}
-    </Tooltip>
+    <div class="toggle">
+        <SidebarIconButton
+            id="app-navigation-toggle"
+            icon={PanelLeftIcon}
+            label={__('ui.navigation.close')}
+            aria-expanded={sidebar.navOpen}
+            aria-controls="app-navigation"
+            onclick={closeNavigation}
+        />
+    </div>
 </div>
 
 <style>
-    /* Brand + collapse toggle row. Horizontal padding 0 so the logo and toggle
-       sit flush with the item rows below. */
+    /* The panel's own padding sets the outer inset, so only the gap to the first
+       row below is added here, the same size as that padding. */
     .sidebar-header {
-        /* Named because the absolutely-positioned brand has to inset itself by
-           the same amounts — see below. */
-        --header-pad-top: var(--space-1);
-        /* Tighter than the sidebar's group gap: the brand row reads as the
-           panel's cap rather than as another group, so it sits closer to the
-           switcher below it. */
-        --header-pad-bottom: var(--space-2);
-        /* Horizontal room the actions occupy, for the brand's max-width. The
-           actions are `--nav-row-h` squares: at rail width a row is square, so
-           matching the row height gives them the same hit area, hover surface
-           and column as every other item. */
-        --actions-w: var(--nav-row-h);
-        /* How far a right-aligned action has to slide to land on the rail's icon
-           column: the difference between where the rows put their icon centre and
-           where the panel's right edge leaves that button's centre. */
-        --rail-nudge: calc(
-            (var(--space-2) + var(--nav-item-pad-x) + var(--nav-icon-size) / 2) -
-                (var(--rail-w) - var(--divider-width) - var(--space-2) - var(--nav-row-h) / 2)
-        );
-
         position: relative;
         flex-shrink: 0;
         display: flex;
         align-items: center;
-        /* The toggle is the only item in the flow, pinned to the right, so it
-           rides the panel's edge inward as the column animates — no
-           mid-transition re-anchoring. */
-        justify-content: flex-end;
-        padding: var(--header-pad-top) 0 var(--header-pad-bottom);
-        /* The rail deepens the row to make room for the stacked search action;
-           animate it so the items below glide down with it. */
-        transition: padding-bottom 280ms var(--easing-spring);
+        gap: var(--space-2);
+        padding-bottom: var(--space-4);
     }
 
-    .sidebar-header:has(.search) {
-        --actions-w: calc(2 * var(--nav-row-h) + var(--space-1));
-    }
-
-    /* In the rail the search action drops onto a second line, so the row has to
-       reserve that line's height itself — it is absolutely positioned and would
-       otherwise overlap the first nav item. */
-    .sidebar-header:has(.search):not(.open) {
-        --header-pad-bottom: calc(var(--space-2) + var(--nav-row-h) + var(--space-1));
-    }
-
-    /* The brand is positioned out of the flex line on purpose. In the flow it
-       shrinks to zero width at rail size but the row's `gap` survives it, and
-       the overflowing line then pins the toggle to the LEFT instead of the right
-       — putting it several pixels off the icon column. Absolute keeps the
-       toggle's geometry a pure function of the panel edge. */
+    /* The wordmark's stem has no side bearing, so it is inset by the same extra
+       amount as the text-only history rows below (ChatSidebar) to start on their
+       line. The auto margin pushes everything after it to the row's right side. */
     .brand {
-        position: absolute;
-        left: 0;
-        /* Match the toggle's box exactly rather than insetting to the row's
-           content box: absolute offsets resolve against the padding box, so
-           `top/bottom: 0` would centre the logo lower than the toggle — and the
-           bottom padding grows in the rail, which would drag the logo down with
-           it mid-collapse. */
-        top: var(--header-pad-top);
-        height: var(--nav-row-h);
+        flex-shrink: 0;
+        margin-right: auto;
         display: inline-flex;
         align-items: center;
-        /* Stop short of the actions so a long logo never runs under them. */
-        max-width: calc(100% - var(--actions-w) - var(--space-2));
-        overflow: hidden;
-        /* Shrink-wrap the logo so the hover surface hugs it instead of spanning
-           the whole free width of the row, and pad it exactly as the header
-           actions pad their icon — the toggle is a `--nav-row-h` square
-           around a `--nav-icon-size` glyph — so both hover surfaces have the
-           same inset and the same height. */
-        width: fit-content;
+        height: var(--nav-row-h);
+        padding-inline: var(--nav-text-inset) var(--nav-item-pad-x);
         color: inherit;
         text-decoration: none;
-        padding: 0 calc((var(--nav-row-h) - var(--nav-icon-size)) / 2);
         border-radius: var(--corner-sm);
-        transition:
-            opacity 160ms ease 100ms,
-            background var(--duration-fast);
     }
 
-    /* Same hover surface the header actions use, so the brand reads as part of
-       the same row. Suppressed in the rail, where the brand is faded out. */
-    .sidebar-header.open .brand:hover {
-        background: var(--color-hover);
+    .brand :global(.mark) {
+        color: var(--color-logo);
+        transition: color var(--duration-fast);
     }
 
-    .sidebar-header:not(.open) .brand {
-        opacity: 0;
-        transition: opacity 100ms ease;
+    a.brand:hover :global(.mark) {
+        color: var(--color-logo-hover);
     }
 
-    .header-action {
-        flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: var(--nav-row-h);
-        height: var(--nav-row-h);
-        padding: 0;
-        border: none;
-        background: transparent;
-        /* Recedes at rest and comes forward on hover, same as the section
-           switcher's chevron. */
-        color: var(--color-text-muted);
-        cursor: pointer;
-        border-radius: var(--corner-sm);
-        transition:
-            color var(--duration-fast),
-            background var(--duration-fast),
-            transform 280ms var(--easing-spring);
+    .actions {
+        display: flex;
+        min-width: 0;
     }
 
-    /* The toggle rides the panel's right edge inward as the column animates, but
-       being right-aligned it settles a couple of pixels off the rail's icon
-       column. Nudge it onto that column. Transform, not margin, so it glides
-       with the collapse instead of re-laying-out. */
-    .sidebar-header:not(.open) .collapse {
-        transform: translateX(var(--rail-nudge));
+    /* The mobile drawer covers the toggle outside the nav, so only there does it get
+       one of its own. */
+    .toggle {
+        display: none;
     }
 
-    /* Absolute like the brand, and for the same reason: the toggle must stay the
-       only item in the flex line, or at rail width the line overflows and the
-       toggle is pinned left instead of riding the panel's right edge. Its height
-       matches the toggle's, so insetting the top alone lines the two up. */
-    .header-action.search {
-        position: absolute;
-        right: calc(var(--nav-row-h) + var(--space-1));
-        top: var(--header-pad-top);
-    }
-
-    /* No room beside the toggle in the rail, so it moves under it: right by its
-       own offset from the toggle to sit on the same column, then down by one
-       button plus the gap. Same spring as the toggle's nudge, so the pair reads
-       as one movement. */
-    .sidebar-header:not(.open) .header-action.search {
-        transform: translate(
-            calc(var(--rail-nudge) + var(--nav-row-h) + var(--space-1)),
-            calc(var(--nav-row-h) + var(--space-1))
-        );
-    }
-
-    /* Shrink-wraps the icon so it can serve as the tooltip's anchor — matching
-       the nav rows' `.icon-wrap`. */
-    .icon-wrap {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .header-action:hover {
-        color: var(--color-text);
-        background: var(--color-hover);
-    }
-
-    /* Bump the chrome up a notch for easier tapping on small screens. The box
-       needs no override — `--nav-row-h` grows on mobile and takes the actions
-       (and the brand's max-width, which reads the same var) with it. */
     @media (--bp-md-and-smaller) {
-        .header-action :global(svg) {
-            width: var(--space-5);
-            height: var(--space-5);
+        .toggle {
+            display: flex;
         }
     }
 </style>

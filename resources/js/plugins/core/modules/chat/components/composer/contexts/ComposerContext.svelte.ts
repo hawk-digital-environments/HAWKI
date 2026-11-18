@@ -34,10 +34,8 @@
  * |-----------|--------------------|---------------------------------------------------------|
  * | `default` | `ChatDefaultMode`  | Normal compose; stays active after send                 |
  * | `edit`    | `ChatEditMode`     | Edit a past user message; locks model/tools/settings UI |
- * | `thread`  | `ChatInThreadMode` | Compose inside a thread; allows a nested edit mode       |
- * | `regen`   | `ChatRegenMode`    | Regenerate an assistant reply; pre-fills the composer    |
- *           |                    | from the message's snapshot; the re-run's participant is |
- *           |                    | picked in the model picker's regen groups                |
+ * | `thread`  | `ChatInThreadMode` | Compose inside a thread; allows nested edit/regen modes |
+ * | `regen`   | `ChatRegenMode`    | Regenerate an assistant reply; pre-fills model + params |
  *
  * ## Checkpointing
  *
@@ -78,7 +76,7 @@
  * ```
  */
 import {onDestroy} from 'svelte';
-import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
+import {createStableContext} from '$lib/utils/stableContext.js';
 import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
 import {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
@@ -95,7 +93,7 @@ import {GuardSlice} from '$plugins/core/modules/chat/components/composer/context
 import {MessageSender} from '$plugins/core/modules/chat/components/composer/contexts/sending/MessageSender.js';
 import {OldUiBridgeTransport} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/OldUiBridgeTransport.js';
 import type {SendMessageStatus} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageStatus.svelte.js';
-import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
+import {breakpointsQueries} from '$lib/components/util/breakpoints/breakpoints.js';
 import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte';
@@ -126,12 +124,12 @@ export interface CreateComposerContextOptions {
     useLegacyBridge?: boolean;
 }
 
-/** {@link SyncPipeline} channel name used by {@link ComposerContext.focusInput}. */
-const FOCUS_INPUT_PIPELINE = 'focusInput';
-
-/** Channel-to-payload map for the context-internal {@link SyncPipeline}. `void` = no payload. */
-interface FlowList {
-    [FOCUS_INPUT_PIPELINE]: void;
+declare module '$lib/kernel/extendableTypes.js' {
+    interface HawkiSyncEvents {
+        /** The chat composer's input should receive focus. Triggered by
+         *  {@link ComposerContext.focusInput}; handled by the mounted composer itself. */
+        onComposerFocusRequested: void;
+    }
 }
 
 /**
@@ -206,9 +204,10 @@ export class ComposerContext {
         private readonly getHandleMatchesInText: (text: string) => Generator<{handle: string; start: number; end: number}>,
         /**
          * Reads the taggable assistant entries (also backed by the `ai-handle`
-         * store) so derived state can react to which participant is addressed.
+         * store) so the participant-aware derivations below stay store-free.
          */
-        private readonly getAssistants: () => AiAssistant[]
+        private readonly getAssistants: () => AiAssistant[],
+        private readonly events: HawkiApp['events']
     ) {
         this._systemPrompt = $state(initialSystemPrompt);
 
@@ -244,8 +243,6 @@ export class ComposerContext {
         });
     }
 
-    /** Internal event bus for imperative, fire-and-forget signals (currently only "focus the input"). */
-    private sync = new SyncPipeline<FlowList>();
     /** Backing field for {@link systemPrompt}; declared as `$state` in the constructor. */
     private _systemPrompt: string;
     /** Backing field for {@link sendStatus}. `null` while idle. */
@@ -263,18 +260,13 @@ export class ComposerContext {
     public message = $state('');
 
     /** The message text with all `@handle` tokens stripped and whitespace normalised.
-     *  Used by `GuardSlice.canSend` to check whether there is actual content to send.
-     *  Every whole-token occurrence is removed, however often the same assistant is
-     *  mentioned — but a known handle that merely prefixes a longer unknown token
-     *  (`@test` inside `@testing`) leaves that token alone. */
+     *  Used by `GuardSlice.canSend` to check whether there is actual content to send. */
     public readonly messageWithoutHandles = $derived.by(() => {
         let text = '';
         let cursor = 0;
         for (const match of this.getHandleMatchesInText(this.message)) {
             text += this.message.slice(cursor, match.start);
             cursor = match.end;
-            // Swallow the separator the handle brought with it, so removing "@hawki " from
-            // "@hawki hi" leaves "hi" rather than " hi".
             if (this.message[cursor] === ' ') {
                 cursor += 1;
             }
@@ -286,7 +278,7 @@ export class ComposerContext {
      *  In room mode, the presence of a handle determines whether AI UI elements are shown.
      *  Only one assistant can be addressed at a time (see {@link addHandleToMessage}), so
      *  this normally holds at most one entry — it stays a list because a hand-typed message
-     *  can still contain several. Each handle is listed once, however often it occurs. */
+     *  can still contain several. */
     public readonly handlesInMessage = $derived.by(() => {
         const handles = new Set<string>();
         for (const match of this.getHandleMatchesInText(this.message)) {
@@ -298,7 +290,9 @@ export class ComposerContext {
     /** `true` when at least one `@hawki` is present in the message. */
     public readonly containsAiHandle = $derived.by(() => this.handlesInMessage.length > 0);
 
-    /** The taggable-assistant entries addressed by the current message. */
+    /** The assistant entries currently addressed in the message. A message
+     *  can address several; the transport resolves the binding (see
+     *  {@link addressedAssistantHandle}). */
     public readonly addressedAssistants = $derived.by(() => {
         const handles = new Set(this.handlesInMessage);
         return this.getAssistants().filter(assistant => handles.has(assistant.handle));
@@ -349,15 +343,21 @@ export class ComposerContext {
     }
 
     /** Imperatively requests that the textarea receives focus. Called by modes after
-     *  pre-filling the message so the cursor lands in the input without a user click. */
+     *  pre-filling the message so the cursor lands in the input without a user click.
+     *  Broadcast as the `onComposerFocusRequested` kernel event so delivery follows the
+     *  composer's mount state instead of call-site timing. */
     public focusInput(): void {
-        this.sync.trigger(FOCUS_INPUT_PIPELINE);
+        this.events.sync.triggerVoid('onComposerFocusRequested');
     }
 
-    /** Registers a handler that fires whenever {@link focusInput} is called.
-     *  Returns an unsubscribe function. Typically called by the textarea component. */
-    public onFocusInput(handler: () => void): () => void {
-        return this.sync.on(FOCUS_INPUT_PIPELINE, handler);
+    /** Like {@link focusInput}, but for focus the user did not explicitly ask for (opening
+     *  a chat, picking a model). Skipped on small screens, where focusing the textarea
+     *  would pop up the on-screen keyboard. */
+    public autoFocusInput(): void {
+        if (window.matchMedia(breakpointsQueries.bpSmallerThanMd).matches) {
+            return;
+        }
+        this.focusInput();
     }
 
     /** Starts a send operation. Returns `null` without doing anything when `guard.canSend`
@@ -387,8 +387,11 @@ export class ComposerContext {
 
         status.response.then((res) => {
             res.body.then(() => {
-                // Clear the send status only after the response body has been fully received
-                this._sendStatus = null;
+                // Clear the send status only after the response body has been fully received,
+                // and only if no newer send has taken its place in the meantime
+                if (this._sendStatus === status) {
+                    this._sendStatus = null;
+                }
             });
         });
 
@@ -441,8 +444,8 @@ export class ComposerContext {
      * @param withCheckpoint
      */
     // Note: the model itself is intentionally NOT reset here — only when `withCheckpoint`
-    // restores a snapshot does the model revert. Modes rely on this: they may call `reset()`
-    // first and then set their own model/parameters on the clean slate.
+    // restores a snapshot does the model revert. Modes such as `ChatRegenMode` rely on this:
+    // they call `reset()` first and then set their own model/parameters on the clean slate.
     public reset(withCheckpoint?: boolean): void {
         if (withCheckpoint) {
             this.checkpointer.restoreCheckpoint();
@@ -459,13 +462,12 @@ export class ComposerContext {
 /**
  * Svelte context accessor pair for the composer.
  *
- * `createHmrSafeContext()` mirrors Svelte's `createContext()` `[get, set]`
- * tuple but keeps its key stable across Vite HMR module re-evaluations (see
- * its doc block). `get` is re-exported below as {@link useComposerContext}
- * with an extra guard so a missing provider produces an actionable message
- * instead of the generic one.
+ * `createStableContext()` provides a `[get, set]` tuple whose key identity
+ * stays stable across module (re-)evaluations (see its doc block). `get` is
+ * re-exported below as {@link useComposerContext} with an extra guard so a
+ * missing provider produces an actionable message instead of the generic one.
  */
-const [get, set] = createHmrSafeContext<ComposerContext>('hawki.chat.composer-context');
+const [get, set] = createStableContext<ComposerContext>('hawki.chat.composer-context');
 
 /** Returns the `ComposerContext` published by the nearest `createComposerContext` ancestor. */
 export function useComposerContext(): ComposerContext {
@@ -479,6 +481,22 @@ export function useComposerContext(): ComposerContext {
         throw new Error('No ComposerContext found in Svelte context tree. Make sure to call createComposerContext() in a parent component.');
     }
     return context;
+}
+
+/**
+ * Returns the {@link ComposerContext} published by the nearest ancestor that
+ * created one, or `null` when there is none.
+ *
+ * Lets `ChatComposer` adopt a context owned higher up the tree (the chat
+ * layout's — see `useChatComposerContext`) instead of always building its own,
+ * without a try/catch at the call site.
+ */
+export function findComposerContext(): ComposerContext | null {
+    try {
+        return get();
+    } catch {
+        return null;
+    }
 }
 
 /**
@@ -585,7 +603,7 @@ export function createComposerContext(
         }
     );
     const attachment = new AttachmentSlice(app.config);
-    const tool = new ToolSlice(modelContext, aiToolStore, () => toastContext.info(app.translator.__('chat.tools.accessChanged')));
+    const tool = new ToolSlice(modelContext, aiToolStore);
     const guard = new GuardSlice((): ComposerContext => context);
     const modelUsage = new ModelUsageSlice(
         aiModelStore,
@@ -628,7 +646,8 @@ export function createComposerContext(
         onSetSystemPrompt,
         options.onImproveMessage ?? ((message, systemPrompt) => oldUiBridge.triggerImproveMessage(message, systemPrompt)),
         (message) => aiHandleStore.getHandleMatchesIn(message),
-        () => aiHandleStore.assistants
+        () => aiHandleStore.assistants,
+        app.events
     );
 
     const unbinders = options.useLegacyBridge === false ? [] : [
@@ -647,8 +666,6 @@ export function createComposerContext(
             context.model.set(model);
         }),
         oldUiBridge.onEnterMode((mode, data) => {
-            // The legacy UI requests `edit`, `thread` and `regen` — every mode the
-            // registry has. An unknown key throws in the mode factory, loudly.
             context.mode.enter(mode, data);
         }),
         oldUiBridge.onExitThread(() => {

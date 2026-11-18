@@ -17,6 +17,8 @@
         keywords?: string[];
         /** Non-selectable row. */
         disabled?: boolean;
+        /** Keyboard shortcut hint at the row's end. */
+        shortcut?: string;
     }
 
     /** Rows bucketed under one heading. */
@@ -40,11 +42,8 @@
   Must sit inside a `Command.Root`. Rows call `onSelect` with their `value`.
   A `current` value renders a trailing check on that row. `children` renders
   inside the viewport, before the groups (used for the palette's sliding hover
-  highlight); `empty` renders instead of the groups when there are none — it
-  sits *after* the List rather than inside it, since the List is a `listbox`
-  whose only permitted children are options and groups. Remaining props go to
-  the List element; pass a translated `aria-label` for it, or bits-ui falls
-  back to an English default.
+  highlight); `empty` renders instead of the groups when there are none.
+  Remaining props go to the List element.
 -->
 <script lang="ts">
     import {Command as CommandPrimitive, mergeProps, type CommandListProps} from 'bits-ui';
@@ -62,6 +61,8 @@
         children?: Snippet;
         /** Rendered instead of the groups when there are none. */
         empty?: Snippet;
+        /** A pointer press on an enabled row. */
+        onRowPointerDown?: (value: string) => void;
         /** The viewport element. Supports bind:viewport. */
         viewport?: HTMLElement | null;
     }
@@ -72,6 +73,7 @@
         current,
         children,
         empty,
+        onRowPointerDown,
         viewport = $bindable(null),
         ...restProps
     }: Props = $props();
@@ -80,6 +82,9 @@
 <CommandPrimitive.List {...mergeProps({class: 'command-list'}, restProps)}>
     <CommandPrimitive.Viewport class="command-viewport" bind:ref={viewport}>
         {@render children?.()}
+        {#if groups.length === 0}
+            {@render empty?.()}
+        {/if}
         {#each groups as group (group.id)}
             <CommandPrimitive.Group class="command-group" value={group.id}>
                 {#if group.label}
@@ -96,6 +101,7 @@
                             keywords={item.keywords}
                             disabled={item.disabled}
                             onSelect={() => onSelect(item.value)}
+                            onpointerdown={() => {if (!item.disabled) onRowPointerDown?.(item.value);}}
                         >
                             <span class="item-icon" aria-hidden="true">
                                 {#if Icon}
@@ -110,12 +116,13 @@
                             {:else}
                                 <span class="item-label">{item.label}</span>
                             {/if}
-                            {#if current !== undefined}
-                                <!-- The check keeps its slot at all times so labels
-                                     never shift as the selection moves between rows. -->
-                                <span class="item-check" class:on={current === item.value} aria-hidden="true">
+                            <!-- The current row's check takes the place of its shortcut hint. -->
+                            {#if current === item.value}
+                                <span class="item-check" aria-hidden="true">
                                     <TickIcon size={15} strokeWidth={2.5} />
                                 </span>
+                            {:else if item.shortcut}
+                                <span class="item-shortcut" aria-hidden="true">{item.shortcut}</span>
                             {/if}
                         </CommandPrimitive.Item>
                     {/each}
@@ -124,9 +131,6 @@
         {/each}
     </CommandPrimitive.Viewport>
 </CommandPrimitive.List>
-{#if groups.length === 0}
-    {@render empty?.()}
-{/if}
 
 <style>
     /* Command renders the elements itself, so they are addressed globally
@@ -170,7 +174,7 @@
     :global(.command-list .command-group-heading) {
         padding: var(--space-2) var(--space-2_5) var(--space-1);
         font-size: var(--font-size-xxs);
-        font-weight: var(--font-weight-medium, 500);
+        font-weight: var(--font-weight-medium);
         letter-spacing: 0.05em;
         text-transform: uppercase;
         color: var(--color-text-muted);
@@ -248,32 +252,42 @@
         color: inherit;
     }
 
+    /* Takes the row's own tint. Keeps its slot while hidden so labels never shift. */
+    :global(.command-list .item-shortcut) {
+        flex-shrink: 0;
+        color: inherit;
+        font-size: var(--font-size-xs);
+        letter-spacing: 0.03em;
+        opacity: 0;
+        transition: opacity var(--duration-fast);
+    }
+
+    :global(.command-list .command-item:not([data-disabled]):hover .item-shortcut),
+    :global(.command-root.armed .command-item[data-selected] .item-shortcut) {
+        opacity: 1;
+    }
+
+    /* Every row shows its hint while the shortcut modifier is held. */
+    :global(.shortcuts-held .command-list .item-shortcut) {
+        opacity: 1;
+    }
+
     :global(.command-list .item-check) {
         display: inline-flex;
         flex-shrink: 0;
         padding-inline: var(--space-1);
         color: var(--color-active-text);
-        opacity: 0;
-        transform: scale(0.7);
-        transition:
-            opacity 140ms var(--easing-default),
-            transform 200ms var(--easing-spring);
-    }
-
-    :global(.command-list .item-check.on) {
-        opacity: 1;
-        transform: scale(1);
     }
 
     /* The current row wears the sidebar's active highlight — same surface and
        ink as the nav's sliding highlight — whether or not it is also the row
        the keyboard/pointer is on. */
-    :global(.command-list .command-item:has(.item-check.on)) {
+    :global(.command-list .command-item:has(.item-check)) {
         background-color: var(--color-active-surface);
         color: var(--color-active-text);
     }
 
-    :global(.command-list .command-item:has(.item-check.on) .item-icon) {
+    :global(.command-list .command-item:has(.item-check) .item-icon) {
         color: inherit;
     }
 

@@ -1,20 +1,22 @@
 /**
  * Sessions: one independent view of the search index per SearchBar.
  *
- * The manager owns everything sessions *share* — the app-wide dynamic
- * concurrency budget and the recent-selection history — and nothing else. Each
- * session owns its own query, scope, freeze state, worker reply and dynamic
- * queries, so opening a second bar neither reloads a source nor cancels the
+ * The manager owns what sessions *share* — the app-wide dynamic concurrency
+ * budget — and nothing else. Each session owns its own query, scope, freeze
+ * state, worker reply and dynamic queries, so opening a second bar neither reloads a source nor cancels the
  * first bar's work. Static loading and the shared index stay with the extension
  * that hosts this manager.
  *
- * A session publishes in three waves, deliberately unsynchronised:
+ * A session publishes in two waves, deliberately unsynchronised:
  *
- * 1. **Immediate**, on every accepted input: Fuse scores the immediate index
- *    on the main thread, without a debounce.
- * 2. **Worker**, when a source opted into worker matching: the same scores, one
- *    round-trip later, merged into the same ranking.
- * 3. **Dynamic**, after a 250 ms debounce: each group is published whole once
+ * 1. **Static**, on every accepted input without a debounce: the search worker
+ *    scores the shared static corpus. The main thread never builds or queries
+ *    a Fuse index for it. While the answer is on its way the session keeps its
+ *    previous rows on screen, for at most `SEARCH_LOCAL_PENDING_DELAY_MS`, so
+ *    a keystroke swaps one list for the next instead of flashing an empty or
+ *    pending state in between. A blank query needs no worker: the whole
+ *    list of every source is resolved locally.
+ * 2. **Dynamic**, after a 250 ms debounce: each group is published whole once
  *    all of its providers have settled, failures included.
  *
  * Relevance uses the inverted Fuse score throughout. Remote rows are scored
@@ -22,14 +24,18 @@
  * row the engine does not match stays eligible at score `0`, in its provider's order.
  */
 import type {DynamicSource, SearchGroupView, SearchProviderError, SearchRow, SearchScope, SearchSession, SearchSessionOptions, SearchSessionState} from '$lib/kernel/search/types.js';
-import {SEARCH_DYNAMIC_CANDIDATE_LIMIT, SEARCH_DYNAMIC_CONCURRENCY, SEARCH_DYNAMIC_MIN_QUERY_LENGTH} from '$lib/kernel/search/types.js';
+import {
+    SEARCH_DYNAMIC_CANDIDATE_LIMIT,
+    SEARCH_DYNAMIC_CONCURRENCY,
+    SEARCH_DYNAMIC_MIN_QUERY_LENGTH,
+    SEARCH_LOCAL_PENDING_DELAY_MS
+} from '$lib/kernel/search/types.js';
 import type {SearchSessionHost} from '$lib/kernel/search/sessionHost.js';
 import type {SearchProviderDefinition} from '$lib/kernel/search/searchRegistry.js';
 import {documentKey, type IndexedDocument} from '$lib/kernel/search/sharedIndex.js';
 import {resolveSearchScope, scopeMatches, type KnownSearchScope, type ResolvedSearchScope} from '$lib/kernel/search/scope.js';
 import {SearchEngine} from '$lib/kernel/search/searchEngine.js';
 import {normalizeSearchQuery, queryLength} from '$lib/kernel/search/query.js';
-import {SearchRecentsStore} from '$lib/kernel/search/sessionHistory.js';
 import {
     appendReadyGroups,
     applyRowLimits,
@@ -40,9 +46,12 @@ import {
 } from '$lib/kernel/search/sessionPublication.js';
 import {
     ConcurrencyGate,
+    DEFAULT_RUNNER_TIMING,
+    DEFAULT_SCHEDULER_TIMERS,
     DynamicQueryRunner,
     type DynamicProviderOutcome,
-    type DynamicProviderTask
+    type DynamicProviderTask,
+    type SchedulerTimers
 } from '$lib/kernel/search/sessionScheduler.js';
 
 /**
@@ -56,20 +65,18 @@ export class SearchSessionManager {
     private readonly host: SearchSessionHost;
     private readonly gate: ConcurrencyGate;
     private readonly sessions = new Set<SearchSessionImpl>();
-    private readonly recents: SearchRecentsStore;
     private disposed = false;
 
     public constructor(host: SearchSessionHost) {
         this.host = host;
         this.gate = new ConcurrencyGate(SEARCH_DYNAMIC_CONCURRENCY);
-        this.recents = new SearchRecentsStore(host.app.localStorage, host.identity);
     }
 
     public createSession(options: SearchSessionOptions = {}): SearchSession {
         if (this.disposed) {
             throw new Error('The search session manager is disposed; no further sessions can be created.');
         }
-        const session = new SearchSessionImpl(this.host, this.gate, this.recents, options, disposed => this.sessions.delete(disposed), () => this.invalidate());
+        const session = new SearchSessionImpl(this.host, this.gate, options, disposed => this.sessions.delete(disposed));
         this.sessions.add(session);
         return session;
     }
@@ -88,11 +95,9 @@ export class SearchSessionManager {
 
     /**
      * The user or the connection changed. Everything the previous identity
-     * produced is dropped — queries, results and freeze — and the history is
-     * re-read for whoever is signed in now.
+     * produced is dropped — queries, results and freeze.
      */
     public reset(): void {
-        this.recents.useIdentity(this.host.identity);
         for (const session of [...this.sessions]) {
             session.resetSession();
         }
@@ -109,12 +114,11 @@ export class SearchSessionManager {
 
 class SearchSessionImpl implements SearchSession {
     private readonly host: SearchSessionHost;
-    private readonly recents: SearchRecentsStore;
     private readonly allowedScope: SearchScope | undefined;
     private readonly runner: DynamicQueryRunner;
     private readonly forget: (session: SearchSessionImpl) => void;
-    private readonly selectionChanged: () => void;
     private readonly stateView: SearchSessionState;
+    private readonly timers: SchedulerTimers;
 
     private published = $state<SearchGroupView[]>([]);
     private frozen = $state(false);
@@ -130,6 +134,9 @@ class SearchSessionImpl implements SearchSession {
     private workerRequestedRevision = -1;
     private workerReply: {query: string; revision: number; scores: Map<string, number>} | null = null;
     private workerController: AbortController | null = null;
+    /** Publication is held on the previous rows while the worker answers; see the file comment. */
+    private holding = false;
+    private holdTimer: number | null = null;
     private readonly dynamicOutcomes = new Map<string, readonly DynamicProviderOutcome[]>();
     private dynamicCache: RankingCandidate[] | null = null;
     private disposed = false;
@@ -139,22 +146,24 @@ class SearchSessionImpl implements SearchSession {
     public constructor(
         host: SearchSessionHost,
         gate: ConcurrencyGate,
-        recents: SearchRecentsStore,
         options: SearchSessionOptions,
-        forget: (session: SearchSessionImpl) => void,
-        selectionChanged: () => void
+        forget: (session: SearchSessionImpl) => void
     ) {
         this.host = host;
-        this.recents = recents;
         this.allowedScope = options.allowedScope ? {...options.allowedScope} : undefined;
         this.forget = forget;
-        this.selectionChanged = selectionChanged;
-        this.runner = new DynamicQueryRunner(gate, {
-            onGroupSettled: (groupId, outcomes) => this.acceptGroup(groupId, outcomes),
-            onPendingChange: pending => {
-                this.remotePending = pending;
-            }
-        });
+        this.timers = this.host.schedulerTimers ?? DEFAULT_SCHEDULER_TIMERS;
+        this.runner = new DynamicQueryRunner(
+            gate,
+            {
+                onGroupSettled: (groupId, outcomes) => this.acceptGroup(groupId, outcomes),
+                onPendingChange: pending => {
+                    this.remotePending = pending;
+                }
+            },
+            DEFAULT_RUNNER_TIMING,
+            this.timers
+        );
 
         const session = this;
         this.stateView = {
@@ -200,7 +209,9 @@ class SearchSessionImpl implements SearchSession {
     }
 
     public freezeOrder(): void {
-        if (!this.disposed && this.published.some(group => group.items.some(row => row.available))) {
+        // Held rows answer the previous input and are about to be replaced;
+        // freezing them would pin a list the user never asked for.
+        if (!this.disposed && !this.holding && this.published.some(group => group.items.some(row => row.available))) {
             this.frozen = true;
         }
     }
@@ -218,12 +229,6 @@ class SearchSessionImpl implements SearchSession {
                 const entry = this.liveEntry(row, active);
                 if (!row.available || !entry) {
                     return null;
-                }
-                // Only local entities are worth remembering: a remote hit has no
-                // stable local row to resolve the id back to on the next visit.
-                if (row.kind === 'static') {
-                    this.recents.record(entityKey);
-                    this.selectionChanged();
                 }
                 return {...entry, providerId: row.providerId, groupId: row.groupId, kind: row.kind, available: true};
             }
@@ -297,10 +302,10 @@ class SearchSessionImpl implements SearchSession {
         this.resolveScope();
         this.syncDynamicProviders();
         this.dynamicCache = null;
-        if (this.host.index.hasWorkerDocuments && this.host.index.revision !== this.workerRequestedRevision) {
+        if (this.host.index.size > 0 && this.host.index.revision !== this.workerRequestedRevision) {
             this.startWorker(false);
         }
-        if (!this.host.index.hasWorkerDocuments) {
+        if (this.host.index.size === 0) {
             this.cancelWorker();
             this.workerReply = null;
             this.workerError = null;
@@ -320,6 +325,7 @@ class SearchSessionImpl implements SearchSession {
         this.frozen = false;
         this.dynamicErrors = [];
         this.workerError = null;
+        this.workerReply = null;
         this.dynamicOutcomes.clear();
         this.dynamicCache = null;
         this.dynamicProviders.clear();
@@ -357,6 +363,9 @@ class SearchSessionImpl implements SearchSession {
     }
 
     private publish(): void {
+        if (this.holding) {
+            return;
+        }
         const active = this.activeProviderIds();
         const ranked = this.rank(active);
         if (!this.frozen) {
@@ -375,74 +384,52 @@ class SearchSessionImpl implements SearchSession {
         if (scope === null) {
             return [];
         }
+        if (this.query === '') {
+            const candidates = this.blankCandidates(scope, active);
+            return candidates.length === 0 ? [] : rankGroups(candidates, this.rankingGroups(candidates));
+        }
         const local = this.staticCandidates(scope, active);
         const remote = this.dynamicCandidates(active).map(candidate => {
             const copy = this.host.index.documentsForEntity(candidate.row.entityKey, scope)
                 .find(document => active.has(document.provider.id));
-            return copy ? staticCandidate(copy, candidate.score, 0) : candidate;
+            return copy ? staticCandidate(copy, candidate.score) : candidate;
         });
         const candidates = [...local, ...remote];
         return candidates.length === 0 ? [] : rankGroups(candidates, this.rankingGroups(candidates));
     }
 
     private staticCandidates(scope: ResolvedSearchScope, active: ReadonlySet<string>): RankingCandidate[] {
-        if (this.query === '') {
-            return this.recentCandidates(scope, active);
+        const scores = this.workerScores();
+        if (scores === null) {
+            return [];
         }
-
         const candidates: RankingCandidate[] = [];
-        const immediate = new Map(this.host.index.searchScores(this.query));
-        for (const document of this.host.index.candidates(scope, 'immediate')) {
-            const score = immediate.get(document.key);
+        for (const document of this.host.index.candidates(scope)) {
+            const score = scores.get(document.key);
             if (score !== undefined && active.has(document.provider.id)) {
-                candidates.push(staticCandidate(document, score, 0));
-            }
-        }
-
-        const worker = this.workerScores();
-        if (worker !== null) {
-            for (const document of this.host.index.candidates(scope, 'worker')) {
-                const score = worker.get(document.key);
-                if (score !== undefined && active.has(document.provider.id)) {
-                    candidates.push(staticCandidate(document, score, 0));
-                }
+                candidates.push(staticCandidate(document, score));
             }
         }
         return candidates;
     }
 
     /**
-     * A blank query is answered from the recent selections that still resolve to
-     * a live in-scope row, most recent first. Only when none of them do does the
-     * list fall back to the sources' own order — unused recent slots are never
-     * padded with unrelated entries.
+     * A blank query lists every static source in its registration order —
+     * the "open the palette and see everything" view.
      */
-    private recentCandidates(scope: ResolvedSearchScope, active: ReadonlySet<string>): RankingCandidate[] {
-        const candidates: RankingCandidate[] = [];
-        const selections = this.recents.entries;
-        for (let index = 0; index < selections.length; index++) {
-            const recency = selections.length - index;
-            for (const document of this.host.index.documentsForEntity(selections[index].entityKey, scope)) {
-                if (document.provider.kind !== 'static' || !active.has(document.provider.id)) {
-                    continue;
-                }
-                candidates.push(staticCandidate(document, 0, recency));
-                break;
-            }
-        }
-        if (candidates.length > 0) {
-            return candidates;
-        }
-
+    private blankCandidates(scope: ResolvedSearchScope, active: ReadonlySet<string>): RankingCandidate[] {
         return this.host.index.candidates(scope)
             .filter(document => document.provider.kind === 'static' && active.has(document.provider.id))
-            .map(document => staticCandidate(document, 0, 0));
+            .map(document => staticCandidate(document, 0));
     }
 
     /**
      * Scores what the dynamic providers returned with a per-session Fuse
      * engine, so a remote row is ranked by the same measure as a local one. A
      * row the engine misses keeps score `0` and therefore the server's order.
+     * This one stays on the main thread: it only ever holds the few rows a
+     * provider returned (`SEARCH_DYNAMIC_CANDIDATE_LIMIT` each), and a worker
+     * round-trip would cost more than indexing them.
      */
     private dynamicCandidates(active: ReadonlySet<string>): RankingCandidate[] {
         if (this.dynamicCache !== null) {
@@ -491,7 +478,6 @@ class SearchSessionImpl implements SearchSession {
         this.dynamicCache = pending.map(item => ({
             row: item.row,
             score: scores.get(item.key) ?? 0,
-            recency: 0,
             providerOrder: item.providerOrder,
             entryOrder: item.entryOrder,
             preferStatic: false
@@ -564,14 +550,15 @@ class SearchSessionImpl implements SearchSession {
     }
 
     private startWorker(force: boolean): void {
-        this.cancelWorker();
-        if (this.suspended || !this.host.index.hasWorkerDocuments || this.query === '' || this.resolvedScope === null
-            || this.host.index.candidates(this.resolvedScope, 'worker').length === 0) {
-            this.localPending = false;
+        this.abortWorkerRequest();
+        if (this.suspended || this.query === '' || this.resolvedScope === null
+            || this.host.index.candidates(this.resolvedScope).length === 0) {
+            this.endHold();
             return;
         }
         if (!force && this.workerReply !== null && this.workerReply.query === this.query
             && this.workerReply.revision === this.host.index.revision) {
+            this.endHold();
             return;
         }
 
@@ -580,7 +567,7 @@ class SearchSessionImpl implements SearchSession {
         const controller = new AbortController();
         this.workerController = controller;
         this.workerRequestedRevision = this.host.index.revision;
-        this.localPending = true;
+        this.beginHold();
 
         void this.host.queryWorker(query, controller.signal).then(
             reply => this.acceptWorkerReply(generation, query, reply),
@@ -605,7 +592,7 @@ class SearchSessionImpl implements SearchSession {
         this.workerController = null;
         this.workerReply = {query, revision: reply.revision, scores: new Map(reply.scores)};
         this.workerError = null;
-        this.localPending = false;
+        this.endHold();
         this.publish();
     }
 
@@ -614,11 +601,12 @@ class SearchSessionImpl implements SearchSession {
             return;
         }
         this.workerController = null;
-        this.localPending = false;
-        // Immediate and dynamic groups stay usable; only the worker corpus is missing.
+        this.endHold();
+        // Dynamic groups stay usable; only the static corpus is missing.
         this.workerError = error instanceof Error && error.message !== ''
             ? error.message
             : 'Local search matching is unavailable.';
+        this.publish();
     }
 
     private workerScores(): Map<string, number> | null {
@@ -626,9 +614,41 @@ class SearchSessionImpl implements SearchSession {
     }
 
     private cancelWorker(): void {
+        this.abortWorkerRequest();
+        this.endHold();
+    }
+
+    private abortWorkerRequest(): void {
         this.workerController?.abort();
         this.workerController = null;
         this.workerGeneration++;
+    }
+
+    /**
+     * Holds publication on the current rows until the worker answers or the
+     * delay runs out, whichever comes first. A request that supersedes one
+     * still being waited for keeps the running deadline: a corpus that keeps
+     * changing must not hold the list forever.
+     */
+    private beginHold(): void {
+        if (this.localPending || this.holdTimer !== null) {
+            return;
+        }
+        this.holding = true;
+        this.holdTimer = this.timers.setTimeout(() => {
+            this.holdTimer = null;
+            this.holding = false;
+            this.localPending = true;
+            this.publish();
+        }, SEARCH_LOCAL_PENDING_DELAY_MS);
+    }
+
+    private endHold(): void {
+        if (this.holdTimer !== null) {
+            this.timers.clearTimeout(this.holdTimer);
+            this.holdTimer = null;
+        }
+        this.holding = false;
         this.localPending = false;
     }
 
@@ -684,7 +704,7 @@ class SearchSessionImpl implements SearchSession {
     }
 }
 
-function staticCandidate(document: IndexedDocument, score: number, recency: number): RankingCandidate {
+function staticCandidate(document: IndexedDocument, score: number): RankingCandidate {
     return {
         row: {
             ...document.entry,
@@ -694,7 +714,6 @@ function staticCandidate(document: IndexedDocument, score: number, recency: numb
             available: true
         },
         score,
-        recency,
         providerOrder: document.provider.order,
         entryOrder: document.entryOrder,
         preferStatic: true

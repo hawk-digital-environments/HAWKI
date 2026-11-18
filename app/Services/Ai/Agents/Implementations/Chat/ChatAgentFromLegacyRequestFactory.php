@@ -14,7 +14,7 @@ use App\Services\Ai\Agents\Utils\UserMessageAttachments;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Exceptions\ModelNotInPayloadException;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
-use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\Models\Identifiers\ModelFinder;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFileCategory;
 use App\Services\Storage\Values\StoredFileIdentifier;
@@ -39,7 +39,7 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
 {
     public function __construct(
         private readonly FileStorageService $fileStorageService,
-        private readonly AiModelRepository  $modelRepository,
+        private readonly ModelFinder             $modelFinder,
         private readonly ChatToolResolver   $toolResolver,
         private readonly LoggerInterface    $logger
     )
@@ -77,7 +77,7 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
             throw new ModelNotInPayloadException($payload->toArray());
         }
 
-        return $this->modelRepository->findOneOrFail($modelId);
+        return $this->modelFinder->findOrFail($modelId);
     }
 
     /**

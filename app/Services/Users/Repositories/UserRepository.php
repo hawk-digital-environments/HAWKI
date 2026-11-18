@@ -5,15 +5,32 @@ declare(strict_types=1);
 namespace App\Services\Users\Repositories;
 
 
+use App\Models\ExtApp;
 use App\Models\User;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
 use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class UserRepository extends AbstractRepositoryWithContextualScopes
 {
-    public const SEARCH_MIN_LENGTH = 3;
-    public const SEARCH_LIMIT = 5;
+    public function createForRegistration(
+        string $username,
+        string $name,
+        string $email,
+        string $employeeType
+    ): User {
+        return $this->getQueryWithoutContextualScopes()->create([
+            'username' => $username,
+            'name' => $name,
+            'email' => $email,
+            'employeetype' => $employeeType,
+            'publicKey' => '',
+            'avatar_id' => null,
+            'isRemoved' => false,
+            'registration_fingerprint' => null,
+        ]);
+    }
 
     public function insert(
         string $username,
@@ -41,10 +58,78 @@ class UserRepository extends AbstractRepositoryWithContextualScopes
         return $this->getQuery($scopeOverrides)->where('username', $username)->first();
     }
 
+    /**
+     * Loads the user with `$username` and holds a row lock on them until the surrounding
+     * transaction ends. Returns null when no such user exists — the lock then has nothing to
+     * hold, and the caller has to rely on the unique index on `username` instead.
+     *
+     * Used by the registration flow to serialise two concurrent "complete registration"
+     * requests for the same account.
+     */
+    public function lockOneByUsername(string $username): User|null
+    {
+        return $this->getQueryWithoutContextualScopes()
+            ->where('username', $username)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    public function updatePublicKey(User $user, string $publicKey): void
+    {
+        $user->update(['publicKey' => $publicKey]);
+    }
+
+    public function prepareForRegistration(
+        User $user,
+        string $name,
+        string $email,
+        string $employeeType
+    ): User {
+        $user->update([
+            'name' => $name,
+            'email' => $email,
+            'employeetype' => $employeeType,
+            'publicKey' => '',
+            'avatar_id' => null,
+            'isRemoved' => false,
+            'registration_fingerprint' => null,
+        ]);
+
+        return $user;
+    }
+
+    public function updateRegistrationFingerprint(User $user, string $fingerprint): void
+    {
+        $user->update(['registration_fingerprint' => $fingerprint]);
+    }
+
     public function findHawki(): User
     {
         return $this->getQueryWithoutContextualScopes()->findOrFail(1);
     }
+
+    /**
+     * Finds active human users (app accounts excluded) whose name, username or email matches the given term.
+     * @param string $term The term to search for.
+     * @param int $limit The maximum number of users to search.
+     * @return Collection<int, User>
+     */
+    public function searchRoomInviteMembers(string $term, int $limit = 5): Collection
+    {
+        return $this->getQueryWithoutContextualScopes()
+            ->where('isRemoved', false)
+            ->where(function (Builder $query) use ($term) {
+                $query->where('name', 'like', "%{$term}%")
+                    ->orWhere('username', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
+            })
+            ->where('employeetype', '!=', ExtApp::EMPLOYEE_TYPE_APP)
+            ->take($limit)
+            ->get();
+    }
+
+    public const SEARCH_MIN_LENGTH = 3;
+    public const SEARCH_LIMIT = 5;
 
     /**
      * Substring match against name, username and email — the share dialog's

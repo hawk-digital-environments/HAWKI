@@ -1,7 +1,7 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
-import {defaultAssistantAppearance, type AssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
+import {HAWKI_ASSISTANT_APPEARANCE, type AssistantAppearance} from '$plugins/core/modules/chat/components/composer/utils/assistantAppearance.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiDataStores {
@@ -9,6 +9,9 @@ declare module '$lib/kernel/extendableTypes.js' {
     }
     interface HawkiHooks {
         aiAssistants: {value: AiAssistant[]; ctx: AiAssistantsContext};
+        /** Named route of a page listing all assistants (e.g. the assistant store),
+         *  linked from the composer's `@` menu. `null` while no plugin provides one. */
+        aiAssistantsOverviewRoute: {value: string | null; ctx: AiAssistantsContext};
     }
 }
 
@@ -19,7 +22,7 @@ declare module '$lib/kernel/extendableTypes.js' {
  * {@link AiHandleStore.hawkiAssistant}); everything else is contributed by
  * other plugins through the `aiAssistants` hook — e.g. the assistants
  * plugin appends the user's real assistants there, grouped by their
- * category, with favourites flagged as pinned.
+ * category, with favourites flagged.
  */
 export interface AiAssistant {
     /** Stable id, namespaced by its provider (e.g. `'hawki'`, `'assistant:<uuid>'`). */
@@ -33,9 +36,19 @@ export interface AiAssistant {
     /** Which section of the `@` menu the row belongs to (e.g. the assistant's
      *  category). Rows without a group share the menu's default section. */
     group?: {id: string; label: string};
-    /** Server-side pinned hint; lifts the row into the menu's "Pinned" section
+    /** Server-side favourite; lifts the row into the menu's "Favorites" section
      *  the same way a local composer pin does. */
+    favorite?: boolean;
+    /** Presentation override; falls back to the shared default appearance. */
+    appearance?: AssistantAppearance;
+    /** Server-side favourite toggle for this row.
+     *  Absent = the row is favourited through the local `composer-pins` store. */
+    onToggleFavorite?: (favorite: boolean) => void;
+    /** Alias of {@see favorite} kept for contributors that pin rows server-side
+     *  (e.g. the assistants plugin); the menu treats both alike. */
     pinned?: boolean;
+    /** Alias of {@see onToggleFavorite} for server-side pin contributors. */
+    onTogglePin?: (pinned: boolean) => void;
     /** What the participant allows the user to configure when addressed.
      *  Absent capabilities are unrestricted (the HAWKI default). */
     capabilities?: {
@@ -60,11 +73,6 @@ export interface AiAssistant {
      *  - `offline`: its model is offered but currently unreachable. Pickers
      *    show it grayed out and not selectable. */
     unavailable?: 'deactivated' | 'offline';
-    /** Presentation override; falls back to the shared default appearance. */
-    appearance?: AssistantAppearance;
-    /** Server-side pin toggle for this row (e.g. toggling the favourite).
-     *  Absent = the row pins through the local `composer-pins` store. */
-    onTogglePin?: (pinned: boolean) => void;
 }
 
 /** Context for the `aiAssistants` hook: handlers may resolve labels in the user's language. */
@@ -108,8 +116,9 @@ export class AiHandleStore implements DataStore {
             label,
             description: translate('chat.composer.assistantMenu.assistants.hawkiDescription'),
             group: {id: 'hawki', label: translate('chat.composer.assistantMenu.hawkiLabel')},
-            // Same icon rule as every other row: the name's first glyph.
-            appearance: defaultAssistantAppearance(label)
+            // The curated robot on the brand colors — HAWKI's name is a brand,
+            // not a creator-picked label.
+            appearance: HAWKI_ASSISTANT_APPEARANCE
         };
     }
 
@@ -121,6 +130,17 @@ export class AiHandleStore implements DataStore {
             return [];
         }
         return this._app.hooks.apply('aiAssistants', [this.hawkiAssistant], {
+            translate: this._app.localization.translator.translate
+        });
+    }
+
+    /** Named route of the assistant overview contributed via the
+     *  `aiAssistantsOverviewRoute` hook, or `null` when no plugin offers one. */
+    public get overviewRoute(): string | null {
+        if (this._app === null) {
+            return null;
+        }
+        return this._app.hooks.apply('aiAssistantsOverviewRoute', null, {
             translate: this._app.localization.translator.translate
         });
     }

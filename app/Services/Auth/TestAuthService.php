@@ -4,7 +4,7 @@ namespace App\Services\Auth;
 
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
-use App\Services\Auth\Exception\AuthFailedException;
+use App\Services\Auth\Exceptions\AuthFailedException;
 use App\Services\Auth\Util\AuthServiceWithCredentialsTrait;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
 use Illuminate\Container\Attributes\Config;

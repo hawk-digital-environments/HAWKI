@@ -8,7 +8,7 @@ export const model: AiModel = {
     id: '7', model_id: 'test-model', label: 'Test', tool_ids: [11, 12], settings: {tool_calling: true},
     native_capabilities: ['web_search'], input: ['text'], output: ['text'], model_type: 'chat',
     status: 'online', demand: 'low', parameters: null, flags: [], created_at: '', updated_at: '',
-    limits: null, pricing: null
+    limits: null, pricing: null, active: true
 };
 export const tool: AiTool = {
     id: '11', name: 'search', description: 'Search', status: 'online', capability_key: 'web_search',

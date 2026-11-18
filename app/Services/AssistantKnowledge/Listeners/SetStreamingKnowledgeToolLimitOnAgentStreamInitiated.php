@@ -34,6 +34,6 @@ class SetStreamingKnowledgeToolLimitOnAgentStreamInitiated
         // their own — attach the app's registry so the read always resolves.
         $settings->setService(AiModelSettingRegistry::class, app(AiModelSettingRegistry::class));
 
-        $this->citations->setToolRoundLimit($settings->getMaxToolCallingRounds(true));
+        $this->citations->setToolRoundLimit($settings->getMaxToolCallingRounds());
     }
 }

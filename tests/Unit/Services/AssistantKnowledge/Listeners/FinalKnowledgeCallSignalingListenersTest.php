@@ -36,15 +36,15 @@ class FinalKnowledgeCallSignalingListenersTest extends TestCase
         static::assertSame(5, $collector->toolRoundLimit());
     }
 
-    public function testStreamInitiatedOverridesWithTheStreamingDefault(): void
+    public function testStreamInitiatedArmsTheDeclaredDefault(): void
     {
         $collector = $this->collector();
-        $collector->setToolRoundLimit(5);
+        $collector->setToolRoundLimit(1);
 
         (new SetStreamingKnowledgeToolLimitOnAgentStreamInitiated($collector))
             ->handle($this->streamInitiatedEvent(settings: AiModelSettings::fromArray([])));
 
-        static::assertSame(3, $collector->toolRoundLimit());
+        static::assertSame(5, $collector->toolRoundLimit());
     }
 
     public function testPerModelOverridesWinInBothModes(): void
@@ -52,7 +52,6 @@ class FinalKnowledgeCallSignalingListenersTest extends TestCase
         $collector = $this->collector();
         $settings = AiModelSettings::fromArray([
             WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => 8,
-            WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING => 2,
         ]);
 
         (new ArmFinalKnowledgeCallSignalingOnAgentSending($collector))
@@ -61,7 +60,7 @@ class FinalKnowledgeCallSignalingListenersTest extends TestCase
 
         (new SetStreamingKnowledgeToolLimitOnAgentStreamInitiated($collector))
             ->handle($this->streamInitiatedEvent(settings: $settings));
-        static::assertSame(2, $collector->toolRoundLimit());
+        static::assertSame(8, $collector->toolRoundLimit());
     }
 
     private function collector(): RagCitationCollector

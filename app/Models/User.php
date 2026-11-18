@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Announcements\Announcement;
 use App\Models\Announcements\AnnouncementUser;
 use App\Models\Assistants\Assistant;
+use App\Models\Organization;
 use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Models\Scopes\KnownUsersAccessScope;
 use App\Policies\UserPolicy;
@@ -40,6 +41,7 @@ class User extends Authenticatable
         'bio',
         'locale',
         'isRemoved',
+        'registration_fingerprint',
     ];
 
     protected $casts = [
@@ -92,6 +94,20 @@ class User extends Authenticatable
         $this->update(['isRemoved' => 1]);
     }
 
+
+    // SECTION: ANNOUNCEMENTS
+
+    /**
+     * @return BelongsToMany<Announcement, $this, AnnouncementUser>
+     */
+    public function announcements(): BelongsToMany
+    {
+        return $this->belongsToMany(Announcement::class, 'announcement_user')
+            ->using(AnnouncementUser::class)
+            ->withPivot(['seen_at', 'accepted_at', 'locale', 'content_hash'])
+            ->withTimestamps();
+    }
+
     /**
      * @return BelongsToMany<Organization, $this>
      */
@@ -117,19 +133,6 @@ class User extends Authenticatable
     public function sharedAssistants(): BelongsToMany
     {
         return $this->belongsToMany(Assistant::class, 'assistant_shared_users')
-            ->withTimestamps();
-    }
-
-    // SECTION: ANNOUNCEMENTS
-
-    /**
-     * @return BelongsToMany<Announcement, $this, AnnouncementUser>
-     */
-    public function announcements(): BelongsToMany
-    {
-        return $this->belongsToMany(Announcement::class, 'announcement_user')
-            ->using(AnnouncementUser::class)
-            ->withPivot(['seen_at', 'accepted_at', 'locale', 'content_hash'])
             ->withTimestamps();
     }
 

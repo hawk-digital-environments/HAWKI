@@ -38,3 +38,13 @@ export function defaultAssistantAppearance(label: string): AssistantAppearance {
     // Code-point aware so a name starting with an emoji is not cut in half.
     return {icon: Array.from(label)[0] ?? '?', colors: DEFAULT_ASSISTANT_COLORS};
 }
+
+/**
+ * HAWKI's own curated presentation: the one assistant whose "name" is a brand
+ * rather than a creator-picked label, so it keeps the robot glyph on the brand
+ * colors instead of falling back to the name's first letter.
+ */
+export const HAWKI_ASSISTANT_APPEARANCE: AssistantAppearance = {
+    icon: '🤖',
+    colors: DEFAULT_ASSISTANT_COLORS
+};

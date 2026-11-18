@@ -88,11 +88,27 @@ Key fields:
 - `system_prompt` — custom system instruction injected before the AI responds in this room
 - `slug` — unique URL identifier, generated on create, never changes
 
-The model uses `HasContextualScopesTrait` and registers `RoomAccessScope` as its contextual scope. When a non-CLI request is active, `RoomAccessScope` automatically filters every `Room` query to only the rooms the current user is a member of. This means you never accidentally expose another user's rooms when calling `Room::all()` or `Room::where(...)` from within request scope.
+The model uses `HasContextualScopesTrait` and registers `RoomAccessScope` as its contextual scope. When a non-CLI request is active, `RoomAccessScope` automatically filters every `Room` query to only the rooms the current user is a member of. This means you never accidentally expose another user's rooms when looking rooms up from within request scope, e.g. via `RoomRepository::findOneBySlugOrFail()`.
+
+Room and invitation queries go through the repositories in `App\Services\Chat\Room\Repositories`:
+
+| Repository | Responsibility |
+|---|---|
+| `RoomRepository` | Create rooms, find rooms by slug (`findOneBySlug()`, `findOneBySlugOrFail()`), check a user's role in a room (`isMemberWithRole()`) |
+| `InvitationRepository` | Find a user's pending invitations, create or update an invitation, delete a user's invitations for a room |
+
+Do not query `Room` or `Invitation` with Eloquent statics (`Room::where(...)`, `Invitation::create(...)`) outside these repositories.
 
 ### Auto-Deletion
 
-When `removeMember()` is called and the resulting member count drops to exactly 1 (the AI assistant is always member 1), the room calls `deleteRoom()` on itself. If the last removed member was an admin and no other admins remain, the room also deletes immediately. This cleanup logic currently lives directly in the `Room` model — it is a known tech-debt item.
+When `removeMember()` is called and the resulting member count drops to exactly 1 (the AI assistant is always member 1), the room calls `deleteRoom()` on itself. If the last removed member was an admin and no other admins remain, the room also deletes immediately; since `RoomService::leave()` refuses to let the last admin leave, this only happens when an admin's account is deleted. The remaining members are counted without the access scope, because the removed user can no longer see the room. This cleanup logic currently lives directly in the `Room` model — it is a known tech-debt item.
+
+### Membership rules
+
+- New members can only join through invitations, because they need the encrypted room key. There is no endpoint to add a member directly.
+- Admins change the role of existing members via `POST /req/room/changeMemberRole/{slug}` (admin-only). Nobody can change their own role, and the role of HAWKI (the AI member, user 1) can't be changed.
+- HAWKI is added to every room on creation and can't be removed.
+- The last admin of a room can't leave it, they can only delete the room. Admins can't kick themselves; they have to leave instead.
 
 ## The `Member` Model
 
@@ -135,6 +151,8 @@ Without this pattern, `MemberAddedToRoomEvent` would fire for the AI agent befor
 
 When a room admin invites a user who does not yet have a room key, a new `Invitation` record is created. The invitation stores the encrypted room key material for the invitee — the server never sees the plaintext key.
 
+Only room admins can create invitations or send invitation emails: the store route is guarded by the `roomAdmin` middleware, and the controller checks the admin role again. Invitations for users who are already active members are skipped, and accepting an invitation never changes the role of an existing member; role changes go through the admin-only `changeMemberRole` route. When a member is removed from a room (kick, leave or account deletion), their pending invitations for that room are deleted.
+
 `App\Models\Invitation` fields:
 
 | Field | Description |
@@ -154,7 +172,7 @@ The `room-members` JSON:API resource combines `Member` and `Invitation` records 
 
 ## `RoomService` Structure
 
-`App\Services\Chat\Room\RoomService` is the public service entry point for room operations. Its constructor accepts a `GroupMessageHandler` (injected via the container). All method implementations live in three traits:
+`App\Services\Chat\Room\RoomService` is the public service entry point for room operations. Its constructor accepts a `GroupMessageHandler`, a `RoomRepository` and an `InvitationRepository` (injected via the container). All method implementations live in three traits:
 
 - `RoomFunctions` — create, load, update, delete, avatar assignment
 - `RoomMembers` — add, kick, leave, user search
@@ -172,18 +190,19 @@ Do not copy this structure in new code. See the [Technical Debt Register](../100
 
 `App\Models\Scopes\RoomAccessScope` is registered as a contextual scope on the `Room` model under the key `'access'`. When active in a request context, it adds a `whereHas('members', ...)` constraint that restricts results to rooms where the current user is a member.
 
-Because it is a contextual scope (not a plain Eloquent global scope), it can be bypassed for specific queries using the sandboxed scope API:
+In the console without an authenticated user (e.g. artisan commands), the scope applies no filter, so commands see all rooms. In a web request without an authenticated user, it aborts with a 403.
+
+Because it is a contextual scope (not a plain Eloquent global scope), it can be bypassed for a single query by passing scope overrides to the repository:
 
 ```php
-use App\Services\System\Database\Eloquent\ContextualScopes\ModelScopeContext;
+// Default: only rooms the current user is a member of
+$rooms = $roomRepository->findAll();
 
-ModelScopeContext::runSandboxed(function () {
-    ModelScopeContext::disableScope(Room::class, 'access');
-    return Room::all(); // no membership filter
-});
+// Bypass the membership filter for this query only
+$rooms = $roomRepository->findAll($roomRepository->makeScopeOverrides('access', true));
 ```
 
-This is the mechanism admin commands use to iterate over all rooms without being restricted to the current user's membership.
+Without the second argument (`true`, the built-in "force disable" callback), the scope's default guard refuses the bypass for a regular user and the request fails with a 403. Only force-disable the scope for privileged operations.
 
 ## System Prompt Providers
 

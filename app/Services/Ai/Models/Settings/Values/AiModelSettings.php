@@ -104,27 +104,28 @@ class AiModelSettings implements \JsonSerializable, CastableInstanceInterface
     }
 
     /**
-     * Returns the maximum number of consecutive tool-calling rounds before the
-     * agentic loop is aborted — a safeguard against infinite tool-call cycles.
+     * Returns the maximum number of tool-calling rounds a run may use — a
+     * safeguard against infinite tool-call cycles.
      *
-     * Two independent limits exist: one for streaming responses and one for
-     * non-streaming. Pass $streaming = false to retrieve the non-streaming limit.
-     * Returns 0 when no explicit limit has been configured.
+     * When the model carries no explicit value, the registry default applies
+     * (5, declared in AiServiceProvider). An explicit 0 is valid and means
+     * "off": unlimited generations, bounded only by the per-tool call ceilings
+     * ({@see \App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent::maxSteps()}).
      */
-    public function getMaxToolCallingRounds(bool $streaming = true): int
+    public function getMaxToolCallingRounds(): int
     {
-        $key = $streaming ? WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING : WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS;
-        return (int)$this->get($key, 0);
+        return (int)$this->get(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS);
     }
 
     /**
      * Sets the maximum consecutive tool-calling rounds.
-     * Pass $streaming = false to configure the non-streaming limit separately.
+     *
+     * 0 explicitly disables the limit (unlimited); a model without an explicit
+     * value falls back to the registry default.
      */
-    public function setMaxToolCallingRounds(int $rounds, bool $streaming = true): self
+    public function setMaxToolCallingRounds(int $rounds): self
     {
-        $key = $streaming ? WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING : WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS;
-        return $this->set($key, $rounds);
+        return $this->set(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS, $rounds);
     }
 
     // -------------------------------------------------------
@@ -207,8 +208,7 @@ class AiModelSettings implements \JsonSerializable, CastableInstanceInterface
                 // This allows us to easily access them when we only have the settings JSON (e.g. in the tool-calling loop) without needing to resolve registry defaults manually.
                 WellKnownModelSettings::TOOL_CALLING => $this->canUseTools(),
                 WellKnownModelSettings::FILE_UPLOAD => $this->canHandleFiles(),
-                WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => $this->getMaxToolCallingRounds(false),
-                WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING => $this->getMaxToolCallingRounds(true),
+                WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => $this->getMaxToolCallingRounds(),
             ]
         );
     }

@@ -2,7 +2,7 @@
   @component Model showcase as a modal. Renders every available AI model as a
   bordered `ModelCard`, grouped by provider. Mounted by `AppSidebar`, opened
   via `modelsRequested` from the profile dropdown and the "all models" footer
-  link in `ModelPickerV2`.
+  link in the profile menu's models dialog.
 -->
 <script lang="ts">
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';

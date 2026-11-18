@@ -1,9 +1,9 @@
 <?php
 return [
     [
-        'active' => env('MODELS_OPENAI_GPT5_2_ACTIVE', true),
-        'id' => 'gpt-5.2',
-        'label' => 'OpenAI GPT 5.2',
+        'active' => env('MODELS_OPENAI_GPT6_ASTRA_ACTIVE', true),
+        'id' => 'gpt-6-astra',
+        'label' => 'GPT-6 Astra',
         "input" => [
             "text",
             "image"
@@ -12,22 +12,19 @@ return [
             "text"
         ],
         'tools' => [
-            // Native capabilities
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT5_2_TOOLS_FILE_UPLOAD', false),
-            'native_capabilities' => env('MODELS_OPENAI_GPT5_2_TOOLS_NATIVE_CAPABILITIES', true)
+            'file_upload' => env('MODELS_OPENAI_GPT6_ASTRA_TOOLS_FILE_UPLOAD', false),
+            'native_capabilities' => env('MODELS_OPENAI_GPT6_ASTRA_TOOLS_NATIVE_CAPABILITIES', true),
         ],
         'default_params' => [
-            // OpenAI API defaults: temp=1.0, top_p=1.0
-            'temp' => env('MODELS_OPENAI_GPT5_2_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_OPENAI_GPT5_2_PARAMS_TOP_P', 1.0),
+            'temp' => env('MODELS_OPENAI_GPT6_ASTRA_PARAMS_TEMP', 1.0),
         ],
     ],
     [
-        'active' => env('MODELS_OPENAI_GPT5_ACTIVE', true),
-        'id' => 'gpt-5',
-        'label' => 'OpenAI GPT 5',
+        'active' => env('MODELS_OPENAI_GPT6_1_SOL_ACTIVE', true),
+        'id' => 'gpt-6.1-sol',
+        'label' => 'GPT-6.1 Sol',
         "input" => [
             "text",
             "image"
@@ -36,22 +33,19 @@ return [
             "text"
         ],
         'tools' => [
-            // Native capabilities
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT5_TOOLS_FILE_UPLOAD', false),
-            'native_capabilities' => env('MODELS_OPENAI_GPT5_TOOLS_NATIVE_CAPABILITIES', true),
+            'file_upload' => env('MODELS_OPENAI_GPT6_1_SOL_TOOLS_FILE_UPLOAD', false),
+            'native_capabilities' => env('MODELS_OPENAI_GPT6_1_SOL_TOOLS_NATIVE_CAPABILITIES', true),
         ],
         'default_params' => [
-            // OpenAI API defaults: temp=1.0, top_p=1.0
-            'temp' => env('MODELS_OPENAI_GPT5_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_OPENAI_GPT5_PARAMS_TOP_P', 1.0),
+            'temp' => env('MODELS_OPENAI_GPT6_1_SOL_PARAMS_TEMP', 1.0),
         ],
     ],
     [
-        'active' => env('MODELS_OPENAI_GPT4_1_ACTIVE', default: true),
-        'id' => 'gpt-4.1',
-        'label' => 'OpenAI GPT 4.1',
+        'active' => env('MODELS_OPENAI_GPT6_1_TERRA_ACTIVE', true),
+        'id' => 'gpt-6.1-terra',
+        'label' => 'GPT-6.1 Terra',
         "input" => [
             "text",
             "image"
@@ -60,22 +54,19 @@ return [
             "text"
         ],
         'tools' => [
-            // Native capabilities
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT4_1_TOOLS_FILE_UPLOAD', false),
-            'native_capabilities' => env('MODELS_OPENAI_GPT4_1_TOOLS_NATIVE_CAPABILITIES', true),
+            'file_upload' => env('MODELS_OPENAI_GPT6_1_TERRA_TOOLS_FILE_UPLOAD', false),
+            'native_capabilities' => env('MODELS_OPENAI_GPT6_1_TERRA_TOOLS_NATIVE_CAPABILITIES', true),
         ],
         'default_params' => [
-            // OpenAI API defaults: temp=1.0, top_p=1.0
-            'temp' => env('MODELS_OPENAI_GPT4_1_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_OPENAI_GPT4_1_PARAMS_TOP_P', 1.0),
+            'temp' => env('MODELS_OPENAI_GPT6_1_TERRA_PARAMS_TEMP', 1.0),
         ],
     ],
     [
-        'active' => env('MODELS_OPENAI_GPT4_1_NANO_ACTIVE', true),
-        'id' => 'gpt-4.1-nano',
-        'label' => 'OpenAI GPT 4.1 Nano',
+        'active' => env('MODELS_OPENAI_GPT6_LUNA_ACTIVE', true),
+        'id' => 'gpt-6-luna',
+        'label' => 'GPT-6 Luna',
         "input" => [
             "text",
             "image"
@@ -86,99 +77,11 @@ return [
         'tools' => [
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT4_1_NANO_TOOLS_FILE_UPLOAD', false),
-            'native_capabilities' => env('MODELS_OPENAI_GPT4_1_NANO_TOOLS_NATIVE_CAPABILITIES', true),
+            'file_upload' => env('MODELS_OPENAI_GPT6_LUNA_TOOLS_FILE_UPLOAD', false),
+            'native_capabilities' => env('MODELS_OPENAI_GPT6_LUNA_TOOLS_NATIVE_CAPABILITIES', true),
         ],
         'default_params' => [
-            // OpenAI API defaults: temp=1.0, top_p=1.0
-            'temp' => env('MODELS_OPENAI_GPT4_1_NANO_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_OPENAI_GPT4_1_NANO_PARAMS_TOP_P', 1.0),
-        ],
-    ],
-    [
-        'active' => env('MODELS_OPENAI_O4_MINI_ACTIVE', true),
-        'id' => 'o4-mini',
-        'label' => 'OpenAI o4 mini',
-        "input" => [
-            "text",
-            "image"
-        ],
-        "output" => [
-            "text"
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_OPENAI_O4_MINI_TOOLS_FILE_UPLOAD', false),
-            'native_capabilities' => env('MODELS_OPENAI_O4_MINI_TOOLS_NATIVE_CAPABILITIES', true),
-        ],
-        'default_params' => [
-            // Reasoning model (o-series); temperature is not tunable in the traditional sense — API defaults used
-            'temp' => env('MODELS_OPENAI_O4_MINI_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_OPENAI_O4_MINI_PARAMS_TOP_P', 1.0),
-        ],
-    ],
-    [
-        'active' => env('MODELS_OPENAI_GPT5_6_LUNA_ACTIVE', true),
-        'id' => 'gpt-5.6-luna',
-        'label' => 'OpenAI GPT-5.6 Luna',
-        "input" => [
-            "text",
-            "image"
-        ],
-        "output" => [
-            "text"
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT5_6_LUNA_TOOLS_FILE_UPLOAD', false),
-            'native_capabilities' => env('MODELS_OPENAI_GPT5_6_LUNA_TOOLS_NATIVE_CAPABILITIES', true),
-        ],
-        'default_params' => [
-            'temp' => env('MODELS_OPENAI_GPT5_6_LUNA_PARAMS_TEMP', 1.0),
-        ],
-    ],
-    [
-        'active' => env('MODELS_OPENAI_GPT5_6_TERRA_ACTIVE', true),
-        'id' => 'gpt-5.6-terra',
-        'label' => 'OpenAI GPT-5.6 Terra',
-        "input" => [
-            "text",
-            "image"
-        ],
-        "output" => [
-            "text"
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT5_6_TERRA_TOOLS_FILE_UPLOAD', false),
-            'native_capabilities' => env('MODELS_OPENAI_GPT5_6_TERRA_TOOLS_NATIVE_CAPABILITIES', true),
-        ],
-        'default_params' => [
-            'temp' => env('MODELS_OPENAI_GPT5_6_TERRA_PARAMS_TEMP', 1.0),
-        ],
-    ],
-    [
-        'active' => env('MODELS_OPENAI_GPT5_6_SOL_ACTIVE', true),
-        'id' => 'gpt-5.6-sol',
-        'label' => 'OpenAI GPT-5.6 Sol',
-        "input" => [
-            "text",
-            "image"
-        ],
-        "output" => [
-            "text"
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT5_6_SOL_TOOLS_FILE_UPLOAD', false),
-            'native_capabilities' => env('MODELS_OPENAI_GPT5_6_SOL_TOOLS_NATIVE_CAPABILITIES', true),
-        ],
-        'default_params' => [
-            'temp' => env('MODELS_OPENAI_GPT5_6_SOL_PARAMS_TEMP', 1.0),
+            'temp' => env('MODELS_OPENAI_GPT6_LUNA_PARAMS_TEMP', 1.0),
         ],
     ],
 ];

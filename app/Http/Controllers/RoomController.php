@@ -1,16 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
+use App\Models\Member;
 use App\Models\Message;
-use App\Models\User;
 use App\Services\Chat\Message\MessageContentValidator;
 use App\Services\Chat\Room\RoomService;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\FileReference;
 use App\Services\Storage\Values\StoredFileCategory;
 use App\Services\Storage\Values\StoredFileIdentifier;
+use App\Services\Users\Repositories\UserRepository;
 use Dotenv\Exception\ValidationException;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -18,14 +21,17 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class RoomController extends Controller
 {
     protected $roomService;
+    protected $userRepository;
 
-    public function __construct(RoomService $roomService)
+    public function __construct(RoomService $roomService, UserRepository $userRepository)
     {
         $this->roomService = $roomService;
+        $this->userRepository = $userRepository;
     }
 
     // SECTION: ROOM CONTROLS
@@ -92,14 +98,14 @@ class RoomController extends Controller
 
 
     // SECTION: MEMBER
-    public function addMember(Request $request, $slug): JsonResponse
+    public function changeMemberRole(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
-            'username' => 'string',
-            'role' => 'string'
+            'username' => 'required|string',
+            'role' => ['required', 'string', Rule::in([Member::ROLE_ADMIN, Member::ROLE_EDITOR, Member::ROLE_VIEWER])],
         ]);
-        $members = $this->roomService->add($slug, $validatedData);
-        return response()->json($members);
+        $this->roomService->changeRole($slug, $validatedData['username'], $validatedData['role']);
+        return response()->json(['success' => true]);
     }
 
 
@@ -119,7 +125,7 @@ class RoomController extends Controller
             'username' => 'string|max:16',
         ]);
         $username = $validatedData['username'];
-        if ($username === User::find(1)->username) {
+        if ($username === $this->userRepository->findHawki()->username) {
             return response()->json([
                 'success' => false,
                 'message' => "You can't remove HAWKI from the room!"
@@ -308,7 +314,7 @@ class RoomController extends Controller
                 "success" => $result
             ]);
         } catch (Exception $e) {
-            Log::error($e);
+            Log::error('Failed to delete attachment: ' . $e->getMessage(), ['exception' => $e]);
             throw $e;
         }
     }

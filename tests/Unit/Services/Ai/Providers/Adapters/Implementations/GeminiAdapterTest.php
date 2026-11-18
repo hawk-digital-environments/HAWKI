@@ -8,6 +8,7 @@ use App\Models\Ai\AiProvider;
 use App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
+use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Flags\Values\WellKnownModelFlags;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
 use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
@@ -153,16 +154,19 @@ class GeminiAdapterTest extends TestCase
     // getAdditionalDriverOptions
     // =========================================================================
 
-    private function makeContext(int $maxTokens, int $maxThinkingTokens): AgentRequestContext
+    private function makeContext(int $maxTokens, int $maxThinkingTokens, array $flags = []): AgentRequestContext
     {
         $params = AiModelParameters::fromArray([
             'max_tokens'          => $maxTokens,
             'max_thinking_tokens' => $maxThinkingTokens,
         ]);
 
+        $model        = new AiModel(['model_id' => 'gemini-pro']);
+        $model->flags = AiModelFlags::fromArray($flags);
+
         return new AgentRequestContext(
             provider:         $this->makeProvider(),
-            model:            new AiModel(['model_id' => 'gemini-pro']),
+            model:            $model,
             modelParameters:  $params,
         );
     }
@@ -211,6 +215,17 @@ class GeminiAdapterTest extends TestCase
         $result = $sut->getAdditionalDriverOptions($agent, $context);
 
         static::assertSame(1000, $result['generationConfig']['thinkingConfig']['thinkingBudget']);
+    }
+
+    public function testItGetAdditionalDriverOptionsOmitsBudgetForFlaggedModel(): void
+    {
+        $sut     = $this->makeAdapter();
+        $context = $this->makeContext(8000, 1000, [GeminiAdapter::FLAG_NO_THINKING_BUDGET]);
+        $agent   = $this->createMock(AbstractTextGeneratingAgent::class);
+
+        $result = $sut->getAdditionalDriverOptions($agent, $context);
+
+        static::assertSame(['includeThoughts' => true], $result['generationConfig']['thinkingConfig']);
     }
 
     // =========================================================================

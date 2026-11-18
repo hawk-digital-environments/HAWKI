@@ -81,6 +81,8 @@ class McpClientFactory
         // duplicates the FastCGI socket (= the browser response) and corrupts it. HAWKI only uses
         // initialize/tools-list/tools-call (POST request/response), which do not need the stream.
         // Per-server opt-in remains possible via additional_config.http_options.autoSse = true.
+        // TODO: update mcp sdk when upstream code is fixed and released from
+        // https://github.com/logiscape/mcp-sdk-php/issues/65
         $httpOptions = ['autoSse' => false];
         if (!empty($apiKey)) {
             $headers['Authorization'] = 'Bearer ' . $apiKey;

@@ -405,7 +405,7 @@ test('legacy room regeneration revalidates after key export and preserves the or
     const vm = await import('node:vm');
     const f = fixture();
     const legacy = await legacySandbox(f, 'room');
-    const message = {dataset: {rawMsg: 'Original response'}, closest: () => ({id: '0'})};
+    const message = {id: '2', dataset: {rawMsg: 'Original response'}, closest: () => ({id: '0'})};
     legacy.sandbox.document.getElementById = () => message;
     vm.runInContext(await readFile(new URL('../../../public/js/message_functions.js', import.meta.url), 'utf8'), legacy.sandbox);
     legacy.sandbox.exportSymmetricKey = async () => {f.tools.tools = []; return new ArrayBuffer(0);};

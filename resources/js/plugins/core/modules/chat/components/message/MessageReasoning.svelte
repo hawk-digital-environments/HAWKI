@@ -31,8 +31,6 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import type {ReasoningPart} from '$plugins/core/modules/chat/types.js';
-    import {useReducedMotion} from '$lib/utils/transitions/reducedMotion.svelte.js';
-    import ShimmerText from '$lib/components/ui/shimmer-text/ShimmerText.svelte';
 
     const STORAGE_KEY = 'hawkiReasoningOpen';
     /** Sources shown before the rest fold into a nested "+N more" section. */
@@ -65,14 +63,13 @@
         parts: ReasoningPart[];
         /** True while the model is still thinking and has not produced an answer yet. */
         active?: boolean;
-        /** Heading level markdown headings inside the thinking text start at. Defaults to 4. */
+        /** Base heading level for markdown inside the timeline; the message log nests one deeper. */
         headingLevel?: number;
     }
 
     const {parts, active = false, headingLevel = 4}: Props = $props();
     const {__} = useTranslator();
     const app = useApp();
-    const reducedMotion = useReducedMotion();
 
     let userToggled = $state<boolean | null>(null);
     const rememberedOpen = app.localStorage.getItem(STORAGE_KEY) === '1';
@@ -106,6 +103,10 @@
         app.localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
     }
 
+    function prefersReducedMotion(): boolean {
+        return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
     /**
      * Opens or closes a panel on its height alone — no fade, no padding
      * scaling. Pure height is what keeps a collapse from looking mushy. The
@@ -113,7 +114,7 @@
      * than as the entrance played backwards.
      */
     function collapse(node: Element, {duration = MOTION_MODERATE, enabled = true} = {}) {
-        if (!enabled || reducedMotion.current) return {duration: 0};
+        if (!enabled || prefersReducedMotion()) return {duration: 0};
         const height = node.scrollHeight;
         return {
             duration,
@@ -136,7 +137,7 @@
      * top to bottom instead of appearing as one block.
      */
     function stepIn(node: Element, {enabled, streaming, index}: {enabled: boolean; streaming: boolean; index: number}) {
-        if (!enabled || reducedMotion.current) return {duration: 0};
+        if (!enabled || prefersReducedMotion()) return {duration: 0};
 
         if (!streaming) {
             return {
@@ -273,7 +274,7 @@
         {#if !sub}
             <span class="brain" aria-hidden="true"><AiBrain01Icon size={16} /></span>
         {/if}
-        <span class="label"><ShimmerText active={active && !sub}>{label}</ShimmerText></span>
+        <span class="label" class:shimmer={active && !sub}>{label}</span>
         {#if !sub && searchCount > 0}
             <span class="count"><GlobalSearchIcon size={12} /> {searchCount}</span>
         {/if}
@@ -305,7 +306,7 @@
 
                         <div class="content">
                             {#if label}
-                                <span class="step-label"><ShimmerText active={isActive}>{isActive ? withEllipsis(label) : label}</ShimmerText></span>
+                                <span class="step-label" class:shimmer={isActive}>{isActive ? withEllipsis(label) : label}</span>
                             {/if}
 
                             {#if step.kind === 'search'}
@@ -444,7 +445,7 @@
         gap: var(--space-0_5);
         padding-inline: var(--space-1_5);
         border-radius: var(--corner-full);
-        background: var(--color-active-surface);
+        background: var(--color-accent-100);
         font-size: var(--font-size-xxs);
         font-variant-numeric: tabular-nums;
     }
@@ -562,7 +563,7 @@
         min-height: 1.25rem;
         padding-inline: var(--space-2);
         border-radius: var(--corner-full);
-        background: var(--color-active-surface);
+        background: var(--color-accent-100);
         color: var(--color-text);
         font-size: var(--font-size-xxs);
         text-decoration: none;
@@ -598,6 +599,30 @@
     .prose :global([data-node-type]:last-child) { margin-bottom: 0; }
     .prose :global(strong) { color: var(--color-text); font-weight: var(--font-weight-semibold); }
 
+    /* A highlight travelling along the text, rather than the whole label
+       blinking: the label stays readable while it runs. */
+    .shimmer {
+        --shimmer-base: color-mix(in oklab, var(--color-accent-text) 60%, var(--color-text-muted));
+        background: linear-gradient(
+            90deg,
+            var(--shimmer-base) 0%,
+            var(--shimmer-base) 35%,
+            var(--color-accent-text) 50%,
+            var(--shimmer-base) 65%,
+            var(--shimmer-base) 100%
+        );
+        background-size: 300% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: shimmer 1.5s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+        from { background-position: 0% 0; }
+        to { background-position: 100% 0; }
+    }
+
     @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.35; }
@@ -610,6 +635,12 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+        .shimmer {
+            animation: none;
+            background: none;
+            color: var(--color-accent-text);
+        }
+
         .dot.pulse { animation: none; }
         .sources > li { animation: none; }
         .chevron { transition: none; }

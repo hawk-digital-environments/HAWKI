@@ -51,8 +51,6 @@ export interface SearchProviderDefinition {
     /** Global declaration order; the tiebreaker for equally relevant rows. */
     readonly order: number;
     readonly source: StaticSource | DynamicSource;
-    /** Always `immediate` for dynamic providers; static providers may opt into `worker`. */
-    readonly matchIn: 'immediate' | 'worker';
 }
 
 /** One module's complete, validated declaration set. */
@@ -157,8 +155,7 @@ export function collectModuleSearchDefinitions(options: CollectOptions): ModuleS
             pluginId,
             kind: groupDefinition.kind,
             order: nextOrder(),
-            source,
-            matchIn: groupDefinition.kind === 'static' && (source as StaticSource).matchIn === 'worker' ? 'worker' : 'immediate'
+            source
         });
     }
 

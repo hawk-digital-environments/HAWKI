@@ -4,9 +4,10 @@
 
   Shows the tool's icon on a swatch (the same one `AssistantMenuDetail` gives its emoji)
   and its name, a toggle (mirrors the checkbox in `ToolMenuListItem`, wired to the same
-  `entry.onToggle`), a `StatusDotForTool` with its label spelled out, the tool's
+  `entry.onToggle`), a `StatusDotForTool` with its label spelled out (in the Back row,
+  across from the Back button), the tool's
   description, and — for multi-option capabilities — the `ToolMenuConfig` variant picker.
-  A `MenuPinButton` sits beside the toggle.
+  A `MenuPinButton` (the favourite toggle) sits beside the toggle.
 
   Owns its own keyboard handling (`onDetailKeydown`): because this panel lives inside a
   bits-ui dropdown menu whose roving-tabindex model doesn't fit a sub-panel, Escape/ArrowLeft
@@ -34,7 +35,7 @@
     import Switch from '$lib/components/ui/switch/Switch.svelte';
     import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
     import ToolMenuConfig from '$plugins/core/modules/chat/components/composer/ToolMenuConfig.svelte';
-    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import DropdownMenuBackButton from '$lib/components/ui/dropdown-menu/DropdownMenuBackButton.svelte';
     import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -128,19 +129,16 @@
 -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="tool-detail" bind:this={detailEl} onkeydown={onDetailKeydown}>
-    <button
-        type="button"
-        class="tool-detail-back"
-        bind:this={backEl}
-        onpointerdowncapture={(e) => e.stopPropagation()}
-        onclick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onCloseDetail?.();
-                }}>
-        <ArrowLeft01Icon size={16}/>
-        <span>{__('chat.composer.toolMenu.backButton')}</span>
-    </button>
+    <div class="tool-detail-top">
+        <DropdownMenuBackButton
+            bind:ref={backEl}
+            label={__('chat.composer.toolMenu.backButton')}
+            onBack={onCloseDetail}/>
+
+        <div class="tool-detail-status">
+            <StatusDotForTool tool={entry.tool} supported={entry.available} showLabel/>
+        </div>
+    </div>
 
     <div class="tool-detail-header">
         <span class="tool-detail-title">
@@ -164,10 +162,6 @@
         </span>
     </div>
 
-    <div class="tool-detail-status">
-        <StatusDotForTool tool={entry.tool} supported={entry.available} showLabel/>
-    </div>
-
     {#if entry.tool.description}
         <p class="tool-detail-description">{entry.tool.description}</p>
     {/if}
@@ -184,25 +178,19 @@
         padding-bottom: var(--space-2, calc(0.25rem * 2));
     }
 
-    .tool-detail-back {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-1, 0.25rem);
-        align-self: flex-start;
-        margin-bottom: var(--space-1, 0.25rem);
-        padding: var(--space-1, 0.25rem) var(--space-2, calc(0.25rem * 2));
-        border: none;
-        border-radius: var(--corner-sm);
-        background: none;
-        color: var(--color-text-muted, var(--color-text));
-        font-size: var(--font-size-xs);
-        cursor: pointer;
-        transition: background-color var(--duration-fast, 150ms);
+    /* Ending on the variant rows, the panel's own padding already frames them like
+       the sides; the extra bottom room is only for a panel that ends in text. */
+    .tool-detail:has(> :global(.radio-row-group:last-child)) {
+        padding-bottom: 0;
     }
 
-    .tool-detail-back:hover {
-        background-color: var(--color-hover);
-        color: var(--color-text);
+    /* Back on the start edge, the status across from it on the end edge. */
+    .tool-detail-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2, calc(0.25rem * 2));
+        margin-bottom: var(--space-1, 0.25rem);
     }
 
     .tool-detail-header {
@@ -251,7 +239,7 @@
     }
 
     .tool-detail-status {
-        padding-inline: var(--space-2, calc(0.25rem * 2));
+        padding: var(--space-1) var(--space-3);
         font-size: var(--font-size-xxs);
     }
 

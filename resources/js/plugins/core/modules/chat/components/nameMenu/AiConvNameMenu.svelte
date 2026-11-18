@@ -26,14 +26,13 @@
     const {__} = useTranslator();
 
     type Props = {} & Pick<ComponentProps<typeof ChatNameMenu>,
-        'name' | 'nameClickRenames' | 'slug' | 'allowRename' | 'isRenaming' | 'open' |
-        'class' | 'buttonProps' | 'block' | 'triggerIcon' | 'showName' | 'focusAfterRename'>;
+        'name' | 'nameClickRenames' | 'slug' | 'allowRename' | 'isRenaming' |
+        'class' | 'buttonProps' | 'block' | 'triggerIcon'>;
 
     let {
         name,
         slug,
         isRenaming = $bindable(false),
-        open = $bindable(false),
         ...restProps
     }: Props = $props();
 
@@ -42,11 +41,12 @@
 <ConfirmDialog
     bind:open={deleteConfirmOpen}
     title={__('chat.nameMenu.deleteConfirmTitle', {name: name})}
+    okLabel={__('chat.nameMenu.deleteConfirmLabel')}
+    confirmVariant="delete"
     onConfirm={() => slug && oldUiBridge.triggerDeleteChat(slug)}
 />
 <ChatNameMenu
     bind:isRenaming={isRenaming}
-    bind:open={open}
     name={name ?? ''}
     slug={slug ?? ''}
     {...restProps}

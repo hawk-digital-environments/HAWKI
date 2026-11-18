@@ -5,21 +5,14 @@
   pre-configured wrapper around `Popover` (icon trigger, `group="info-popovers"`
   so only one info popover is open at a time, `openOnHover`).
 
-  The icon-only trigger needs an accessible name: pass either `label` (the
-  name of the thing being explained — the button is then named "Info: {label}")
-  or an explicit `ariaLabel`. While open, the popover content is linked to the
-  trigger via `aria-describedby`.
-
   Usage — plain text info, placed right after a label:
     <Txt size="xs">
         {__('chat.composer.settings.temperature')}
-        <InfoPopover
-            label={__('chat.composer.settings.temperature')}
-            info={__('chat.composer.settings.temperatureInfo')}/>
+        <InfoPopover info={__('chat.composer.settings.temperatureInfo')}/>
     </Txt>
 
   Usage — rich content via a snippet, custom icon and side:
-    <InfoPopover popoverSide="right" icon={Settings03Icon} ariaLabel="About Top P">
+    <InfoPopover popoverSide="right" icon={Settings03Icon}>
         {#snippet info()}
             <strong>Top P</strong> controls nucleus sampling.
         {/snippet}
@@ -30,21 +23,12 @@
     import type {ComponentProps} from 'svelte';
     import Popover from '$lib/components/ui/popover/Popover.svelte';
     import {mergeProps} from 'bits-ui';
-    import {ActionIcon} from '$lib/components/ui/icons/index.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
-
-    const {__} = useTranslator();
 
     type PopoverProps = ComponentProps<typeof Popover>;
 
-    /** Either an explicit accessible name or the label of the described item is required. */
-    type Naming =
-        | { ariaLabel: string; label?: string }
-        | { label: string; ariaLabel?: string };
-
-    type Props = Naming & {
+    interface Props {
         /** The content to display inside the popover. Can be a string or a Svelte snippet. */
         info: PopoverProps['popover'];
         /** Icon component to render on the trigger button. Defaults to the Lucide `Info` icon. */
@@ -55,9 +39,9 @@
         popoverAlign?: PopoverProps['align'];
         /** Additional props forwarded to the Popover content element. */
         popoverContentProps?: PopoverProps['contentProps'];
-        /** Accessible name for the info trigger button. Defaults to "Info: {label}". */
+        /** Accessible name for the info trigger button. */
         ariaLabel?: string;
-        /** Label of the item this info describes; used to derive the accessible name. */
+        /** Name of the described item; the trigger is then named "Info: {label}". */
         label?: string;
         /** Extra props merged onto the trigger button. */
         triggerProps?: Record<string, unknown>;
@@ -65,7 +49,7 @@
         triggerEl?: HTMLButtonElement | null;
         /** Disable the Popover */
         disabled?: boolean;
-    };
+    }
 
     let {
         info,
@@ -79,23 +63,17 @@
         triggerEl = $bindable(null),
         disabled = false,
     }: Props = $props();
-
-    const uid = $props.id();
-    const contentId = `${uid}-info`;
-    let open = $state(false);
-    const accessibleName = $derived(ariaLabel ?? __('ui.infoPopover.triggerLabel', {label: label ?? ''}));
 </script>
 
 {#if disabled}
     {@render popoverButton({ props: { "data-disabled": "" } })}
 {:else}
     <Popover side={popoverSide}
-             bind:open
              group="info-popovers"
              align={popoverAlign}
              sideOffset={4}
              openOnHover={true}
-             contentProps={mergeProps(popoverContentProps, {class: 'info-button-popover', id: contentId})}
+             contentProps={mergeProps(popoverContentProps, {class: 'info-button-popover'})}
              popover={info}>
         {#snippet children(a)}
             {@render popoverButton(a)}
@@ -104,25 +82,34 @@
 {/if}
 
 {#snippet popoverButton(a: Record<string, any>)}
-    <ActionIcon
-        bind:el={triggerEl}
-        icon={Icon}
-        label={accessibleName}
-        size="xs"
-        class="info-button"
+    <button
+        bind:this={triggerEl}
         {...mergeProps(
             a?.props ?? {},
             triggerProps ?? {},
-            {'aria-describedby': open && !disabled ? contentId : undefined}
+            (ariaLabel ?? label) ? {'aria-label': ariaLabel ?? `Info: ${label}`} : {}
         ) as Record<string, unknown>}
-    />
+        class="info-button">
+        <Icon size="15"/>
+    </button>
 {/snippet}
 
 <style>
-    :global(.info-button) {
+    .info-button {
+        display: inline-block;
+        line-height: 0;
+        padding: 0;
+        border: none;
+        background: none;
         color: var(--color-text-muted);
         cursor: help;
         stroke: currentColor;
+
+        &[data-state*="open"] {
+            :global(svg) {
+                stroke-width: 3;
+            }
+        }
 
         &[data-disabled] {
             cursor: not-allowed;
@@ -130,13 +117,13 @@
         }
     }
 
-    :global(.info-button[data-state*="open"] svg) {
-        stroke-width: 3;
-    }
-
-    /* Chained with .popover-content to beat its roomier default padding. */
+    /* Short help text: shrink to the content with tooltip-like padding instead
+       of the generic popover's fixed width and roomy padding. */
     :global(.popover-content.info-button-popover) {
-        padding: var(--space-2) var(--space-3);
+        width: max-content;
+        padding-block: var(--space-2);
+        padding-inline: var(--space-3);
+        border-radius: var(--corner-sm);
         font-size: var(--font-size-xxs);
         max-width: 300px;
         max-height: 400px;

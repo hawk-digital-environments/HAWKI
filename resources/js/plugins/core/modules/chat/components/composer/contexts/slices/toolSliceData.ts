@@ -46,7 +46,7 @@ function isToolOrCapabilityWithState(obj: any): obj is AiToolOrCapabilityWithSta
  * This will unwrap the tool or capability if it is already wrapped in a state object, and return the original tool or capability.
  * @param tool
  */
-function getRootTool(tool: AiToolOrCapability | AiToolOrCapabilityWithState): AiToolOrCapability {
+export function getRootTool(tool: AiToolOrCapability | AiToolOrCapabilityWithState): AiToolOrCapability {
     while (isToolOrCapabilityWithState(tool)) {
         tool = tool[rootToolSymbol];
     }

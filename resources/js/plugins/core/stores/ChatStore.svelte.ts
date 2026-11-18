@@ -32,6 +32,28 @@ function decodeLegacyHtml(value: string): string {
     return textarea.value;
 }
 
+const PINNED_STORAGE_KEY = 'hawki.chat.pins';
+
+function readPinnedSlugs(): string[] {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+        const parsed: unknown = JSON.parse(localStorage.getItem(PINNED_STORAGE_KEY) ?? '[]');
+        return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : [];
+    } catch {
+        // A user-editable storage key is never trusted: unreadable pins are simply no pins.
+        return [];
+    }
+}
+
+function writePinnedSlugs(slugs: string[]): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+        localStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(slugs));
+    } catch {
+        // Storage can be full or blocked (private mode); pins then just don't survive a reload.
+    }
+}
+
 export class ChatStore implements DataStore {
     public readonly name = 'chat';
 
@@ -42,6 +64,11 @@ export class ChatStore implements DataStore {
     public error = $state<string | null>(null);
     /** Conversation slugs with an AI request still running in this tab. */
     public generatingSlugs = $state<string[]>([]);
+    /**
+     * Pinned conversation slugs in the order they were pinned. A per-browser
+     * display preference like the composer pins, so it lives in `localStorage`.
+     */
+    public pinnedSlugs = $state<string[]>(readPinnedSlugs());
 
     private _dependencies: ChatStoreDependencies | null = null;
     private activeLoad = 0;
@@ -184,22 +211,6 @@ export class ChatStore implements DataStore {
         this.touch(slug, typeof updated?.updated_at === 'string' ? updated.updated_at : undefined);
     }
 
-    /**
-     * Keeps the persisted conversation binding in sync with the assistant the
-     * latest send addressed: switching assistants mid-chat rebinds, sending
-     * without an assistant handle clears the binding (plain HAWKI chat).
-     * No-ops while the cached binding already matches.
-     */
-    public async updateAssistantHandle(slug: string, assistantHandle: string | null): Promise<void> {
-        if (this.getConversation(slug)?.assistant_handle === assistantHandle) {
-            return;
-        }
-
-        await this.dependencies.restApi.updateResource('ai-convs', slug, {hawkiExtensions: {assistant_handle: assistantHandle}});
-        const conversation = this.getConversation(slug);
-        if (conversation) conversation.assistant_handle = assistantHandle;
-    }
-
     public conversationName(slug: string): string | null {
         return this.getConversation(slug)?.name
             ?? this.conversations.find(item => item.slug === slug)?.name
@@ -214,11 +225,37 @@ export class ChatStore implements DataStore {
         if (this.active?.slug === slug) this.active.system_prompt = prompt;
     }
 
+    /**
+     * Keeps the persisted conversation binding in sync with the assistant the
+     * latest send addressed; null clears the binding (plain HAWKI chat).
+     */
+    public async updateAssistantHandle(slug: string, assistantHandle: string | null): Promise<void> {
+        if (this.getConversation(slug)?.assistant_handle === assistantHandle) {
+            return;
+        }
+
+        await this.dependencies.restApi.updateResource('ai-convs', slug, {hawkiExtensions: {assistant_handle: assistantHandle}});
+        const conversation = this.getConversation(slug);
+        if (conversation) conversation.assistant_handle = assistantHandle;
+    }
+
     public async remove(slug: string): Promise<void> {
         await this.dependencies.restApi.deleteResource('ai-convs', slug);
         this.conversations = this.conversations.filter(item => item.slug !== slug);
         this.conversationCache.delete(slug);
         if (this.active?.slug === slug) this.active = null;
+        if (this.isPinned(slug)) this.togglePin(slug);
+    }
+
+    public isPinned(slug: string): boolean {
+        return this.pinnedSlugs.includes(slug);
+    }
+
+    public togglePin(slug: string): void {
+        this.pinnedSlugs = this.isPinned(slug)
+            ? this.pinnedSlugs.filter(item => item !== slug)
+            : [...this.pinnedSlugs, slug];
+        writePinnedSlugs(this.pinnedSlugs);
     }
 
     public async removeMessage(messageId: string): Promise<void> {
@@ -396,10 +433,20 @@ export class ChatStore implements DataStore {
             model: source.model,
             updated_at: source.updated_at ?? '',
             citations,
-            assistant: this.readAssistantIdentity(source.metadata?.assistant),
+            ...(source.metadata?.assistant ? {assistant: this.readAssistantIdentity(source.metadata.assistant)} : {}),
             ...(reasoning?.length ? {reasoning} : {}),
             ...(stats ? {stats} : {})
         };
+    }
+
+    private upsertSummary(conversation: ChatConversation): void {
+        const current = this.conversations.filter(item => item.slug !== conversation.slug);
+        this.conversations = [{
+            name: conversation.name,
+            slug: conversation.slug,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        }, ...current];
     }
 
     /**
@@ -424,16 +471,6 @@ export class ChatStore implements DataStore {
             ...(typeof candidate.tint === 'string' ? {tint: candidate.tint} : {}),
             ...(typeof candidate.handle === 'string' ? {handle: candidate.handle} : {})
         };
-    }
-
-    private upsertSummary(conversation: ChatConversation): void {
-        const current = this.conversations.filter(item => item.slug !== conversation.slug);
-        this.conversations = [{
-            name: conversation.name,
-            slug: conversation.slug,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        }, ...current];
     }
 
     private getConversation(slug: string): ChatConversation | null {

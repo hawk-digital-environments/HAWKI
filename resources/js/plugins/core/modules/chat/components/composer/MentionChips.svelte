@@ -7,9 +7,7 @@
   textarea just doesn't show the handle tokens, `ComposerTextarea` keeps them out of the
   text it displays. This component only resolves handles to assistants; each `MentionChip`
   owns its own reveal-then-pill animation, and removing one strips that handle from the
-  message. The AI itself (the configured mention handle, e.g. `@hawki`) is deliberately
-  chip-less — addressing it is what makes the model/settings controls appear, so a chip
-  next to them would say the same thing twice.
+  message.
 
   What this component owns is the *row* half of the motion: a tag unrolls its width on the
   way in and collapses it on the way out, so the model picker sitting next to it glides
@@ -18,13 +16,13 @@
   reads as one continuous move rather than three.
 
   ## Usage
-  Rendered by `ChatComposer` in the top row's left group, after `ModelPicker`. That group is
+  Rendered by `ChatComposer` in the top row's left group, before `ModelPicker`. That group is
   only mounted while `guard.showsAiUiElements` is true — which in a room is exactly when the
   message carries a handle, i.e. whenever there is a chip to show:
   ```svelte
   <div class="chat-composer-left">
-      <ModelPicker/>
       <MentionChips/>
+      <ModelPicker/>
   </div>
   ```
 -->
@@ -41,24 +39,19 @@
     const aiHandleStore = useStore('ai-handle');
 
     // One chip per handle in the message, resolved back to the assistant it belongs to so
-    // the chip can show that assistant's icon, name and color. The AI itself (the
-    // configured mention handle) never gets one: addressing it is signaled by the
-    // model/settings controls appearing (see `ChatComposer`'s showAiMentionHandleControls),
-    // and its checked row in the assistant menu is where it gets untagged.
+    // the chip can show that assistant's icon, name and color.
     const chips = $derived.by(() => {
-        return composerContext.handlesInMessage
-            .filter(handle => handle !== aiHandleStore.hawkiHandle)
-            .map(handle => {
-                const assistant = aiHandleStore.assistants.find(candidate => candidate.handle === handle);
-                const appearance = assistant?.appearance
-                    ?? defaultAssistantAppearance(assistant ? assistant.label : handle.slice(1));
-                return {
-                    handle,
-                    emoji: appearance.icon,
-                    colors: appearance.colors,
-                    label: assistant ? assistant.label : handle
-                };
-            });
+        return composerContext.handlesInMessage.map(handle => {
+            const assistant = aiHandleStore.assistants.find(candidate => candidate.handle === handle);
+            const appearance = assistant?.appearance
+                ?? defaultAssistantAppearance(assistant ? assistant.label : handle.slice(1));
+            return {
+                handle,
+                emoji: appearance.icon,
+                colors: appearance.colors,
+                label: assistant ? assistant.label : handle
+            };
+        });
     });
 
     // The box is open before the handle has finished spelling itself out, so the reveal is
@@ -66,7 +59,9 @@
     // the unroll rather than on top of it. No overshoot and barely any scale: the chip
     // makes its entrance on the inside, and a bouncing row would only fight it.
     const enter = {duration: 95, scaleFrom: 0.94, overshoot: false} as const;
-    const leave = {direction: 'out', scaleFrom: 0.94} as const;
+    // Leaving blurs out as it collapses, the reverse of the pill's blur-in arrival, so a
+    // removed tag dissolves rather than being squeezed shut with sharp text inside it.
+    const leave = {direction: 'out', scaleFrom: 0.94, blur: 2} as const;
 </script>
 
 {#each chips as chip (chip.handle)}
@@ -82,7 +77,7 @@
             label={chip.label}
             emoji={chip.emoji}
             colors={chip.colors}
-            disabled={composerContext.guard.disablesFeature('assistants')}
+            disabled={composerContext.sendStatus?.sending}
             onRemove={() => composerContext.removeHandleFromMessage(chip.handle)}/>
     </span>
 {/each}

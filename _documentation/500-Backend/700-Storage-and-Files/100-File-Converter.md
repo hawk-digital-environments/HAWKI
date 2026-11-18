@@ -59,7 +59,7 @@ public function processDocument(FileReference $file): FileCollection
 `App\Services\FileConverter\Handlers\HawkiDocConverter` — the default internal converter. Calls HAWKI's own document conversion microservice.
 
 Config keys:
-- `HAWKI_FILE_CONVERTER_API_URL` — base URL of the conversion service
+- `HAWKI_FILE_CONVERTER_API_URL` — base URL of the conversion service. All endpoints are addressed relative to it, so the service keeps working when it is nested behind a reverse proxy on a sub path (e.g. `https://example.test/hawki/converter`). A legacy value that still ends in `/extract` is tolerated and stripped automatically.
 - `HAWKI_FILE_CONVERTER_API_KEY` — authentication key
 
 This is the `FILE_CONVERTER=hawki_converter` option in `config/file_converter.php`.

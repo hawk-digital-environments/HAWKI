@@ -147,7 +147,7 @@ class OpenAiLikeAdapterTest extends TestCase
         static::assertSame('my-api-key', $captured['key']);
     }
 
-    public function testItCreateDriverUsesOpenAiDriverName(): void
+    public function testItCreateDriverUsesTheOpenAiCompatibleDriverName(): void
     {
         $sut          = $this->makeAdapter();
         $provider     = new AiProvider(['api_url' => 'https://api.example.com', 'api_key' => 'k']);
@@ -162,7 +162,7 @@ class OpenAiLikeAdapterTest extends TestCase
 
         $sut->createDriver($provider, $factory);
 
-        static::assertSame(Lab::OpenAI, $capturedName);
+        static::assertSame(Lab::OpenAICompatible, $capturedName);
     }
 
     // =========================================================================

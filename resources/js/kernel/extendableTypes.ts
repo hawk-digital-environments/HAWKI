@@ -151,7 +151,7 @@ export interface HawkiAsyncEvents {
  * ```ts
  * declare module '$lib/kernel/extendableTypes.js' {
  *     interface HawkiHooks {
- *         assistantMenuEntries: {value: AssistantMenuEntry[]; ctx: SidebarContext};
+ *         aiAssistants: {value: AiAssistant[]; ctx: AiAssistantsContext};
  *     }
  * }
  * ```

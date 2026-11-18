@@ -17,21 +17,31 @@
     import Alert from '$lib/components/ui/alert/Alert.svelte';
     import Alert01Icon from '$lib/components/ui/icons/iconset/Alert01Icon.svelte';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
-    import {samplingPresets, type SamplingPresetKey} from '$plugins/core/modules/chat/components/composer/samplingPresets.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {slide} from 'svelte/transition';
-    import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
     const composerContext = useComposerContext();
     const {__} = useTranslator();
 
-    type Preset = SamplingPresetKey | null;
+    type Preset = 'creative' | 'balanced' | 'precise' | null;
 
-    const presets = samplingPresets;
-    const tabItems: TabItem[] = presets.map(p => ({key: p.key, label: __(p.labelKey)}));
+    // "Balanced" is the current model's own defaults, so a fresh composer always
+    // has an active preset; fixed values would never match most models' defaults.
+    const balanced = $derived({
+        temp: composerContext.modelParameters.defaults.temperature ?? 0.7,
+        topP: composerContext.modelParameters.defaults.top_p ?? 0.9
+    });
+    const presets = $derived<{ key: Preset; label: string; temp: number; topP: number }[]>([
+        {key: 'creative', label: __('chat.composer.settings.presetCreative'), temp: 1.4, topP: 0.95},
+        {key: 'balanced', label: __('chat.composer.settings.presetBalanced'), ...balanced},
+        {key: 'precise', label: __('chat.composer.settings.presetPrecise'), temp: 0.2, topP: 0.5}
+    ]);
+    const tabItems = $derived<TabItem[]>(presets.map(p => ({key: p.key as string, label: p.label})));
 
+    // Balanced is checked first so it wins if a model's defaults equal another preset.
     const activePreset = $derived<Preset>(
-        presets.find(p => composerContext.modelParameters.intersects({temperature: p.temp, top_p: p.topP}))?.key ?? null
+        [presets[1], presets[0], presets[2]]
+            .find(p => composerContext.modelParameters.intersects({temperature: p.temp, top_p: p.topP}))?.key ?? null
     );
     const samplingDisabled = $derived.by(() => !composerContext.model.current.flags?.includes('feature-sampling-parameters'));
 
@@ -52,7 +62,6 @@
         value={activePreset}
         onChange={handlePresetChange}
         aria-label={__('chat.composer.settings.settingsHeading')}
-        mode="radio"
     />
 {/if}
 
@@ -68,19 +77,16 @@
 </button>
 
 {#if advancedOpen}
-    <div class="sliders-section" id="model-settings-advanced" transition:slide={{duration: motionDuration(150)}}>
+    <div class="sliders-section" id="model-settings-advanced" transition:slide={{duration: 150}}>
         {#if samplingDisabled}
             <Alert description={__('chat.composer.settings.samplingDisabled')} icon={Alert01Icon} size="small"/>
         {/if}
 
         <div class="slider-group">
-            <div class="slider-header" class:is-disabled={samplingDisabled}>
+            <div class="slider-header">
                 <Txt size="xs">
                     {__('chat.composer.settings.temperature')}
-                    <InfoPopover
-                        label={__('chat.composer.settings.temperature')}
-                        info={__('chat.composer.settings.temperatureInfo')}
-                        disabled={samplingDisabled}/>
+                    <InfoPopover info={__('chat.composer.settings.temperatureInfo')} disabled={samplingDisabled}/>
                 </Txt>
                 <Txt size="xs">{composerContext.modelParameters.get('temperature').toFixed(1)}</Txt>
             </div>
@@ -96,13 +102,10 @@
         </div>
 
         <div class="slider-group">
-            <div class="slider-header" class:is-disabled={samplingDisabled}>
+            <div class="slider-header">
                 <Txt size="xs">
                     {__('chat.composer.settings.topP')}
-                    <InfoPopover
-                        label={__('chat.composer.settings.topP')}
-                        info={__('chat.composer.settings.topPInfo')}
-                        disabled={samplingDisabled}/>
+                    <InfoPopover info={__('chat.composer.settings.topPInfo')} disabled={samplingDisabled}/>
                 </Txt>
                 <Txt size="xs">{composerContext.modelParameters.get('top_p').toFixed(2)}</Txt>
             </div>
@@ -136,7 +139,7 @@
         line-height: var(--line-height-normal);
         cursor: pointer;
         text-align: left;
-        transition: background-color var(--duration-fast, 150ms), color var(--duration-fast, 150ms);
+        transition: background-color var(--duration-fast), color var(--duration-fast);
     }
 
     .advanced-toggle:hover,
@@ -146,7 +149,7 @@
     }
 
     :global(.advanced-toggle-chevron) {
-        transition: rotate var(--duration-fast, 150ms) var(--easing-default);
+        transition: rotate var(--duration-fast) var(--easing-default);
     }
 
     :global(.advanced-toggle-chevron.is-open) {
@@ -169,10 +172,5 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-    }
-
-    /* A disabled slider mutes its label and value, not just the track. */
-    .slider-header.is-disabled {
-        color: var(--color-text-disabled);
     }
 </style>

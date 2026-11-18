@@ -7,6 +7,9 @@
   Low-level primitive: for a button that needs a tooltip, prefer
   `ButtonWithTooltip` which wires this up for you.
 
+  Inside a `TooltipGroup`, the tooltip joins the group's one bubble, which
+  travels between neighbouring triggers; the group then owns the delay.
+
   Usage — string trigger and tooltip:
     <Tooltip tooltip="Copy to clipboard">Copy</Tooltip>
 
@@ -30,6 +33,7 @@
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import SnippetOrStringTrigger from '$lib/components/util/snippetOrString/SnippetOrStringTrigger.svelte';
+    import {getTooltipGroup, type TooltipGroupPayload} from '$lib/components/ui/tooltip/TooltipGroup.svelte';
 
     type Props = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & Partial<{
         /** Delay in milliseconds before the tooltip is shown after hovering over the trigger. Default is 200ms. */
@@ -51,26 +55,16 @@
         /** If true, the tooltip will not open on hover/focus. */
         disabled?: boolean;
         /**
-         * CSS `max-width` for the tooltip bubble, e.g. `'400px'` or
-         * `'calc(100vw - var(--space-8))'`. Inline, so it overrides the shared
-         * 300px cap from the `.tooltip-content` rule; when unset, that CSS
-         * default applies.
-         */
-        maxWidth?: string;
-        /**
-         * CSS `max-height` for the tooltip bubble, e.g. `'50dvh'` or
-         * `'calc(100dvh - var(--space-8))'`. When set, content taller than the
-         * cap scrolls inside the bubble (`overflow-y: auto`); when unset, the
-         * bubble grows to fit its content.
-         */
-        maxHeight?: string;
-        /**
          * If false, the trigger is removed from the tab order. Use this for decorative
          * tooltips nested inside another focusable control (a status dot inside a button,
          * for example) — without it every such tooltip adds its own tab stop.
          * The tooltip still opens on hover and on focus of the surrounding control.
          */
         focusable?: boolean;
+        /** CSS max-width for the tooltip content, e.g. to keep long text inside the viewport. */
+        maxWidth?: string;
+        /** CSS max-height for the tooltip content. */
+        maxHeight?: string;
         /**
          * Screen-reader text used when the tooltip trigger is not independently focusable.
          * Falls back to the `tooltip` prop when that is a plain string.
@@ -92,28 +86,28 @@
         sideOffset = 4,
         open = $bindable(false),
         disabled,
-        maxWidth,
-        maxHeight,
         focusable = true,
         hiddenLabel,
+        maxWidth,
+        maxHeight,
         ...restProps
     }: Props = $props();
+
+    const group = getTooltipGroup();
+    const uid = $props.id();
+    const groupTriggerId = `tooltip-trigger-${uid}`;
+    const groupPayload: TooltipGroupPayload = $derived({tooltip, side, sideOffset});
+
+    // In a group bits-ui takes `disabled` on the trigger, which would also disable
+    // the element itself; only the tooltip is meant.
+    function withoutDisabled(props: Record<string, any>): Record<string, any> {
+        const {disabled: _, ...rest} = props;
+        return rest;
+    }
 
     // A snippet tooltip can't be flattened to text, so only a plain string may
     // stand in for a missing hiddenLabel.
     const srOnlyLabel = $derived(hiddenLabel ?? (typeof tooltip === 'string' ? tooltip : undefined));
-
-    // Inline size caps for the bubble. A max-height implies internal scrolling:
-    // the bubble is hoverable, so the pointer can move onto it to scroll.
-    const contentStyle = $derived.by(() => {
-        const style: Record<string, string> = {};
-        if (maxWidth) style['max-width'] = maxWidth;
-        if (maxHeight) {
-            style['max-height'] = maxHeight;
-            style['overflow-y'] = 'auto';
-        }
-        return Object.keys(style).length > 0 ? style : undefined;
-    });
 
     // bits-ui makes every trigger focusable. For decorative triggers inside another
     // control that would add a redundant tab stop, so strip the tabindex it injects.
@@ -132,7 +126,8 @@
     function handleTouchStart(e: TouchEvent) {
         isTouching = true;
         longPress.timer = setTimeout(() => {
-            open = true;
+            if (!group) open = true;
+            else if (!disabled) group.tether.open(groupTriggerId);
         }, 300);
     }
 
@@ -153,60 +148,71 @@
 
 </script>
 
-<TooltipPrimitive.Provider>
-    <TooltipPrimitive.Root
-        {delayDuration}
-        {open}
-        {disabled}
-        onOpenChange={o => open = o}
-        ignoreNonKeyboardFocus>
-        <TooltipPrimitive.Trigger>
-            {#snippet child(a)}
-                <SnippetOrStringTrigger value={children as string|Snippet} snippetArgs={{
-                    props: applyFocusable(mergeProps(
-                        a.props,
-                        {
-                            ontouchstart: handleTouchStart,
-                            ontouchend: handleTouchEnd,
-                            ontouchcancel: handleTouchEnd,
-                            oncontextmenu: handleContextMenu
-                        }
-                    ))
-                }}/>
-            {/snippet}
-        </TooltipPrimitive.Trigger><!-- Deliberately no whitespace between trigger and portal:
-            it would render as a stray text node right after the trigger — visible as a space
-            behind every tooltip-wrapped inline element (e.g. links in chat markdown).
-        --><TooltipPrimitive.Portal>
-            <TooltipPrimitive.Content
-                {...mergeProps({class: 'tooltip-content', side, sideOffset, style: contentStyle}, restProps) as TooltipContentProps}
-            >
-                <SnippetOrString value={tooltip}/>
-            </TooltipPrimitive.Content>
-        </TooltipPrimitive.Portal>
-    </TooltipPrimitive.Root>
-</TooltipPrimitive.Provider>{#if !focusable && srOnlyLabel}<span class="u-sr-only">{srOnlyLabel}</span>{/if}
+{#snippet trigger(props: Record<string, any>)}
+    <SnippetOrStringTrigger value={children as string|Snippet} snippetArgs={{
+        props: applyFocusable(mergeProps(
+            props,
+            {
+                ontouchstart: handleTouchStart,
+                ontouchend: handleTouchEnd,
+                ontouchcancel: handleTouchEnd,
+                oncontextmenu: handleContextMenu
+            }
+        ))
+    }}/>
+{/snippet}
+
+{#if group}
+    <TooltipPrimitive.Trigger tether={group.tether} id={groupTriggerId} payload={groupPayload} {disabled}>
+        {#snippet child(a)}
+            {@render trigger(withoutDisabled(a.props))}
+        {/snippet}
+    </TooltipPrimitive.Trigger>
+{:else}
+    <TooltipPrimitive.Provider>
+        <TooltipPrimitive.Root
+            {delayDuration}
+            {open}
+            {disabled}
+            onOpenChange={o => open = o}
+            ignoreNonKeyboardFocus>
+            <TooltipPrimitive.Trigger>
+                {#snippet child(a)}
+                    {@render trigger(a.props)}
+                {/snippet}
+            </TooltipPrimitive.Trigger><!-- Deliberately no whitespace between trigger and portal:
+                it would render as a stray text node right after the trigger — visible as a space
+                behind every tooltip-wrapped inline element (e.g. links in chat markdown).
+            --><TooltipPrimitive.Portal>
+                <TooltipPrimitive.Content
+                    {...mergeProps({class: 'tooltip-content', side, sideOffset, style: [maxWidth ? `max-width: ${maxWidth};` : '', maxHeight ? `max-height: ${maxHeight};` : ''].join(' ') || undefined}, restProps) as TooltipContentProps}
+                >
+                    <SnippetOrString value={tooltip}/>
+                </TooltipPrimitive.Content>
+            </TooltipPrimitive.Portal>
+        </TooltipPrimitive.Root>
+    </TooltipPrimitive.Provider>
+{/if}{#if !focusable && srOnlyLabel}<span class="u-sr-only">{srOnlyLabel}</span>{/if}
 
 <style>
     :global(.tooltip-content) {
         --tooltip-bg: var(--color-surface-raised);
         --tooltip-text: var(--color-text);
+        /* Read by `TooltipGroup` to cap its content. */
+        --tooltip-max-width: 300px;
 
         position: relative;
         border-radius: var(--corner-sm);
         border: var(--border);
         padding-inline: var(--space-3);
-        padding-block: var(--space-1);
+        padding-block: var(--space-2);
         font-size: var(--font-size-xxs);
         line-height: var(--line-height-normal);
         background-color: var(--tooltip-bg);
         color: var(--tooltip-text);
         box-shadow: var(--elevation-1);
         z-index: var(--layer-tooltip);
-        max-width: 300px;
-        /* Long unbreakable tokens (URLs, concatenated words) must wrap inside
-           the bubble instead of painting past its border. */
-        overflow-wrap: anywhere;
+        max-width: var(--tooltip-max-width);
 
         &[data-state="delayed-open"],
         &[data-state="instant-open"] {

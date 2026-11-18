@@ -1,30 +1,15 @@
 /**
  * A minimal stand-in for everything the session manager's host provides: a
- * registry, a real shared index, an in-memory local storage and controllable
- * worker replies. Deliberately not a mock framework — the tests assert on
+ * registry, a real shared index and controllable worker replies. Deliberately not a mock framework — the tests assert on
  * observable session output, and this only supplies the inputs.
  */
 import {SearchRegistry, type SearchProviderDefinition} from '$lib/kernel/search/searchRegistry.js';
 import {SharedSearchIndex} from '$lib/kernel/search/sharedIndex.js';
 import type {SearchSessionHost} from '$lib/kernel/search/sessionHost.js';
+import type {SchedulerTimers} from '$lib/kernel/search/sessionScheduler.js';
 import type {ModuleSearchRegistrar, SearchEntry, SearchProviderError, StaticSource} from '$lib/kernel/search/types.js';
-import type {SearchScores} from '$lib/kernel/search/searchEngine.js';
-
-export class MemoryStorage {
-    public readonly items = new Map<string, string>();
-
-    public getItem(key: string): string | null {
-        return this.items.get(key) ?? null;
-    }
-
-    public setItem(key: string, value: string): void {
-        this.items.set(key, value);
-    }
-
-    public removeItem(key: string): void {
-        this.items.delete(key);
-    }
-}
+import {SearchEngine, type SearchScores} from '$lib/kernel/search/searchEngine.js';
+import {handleSearchWorkerRequest, type SearchWorkerRequest} from '$lib/kernel/search/search.worker.js';
 
 export interface WorkerReply {
     revision: number;
@@ -34,9 +19,8 @@ export interface WorkerReply {
 export class TestSearchHost implements SearchSessionHost {
     public readonly registry = new SearchRegistry();
     public readonly index = new SharedSearchIndex();
-    public readonly storage = new MemoryStorage();
+    public readonly schedulerTimers = new FakeTimers();
     public readonly app: any;
-    public identity: string | null = 'user-1@connection-a';
     public errors: SearchProviderError[] = [];
 
     /** Answers `queryWorker`. Replace per test; the default never resolves on its own. */
@@ -49,8 +33,7 @@ export class TestSearchHost implements SearchSessionHost {
     private readonly active = new Map<string, {definition: SearchProviderDefinition; controller: AbortController}>();
 
     public constructor() {
-        this.app = {localStorage: this.storage};
-
+        this.app = {};
     }
 
     public get providers(): readonly {definition: SearchProviderDefinition; signal: AbortSignal}[] {
@@ -103,11 +86,47 @@ export class TestSearchHost implements SearchSessionHost {
     public queryWorker(query: string, signal: AbortSignal): Promise<{revision: number; scores: SearchScores}> {
         return this.worker(query, signal);
     }
+
+    /**
+     * Answers `queryWorker` from a real engine fed by the index's deltas, the
+     * way the worker is fed. Replies settle on the next microtask.
+     */
+    public answerFromEngine(): void {
+        const engine = new SearchEngine();
+        this.index.setDeltaSink(delta => {
+            for (const document of delta.upserts) engine.upsert(document);
+            for (const key of delta.removals) engine.remove(key);
+        });
+        this.worker = query => Promise.resolve({revision: this.index.revision, scores: engine.search(query)});
+    }
+}
+
+/**
+ * A stand-in `Worker` that runs the real worker protocol in-process. `hold`
+ * parks search requests in `held`; `fail` makes posting throw.
+ */
+export class FakeSearchWorker extends EventTarget {
+    public engine = new SearchEngine();
+    public held: SearchWorkerRequest[] = [];
+    public hold = false;
+    public fail = false;
+    public terminated = false;
+
+    public postMessage(request: SearchWorkerRequest): void {
+        if (this.fail) throw new Error('Worker transport failed');
+        if (this.hold && request.type === 'search') {this.held.push(request); return;}
+        const response = handleSearchWorkerRequest(this.engine, request);
+        queueMicrotask(() => this.dispatchEvent(new MessageEvent('message', {data: response})));
+    }
+
+    public terminate(): void {
+        this.terminated = true;
+    }
 }
 
 /** A static source over a fixed list; `entries` may be mutated between reindexes. */
-export function staticSourceOf(entries: SearchEntry[], matchIn: 'immediate' | 'worker' = 'immediate'): StaticSource {
-    return {matchIn, items: () => entries};
+export function staticSourceOf(entries: SearchEntry[]): StaticSource {
+    return {items: () => entries};
 }
 
 export function entry(id: string, title: string, extra: Partial<SearchEntry> = {}): SearchEntry {
@@ -117,6 +136,53 @@ export function entry(id: string, title: string, extra: Partial<SearchEntry> = {
 /** Lets pending promise callbacks and microtasks run. */
 export function tick(ms = 0): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** Lets every already-scheduled promise callback run. */
+async function flushPromises(rounds = 8): Promise<void> {
+    for (let round = 0; round < rounds; round++) {
+        await new Promise(resolve => setImmediate(resolve));
+    }
+}
+
+/**
+ * A deterministic clock for the dynamic scheduler: timers only fire when
+ * time is advanced, and every firing is followed by a promise flush so
+ * dispatch chains settle between timers.
+ */
+export class FakeTimers implements SchedulerTimers {
+    private readonly pending = new Map<number, {due: number; handler: () => void}>();
+    private nextHandle = 1;
+    private now = 0;
+
+    public setTimeout(handler: () => void, ms: number): number {
+        const handle = this.nextHandle++;
+        this.pending.set(handle, {due: this.now + ms, handler});
+        return handle;
+    }
+
+    public clearTimeout(handle: number): void {
+        this.pending.delete(handle);
+    }
+
+    /** Fires everything due within `ms`, in order, flushing promises in between. */
+    public async advance(ms: number): Promise<void> {
+        const target = this.now + ms;
+        for (;;) {
+            const due = [...this.pending.entries()]
+                .filter(([, timer]) => timer.due <= target)
+                .sort((a, b) => a[1].due - b[1].due)[0];
+            if (!due) {
+                break;
+            }
+            this.pending.delete(due[0]);
+            this.now = due[1].due;
+            due[1].handler();
+            await flushPromises();
+        }
+        this.now = target;
+        await flushPromises();
+    }
 }
 
 export function rowTitles(groups: readonly {items: readonly {title: string}[]}[]): string[] {

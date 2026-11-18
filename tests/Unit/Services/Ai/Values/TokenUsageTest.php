@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Services\Ai\Values;
 
 use App\Models\Ai\AiModel;
+use App\Models\Ai\AiProvider;
 use App\Services\Ai\Values\TokenUsage;
 use Laravel\Ai\Responses\Data\Usage;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -20,6 +21,9 @@ class TokenUsageTest extends TestCase
     {
         $model = new AiModel();
         $model->model_id = $modelId;
+        $provider = new AiProvider();
+        $provider->provider_id = 'openAi';
+        $model->setRelation('provider', $provider);
         return $model;
     }
 
@@ -83,12 +87,12 @@ class TokenUsageTest extends TestCase
     // toArray
     // =========================================================================
 
-    public function testItToArrayContainsModelId(): void
+    public function testItToArrayContainsQualifiedModelId(): void
     {
         $model = $this->makeModel('gpt-4o');
         $sut = new TokenUsage(model: $model, promptTokens: 10, completionTokens: 20);
 
-        static::assertSame('gpt-4o', $sut->toArray()['model']);
+        static::assertSame('openAi/gpt-4o', $sut->toArray()['model']);
     }
 
     public function testItToArrayContainsPromptTokens(): void
@@ -127,7 +131,7 @@ class TokenUsageTest extends TestCase
         $json = json_encode($sut);
         static::assertIsString($json);
         $decoded = json_decode($json, true);
-        static::assertSame('gpt-4o', $decoded['model']);
+        static::assertSame('openAi/gpt-4o', $decoded['model']);
         static::assertSame(7, $decoded['prompt_tokens']);
         static::assertSame(13, $decoded['completion_tokens']);
     }

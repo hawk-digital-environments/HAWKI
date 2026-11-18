@@ -1,6 +1,6 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
 import {AiModel} from '$lib/plugins/core/schemas/resources/ai-models.schema';
-import type {AiModelFlag} from '$plugins/core/schemas/resources/ai-model-flags.schema.js';
+import type {AiModelFlag} from '$plugins/core/schemas/resources/ai-model-flags.js';
 import type {WellKnownSystemModelType} from '$plugins/core/schemas/resources/system-models.schema.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 

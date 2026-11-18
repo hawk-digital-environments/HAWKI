@@ -6,7 +6,7 @@
  * at the caret offset, and measure that. This is the standard mirror-div technique; it is
  * accurate as long as the copied properties below cover everything affecting text layout.
  *
- * Used by `ComposerTextarea` to anchor the `@` mention popup to the caret.
+ * Used by `ComposerTextarea` to open the `@`/`/` command menus at the typed trigger.
  */
 
 /** Style properties that influence text layout and therefore must be mirrored. */

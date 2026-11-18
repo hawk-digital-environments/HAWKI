@@ -253,8 +253,17 @@ async function decryptWithTempHash(encryptedData, tempHash, iv, tag) {
 //#region Utilities
 
 
+// Chunked for the same reason as the kernel copy: a single
+// String.fromCharCode.apply() over the full buffer exceeds the engine's
+// argument limit on large payloads (e.g. encrypted message bodies with
+// embedded base64 images).
 function arrayBufferToBase64(buffer) {
-    const binary = String.fromCharCode.apply(null, new Uint8Array(buffer));
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
     return btoa(binary);
 }
 

@@ -265,7 +265,12 @@ export class OldUiMessageHistory {
         }
 
         if (message.content?.text.startsWith('{')) {
-            const parsed = JSON.parse(message.content.text);
+            let parsed;
+            try {
+                parsed = JSON.parse(message.content.text);
+            } catch {
+                return message; // plain text that just happens to start with '{'
+            }
             return {
                 ...message,
                 content: {

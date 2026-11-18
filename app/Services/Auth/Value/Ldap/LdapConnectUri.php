@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Auth\Value\Ldap;
 
 
-use App\Services\Auth\Exception\LdapException;
+use App\Services\Auth\Exceptions\LdapException;
 use Psr\Log\LoggerInterface;
 
 readonly class LdapConnectUri implements \Stringable

@@ -35,18 +35,25 @@
     type Props = {
         /** Whether the conversation has unread messages. Shows a visual indicator if true. */
         hasUnreadMessages?: boolean;
+        /**
+         * The current user's role in this room. Required when the menu is not rendered for the active room
+         * (e.g. in the sidebar); if omitted, the role of the active conversation is used.
+         */
+        role?: string;
     } & Pick<ComponentProps<typeof ChatNameMenu>,
-        'name' | 'nameClickRenames' | 'slug' | 'allowRename' | 'isRenaming' | 'open' |
-        'class' | 'buttonProps' | 'block' | 'triggerIcon' | 'showName' | 'focusAfterRename'>;
+        'name' | 'nameClickRenames' | 'slug' | 'isRenaming' |
+        'class' | 'buttonProps' | 'block' | 'triggerIcon'>;
 
     let {
         name,
         slug,
         isRenaming = $bindable(false),
-        open = $bindable(false),
         hasUnreadMessages,
+        role,
         ...restProps
     }: Props = $props();
+
+    const canAdministrate = $derived(role !== undefined ? role === 'admin' : oldUiMessageHistory.canAdministrate);
 
     let leaveConfirmOpen = $state(false);
     let deleteConfirmOpen = $state(false);
@@ -61,18 +68,20 @@
     bind:open={deleteConfirmOpen}
     title={__('chat.nameMenu.deleteConfirmTitle', {name: name})}
     description={__('chat.nameMenu.deleteConfirmDescription')}
+    okLabel={__('chat.nameMenu.deleteConfirmLabel')}
+    confirmVariant="delete"
     onConfirm={() => slug && oldUiBridge.triggerDeleteChat(slug)}
 />
 
 <ChatNameMenu
     bind:isRenaming={isRenaming}
-    bind:open={open}
+    allowRename={canAdministrate}
     name={name ?? ''}
     slug={slug ?? ''}
     {...restProps}
 >
     {#if !!slug}
-        {#if oldUiMessageHistory.canAdministrate}
+        {#if canAdministrate}
             <DropdownMenuItem
                 iconLeft={Settings03Icon}
                 onclick={() => oldUiBridge.triggerOpenRoomControlPanel(slug ?? '')}>
@@ -93,7 +102,7 @@
             onclick={() => leaveConfirmOpen = true}>
             {__('chat.nameMenu.leaveAction')}
         </DropdownMenuItem>
-        {#if oldUiMessageHistory.canAdministrate}
+        {#if canAdministrate}
             <DropdownMenuItem
                 variant="destructive"
                 onclick={() => deleteConfirmOpen = true}>

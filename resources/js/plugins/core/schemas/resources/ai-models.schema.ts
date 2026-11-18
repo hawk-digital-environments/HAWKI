@@ -1,8 +1,8 @@
 import z from 'zod';
 import {wellKnownAiToolCapabilities} from '$plugins/core/schemas/resources/ai-tools-capabilities.schema.js';
 import AiProvidersSchema from '$plugins/core/schemas/resources/ai-providers.schema.js';
-import {wellKnownAiModelFlags} from '$plugins/core/schemas/resources/ai-model-flags.schema.js';
-import AiModelDescriptionsSchema from '$plugins/core/schemas/resources/ai-model-descriptions.schema.js';
+import {wellKnownAiModelFlags} from '$plugins/core/schemas/resources/ai-model-flags.js';
+import AiModelDescriptionsSchema from '$plugins/core/schemas/resources/ai-model-descriptions.js';
 
 /**
  * Validates the `ai-models` API resource — every AI model (chat, image generation, video
@@ -28,7 +28,7 @@ export type WellKnownAiModelParameter = typeof wellKnownAiModelParameters[number
 export const wellKnownAiModelIoMethods = ['text', 'image', 'audio', 'video', 'code'] as const;
 export type WellKnownAiModelIoMethod = typeof wellKnownAiModelIoMethods[number];
 
-export const wellKnownAiModelSettings = ['max_tool_calling_rounds_streaming', 'max_tool_calling_rounds', 'file_upload', 'tool_calling', 'native_capabilities'] as const;
+export const wellKnownAiModelSettings = ['max_tool_calling_rounds', 'file_upload', 'tool_calling', 'native_capabilities'] as const;
 export type WellKnownAiModelSetting = typeof wellKnownAiModelSettings[number];
 
 const BaseAiModelSchema = z.object({

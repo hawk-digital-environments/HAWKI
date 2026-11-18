@@ -5,7 +5,7 @@ import { createRouter } from '../../../resources/js/components/ui/routing/logist
 import { createTransientRoutingStrategy } from '../../../resources/js/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
 import type { RouteComponent } from '../../../resources/js/components/ui/routing/logistics/RouteRegistrar.js';
 
-const Page: RouteComponent = () => {};
+const Page = (() => {}) as unknown as RouteComponent;
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 

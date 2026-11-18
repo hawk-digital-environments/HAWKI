@@ -10,6 +10,7 @@ use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
 use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
 use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
+use App\Services\Auth\Exceptions\AuthFailedException;
 use App\Models\User;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\RedirectResponse;
@@ -26,10 +27,20 @@ class ChainedAuthServiceTest extends TestCase
     {
         $credentials = new class implements AuthServiceInterface, AuthServiceWithCredentialsInterface {
             public int $calls = 0;
-            public function useCredentials(string $username, string $password): void {}
-            public function forgetCredentials(): void {}
+            public bool $hasCredentials = false;
+            public function useCredentials(string $username, string $password): void
+            {
+                $this->hasCredentials = true;
+            }
+            public function forgetCredentials(): void
+            {
+                $this->hasCredentials = false;
+            }
             public function authenticate(Request $request): AuthenticatedUserInfo
             {
+                if (!$this->hasCredentials) {
+                    throw new AuthFailedException('no credentials');
+                }
                 $this->calls++;
                 return new AuthenticatedUserInfo('local', 'Local User', 'local@example.test', 'guest');
             }
@@ -54,7 +65,8 @@ class ChainedAuthServiceTest extends TestCase
         $chain->forgetCredentials();
         self::assertSame(1, $credentials->calls);
         self::assertSame(0, $redirect->calls);
-        self::assertNull($chain->getLogoutResponse($request));
+        // The chain answers logout from the first service offering a redirect; it does not track which service authenticated.
+        self::assertSame('https://idp.example.test/logout', $chain->getLogoutResponse($request)?->getTargetUrl());
 
         $redirectRequest = $this->requestWithSession();
         self::assertInstanceOf(RedirectResponse::class, $chain->authenticate($redirectRequest));
@@ -63,7 +75,7 @@ class ChainedAuthServiceTest extends TestCase
         self::assertSame('https://idp.example.test/logout', $chain->getLogoutResponse($redirectRequest)?->getTargetUrl());
     }
 
-    public function testPostLoginHooksReachOnlyTheServiceThatAuthenticated(): void
+    public function testPostLoginHooksAreNotForwardedByTheChain(): void
     {
         $local = new class implements AuthServiceInterface, AuthServiceWithCredentialsInterface, AuthServiceWithPostProcessingInterface {
             public int $hooks = 0;
@@ -98,27 +110,14 @@ class ChainedAuthServiceTest extends TestCase
                 return new RedirectResponse('https://idp.example.test/register');
             }
         };
+        // Post-login hooks are consumed by the LoginHandler per service, never through a chain wrapper.
         $chain = new ChainedAuthService($local, $external);
-        self::assertInstanceOf(AuthServiceWithPostProcessingInterface::class, $chain);
+        self::assertNotInstanceOf(AuthServiceWithPostProcessingInterface::class, $chain);
 
         $request = $this->requestWithSession();
         $info = $chain->authenticate($request);
-        self::assertSame('external', $info->username);
-        self::assertSame('https://idp.example.test/welcome-back', $chain->afterLoginWithUser(new User(), $request)?->getTargetUrl());
-        self::assertSame('https://idp.example.test/register', $chain->afterLoginWithoutUser($info, $request)?->getTargetUrl());
-        self::assertSame(0, $local->hooks, 'hooks are forwarded only to the authenticating service');
-
-        // A fresh chain instance, as after an external redirect round trip, resolves the service from the session.
-        $later = new ChainedAuthService($local, $external);
-        self::assertSame('https://idp.example.test/welcome-back', $later->afterLoginWithUser(new User(), $request)?->getTargetUrl());
-
-        $credentialRequest = $this->requestWithSession();
-        $chain->useCredentials('local', 'password');
-        $chain->authenticate($credentialRequest);
-        self::assertNull($chain->afterLoginWithUser(new User(), $credentialRequest));
-        self::assertSame(1, $local->hooks);
-
-        self::assertNull((new ChainedAuthService($local, $external))->afterLoginWithUser(new User(), $this->requestWithSession()));
+        self::assertSame('local', $info->username);
+        self::assertSame(0, $local->hooks, 'the chain never calls post-login hooks');
     }
 
     private function requestWithSession(): Request

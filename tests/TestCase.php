@@ -25,6 +25,11 @@ abstract class TestCase extends BaseTestCase
         // usage. This keeps production code free of test-aware bypasses.
         Cache::flush();
 
+        // The container .env leaks SESSION_DRIVER=database past phpunit's env
+        // forcing; tests run on sqlite :memory: without a sessions table.
+        $this->app->forgetInstance('session.store');
+        config(['session.driver' => 'array']);
+
         // Most fixtures assume org-free users; the default-org assignment has its own tests.
         config()->set('hawki.organization.default', '');
     }

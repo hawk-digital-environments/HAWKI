@@ -22,8 +22,8 @@
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import MoreHorizontalIcon from '$lib/components/ui/icons/iconset/MoreHorizontalIcon.svelte';
     import ThreadIcon from '$lib/components/ui/icons/iconset/ThreadIcon.svelte';
-    import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
     import RefreshIcon from '$lib/components/ui/icons/iconset/RefreshIcon.svelte';
+    import Edit03Icon from '$lib/components/ui/icons/iconset/Edit03Icon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -57,7 +57,7 @@
 
     const PanelIcon = $derived.by(() => {
         if (composerContext.mode.isEdit) {
-            return Edit02Icon;
+            return Edit03Icon;
         }
         if (composerContext.mode.isRegen) {
             return RefreshIcon;
@@ -104,8 +104,8 @@
         wasDefault = isDefault;
     });
 </script>
-<div class="u-sr-only" role="status" aria-live="polite">{announcement}</div>
 {#if !composerContext.mode.isDefault}
+    <div class="u-sr-only" role="status" aria-live="polite">{announcement}</div>
     <div class="panel" transition:growTransition>
         <div class="iconContent">
             <PanelIcon size={20}/>
@@ -119,9 +119,8 @@
             disabled={composerContext.sendStatus?.sending}
             onclick={() => composerContext.mode.exit()}
             title={cancelButtonTitle}
-            aria-label={cancelButtonTitle}
             variant="ghost"
-            size="sm"
+            size="xs"
         />
     </div>
 {/if}

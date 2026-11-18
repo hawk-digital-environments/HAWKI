@@ -17,7 +17,7 @@ class TestTool extends AbstractTool
         private readonly LoggerInterface $logger
     )
     {
-        $this->setMaxRuns(3);
+        $this->setMaxRuns(1);
     }
 
     /**

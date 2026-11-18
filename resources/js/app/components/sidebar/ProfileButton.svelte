@@ -20,8 +20,8 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useConnection} from '$lib/app/hooks/useConnection.svelte.js';
-    import UnfoldMoreIcon from '$lib/components/ui/icons/iconset/UnfoldMoreIcon.svelte';
     import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
+    import {useRouter} from '$lib/components/ui/routing/index.js';
 
     interface Props {
         /** Called when the user picks "Settings" from the menu. */
@@ -31,6 +31,7 @@
     let {onOpenSettings}: Props = $props();
 
     const app = useApp();
+    const router = useRouter();
     const themeStore = useStore('theme');
     const {__} = useTranslator();
     const connection = useConnection();
@@ -38,7 +39,7 @@
     // settings glyph follow the same step so the footer row stays proportional.
     const breakpoint = useBreakpoint();
     const compact = $derived(breakpoint.is('bpMdAndSmaller'));
-    const triggerAvatarSize = $derived(compact ? 24 : 22);
+    const triggerAvatarSize = $derived(compact ? 26 : 24);
     const triggerIconSize = $derived(compact ? 18 : 16);
     const userinfo = $derived(connection.hasUserInfo ? connection.userinfo : null);
     const userName = $derived(userinfo?.name || __('ui.profile.fallbackName'));
@@ -61,19 +62,23 @@
         onOpenSettings();
     }
 
+    function openAnnouncements(): void {
+        menuOpen = false;
+        void router.goToRoute('announcements.index');
+    }
+
     function openModels(): void {
         menuOpen = false;
         app.events.sync.triggerVoid('modelsRequested');
     }
 
     function logout(): void {
-        void app.logout().catch(() => { /* The root layout shows the retry action. */ });
+        app.logout();
     }
 </script>
 
 <DropdownMenu
     bind:open={menuOpen}
-    title={__('ui.profile.menuTitle')}
     side="top"
     align="start"
     sideOffset={8}
@@ -90,7 +95,7 @@
                 <Avatar src={avatarUrl} name={userName} label={userName} size={triggerAvatarSize}/>
             {/snippet}
             {#snippet trailing()}
-                <UnfoldMoreIcon size={triggerIconSize} strokeWidth={2}/>
+                <Settings03Icon size={triggerIconSize} strokeWidth={2}/>
             {/snippet}
         </SidebarItem>
     {/snippet}
@@ -107,12 +112,14 @@
     <DropdownMenuItem iconLeft={Settings03Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
     </DropdownMenuItem>
-    <DropdownMenuItem iconLeft={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
-        {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
+    <DropdownMenuItem iconLeft={Megaphone01Icon} onclick={openAnnouncements}>
+        {__('ui.profile.announcements')}
     </DropdownMenuItem>
-    <DropdownMenuSeparator/>
     <DropdownMenuItem iconLeft={AiChipIcon} onclick={openModels}>
         {__('ui.profile.models')}
+    </DropdownMenuItem>
+    <DropdownMenuItem iconLeft={themeStore.isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
+        {themeStore.isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
     <DropdownMenuItem iconLeft={Logout02Icon} onclick={logout}>
@@ -122,7 +129,8 @@
 
 <style>
     :global(.profile-menu-content.dropdown-content--dropdown) {
-        width: min(15rem, calc(100vw - 2 * var(--space-4)));
+        /* Spans its row. */
+        width: min(var(--bits-floating-anchor-width), calc(100vw - 2 * var(--space-4)));
     }
 
     .profile-summary {
@@ -138,6 +146,11 @@
         flex: 1;
         flex-direction: column;
         gap: var(--space-0_5);
+        /* A length, so the smaller email line keeps the same height as the name. */
+        line-height: calc(var(--font-size-xs) * var(--line-height-tight));
+        /* The smaller email leaves more room under its baseline than the name has
+           above its capitals, so the centred block reads high. Nudges it down 0.5px. */
+        margin-top: 1px;
     }
 
     .profile-summary__text strong,

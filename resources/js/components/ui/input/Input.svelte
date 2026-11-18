@@ -6,12 +6,14 @@
         value?: string;
         ref?: HTMLInputElement | null;
         ariaLabel?: string;
+        /** Visually hidden accessible label; plugin forms pair it with their own visible text. */
+        label?: string;
     }
 
-    let { value = $bindable(''), ref = $bindable(undefined), ariaLabel, ...restProps }: Props = $props();
+    let { value = $bindable(''), ref = $bindable(undefined), ariaLabel, label, ...restProps }: Props = $props();
 </script>
 
-<input bind:this={ref} bind:value {...mergeProps({class: 'input', 'aria-label': ariaLabel}, restProps)}/>
+<input bind:this={ref} bind:value {...mergeProps({class: 'input', 'aria-label': ariaLabel ?? label}, restProps)}/>
 
 <style>
     .input {
@@ -24,9 +26,6 @@
         color: var(--color-text);
         padding: 0 var(--space-3);
         font: inherit;
-    }
-    .input[aria-invalid='true'] {
-        border-color: var(--color-error);
     }
     .input:focus-visible {
         outline: 2px solid var(--color-focus-ring);

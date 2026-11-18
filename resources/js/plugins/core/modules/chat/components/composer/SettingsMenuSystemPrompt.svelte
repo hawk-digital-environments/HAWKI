@@ -10,7 +10,7 @@
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import SystemPromptDialog from '$plugins/core/modules/chat/components/composer/SystemPromptDialog.svelte';
     import SettingsMenuSectionHeader from '$plugins/core/modules/chat/components/composer/SettingsMenuSectionHeader.svelte';
-    import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
+    import Edit03Icon from '$lib/components/ui/icons/iconset/Edit03Icon.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
@@ -32,7 +32,7 @@
         onReset={() => (composerContext.systemPrompt = defaultSystemPrompt)}
     />
     <button type="button" class="system-prompt-preview" onclick={() => (dialogOpen = true)}>
-        <Edit02Icon size={14} class="system-prompt-icon"/>
+        <Edit03Icon size={14} class="system-prompt-icon"/>
         <span class="system-prompt-text">
             {composerContext.systemPrompt?.trim() ? composerContext.systemPrompt : __('chat.composer.settings.noSystemPrompt')}
         </span>
@@ -66,7 +66,7 @@
         color: var(--color-text);
         cursor: pointer;
         text-align: left;
-        transition: border-color var(--duration-fast, 150ms) var(--easing-default);
+        transition: border-color var(--duration-fast) var(--easing-default);
     }
 
     .system-prompt-preview:hover {

@@ -8,28 +8,7 @@ declare(strict_types=1);
 return [
     array (
   'id' => 'elevenlabs/scribe_v1',
-  'object' => 'model_catalog.entry',
   'provider' => 'elevenlabs',
-  'mode' => 'audio_transcription',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'input_cost_per_second' => 6.11E-5,
   'metadata' => 
   array (
@@ -37,6 +16,7 @@ return [
     'notes' => 'ElevenLabs Scribe v1 - state-of-the-art speech recognition model with 99 language support',
     'original_pricing_per_hour' => 0.22,
   ),
+  'mode' => 'audio_transcription',
   'output_cost_per_second' => 0.0,
   'source' => 'https://elevenlabs.io/pricing',
   'supported_endpoints' => 
@@ -46,28 +26,7 @@ return [
 ),
     array (
   'id' => 'elevenlabs/scribe_v1_experimental',
-  'object' => 'model_catalog.entry',
   'provider' => 'elevenlabs',
-  'mode' => 'audio_transcription',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
   'input_cost_per_second' => 6.11E-5,
   'metadata' => 
   array (
@@ -75,6 +34,7 @@ return [
     'notes' => 'ElevenLabs Scribe v1 experimental - enhanced version of the main Scribe model',
     'original_pricing_per_hour' => 0.22,
   ),
+  'mode' => 'audio_transcription',
   'output_cost_per_second' => 0.0,
   'source' => 'https://elevenlabs.io/pricing',
   'supported_endpoints' => 
@@ -84,35 +44,15 @@ return [
 ),
     array (
   'id' => 'elevenlabs/eleven_v3',
-  'object' => 'model_catalog.entry',
   'provider' => 'elevenlabs',
-  'mode' => 'audio_speech',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
-  'input_cost_per_character' => 0.00018,
+  'input_cost_per_character' => 8.0E-5,
   'metadata' => 
   array (
-    'calculation' => '$0.18/1000 characters (Scale plan pricing, 1 credit per character)',
+    'calculation' => '$0.08/1000 characters (API usage pricing, billed in USD per character)',
     'notes' => 'ElevenLabs Eleven v3 - most expressive TTS model with 70+ languages and audio tags support',
   ),
-  'source' => 'https://elevenlabs.io/pricing',
+  'mode' => 'audio_speech',
+  'source' => 'https://elevenlabs.io/pricing/api',
   'supported_endpoints' => 
   array (
     0 => '/v1/audio/speech',
@@ -120,38 +60,142 @@ return [
 ),
     array (
   'id' => 'elevenlabs/eleven_multilingual_v2',
-  'object' => 'model_catalog.entry',
   'provider' => 'elevenlabs',
-  'mode' => 'audio_speech',
-  'max_input_tokens' => NULL,
-  'max_output_tokens' => NULL,
-  'max_tokens' => NULL,
-  'input_cost_per_token' => NULL,
-  'output_cost_per_token' => NULL,
-  'cache_read_input_token_cost' => NULL,
-  'input_cost_per_audio_token' => NULL,
-  'output_cost_per_reasoning_token' => NULL,
-  'deprecation_date' => NULL,
-  'supports_function_calling' => NULL,
-  'supports_parallel_function_calling' => NULL,
-  'supports_vision' => NULL,
-  'supports_audio_input' => NULL,
-  'supports_audio_output' => NULL,
-  'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
-  'supports_response_schema' => NULL,
-  'supports_system_messages' => NULL,
-  'supports_web_search' => NULL,
-  'input_cost_per_character' => 0.00018,
+  'input_cost_per_character' => 8.0E-5,
   'metadata' => 
   array (
-    'calculation' => '$0.18/1000 characters (Scale plan pricing, 1 credit per character)',
+    'calculation' => '$0.08/1000 characters (API usage pricing, billed in USD per character)',
     'notes' => 'ElevenLabs Eleven Multilingual v2 - default TTS model with 29 languages support',
   ),
-  'source' => 'https://elevenlabs.io/pricing',
+  'mode' => 'audio_speech',
+  'source' => 'https://elevenlabs.io/pricing/api',
   'supported_endpoints' => 
   array (
     0 => '/v1/audio/speech',
+  ),
+),
+    array (
+  'id' => 'elevenlabs/eleven_v4',
+  'provider' => 'elevenlabs',
+  'input_cost_per_character' => 8.0E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.08/1000 characters (API usage pricing, billed in USD per character)',
+    'notes' => 'ElevenLabs Eleven v4 - most emotive TTS model with audio tags and 90+ languages',
+  ),
+  'mode' => 'audio_speech',
+  'source' => 'https://elevenlabs.io/pricing/api',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/speech',
+  ),
+),
+    array (
+  'id' => 'elevenlabs/eleven_v4_turbo',
+  'provider' => 'elevenlabs',
+  'input_cost_per_character' => 4.0E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.04/1000 characters (API usage pricing, billed in USD per character)',
+    'notes' => 'ElevenLabs Eleven v4 Turbo - low-latency v4 tuned for real-time and agents',
+  ),
+  'mode' => 'audio_speech',
+  'source' => 'https://elevenlabs.io/pricing/api',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/speech',
+  ),
+),
+    array (
+  'id' => 'elevenlabs/eleven_v3_conversational',
+  'provider' => 'elevenlabs',
+  'input_cost_per_character' => 4.0E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.04/1000 characters (API usage pricing, billed in USD per character)',
+    'notes' => 'ElevenLabs Eleven v3 Conversational - low-latency v3 tuned for realtime conversation',
+  ),
+  'mode' => 'audio_speech',
+  'source' => 'https://elevenlabs.io/pricing/api',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/speech',
+  ),
+),
+    array (
+  'id' => 'elevenlabs/eleven_flash_v2_5',
+  'provider' => 'elevenlabs',
+  'input_cost_per_character' => 4.0E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.04/1000 characters (API usage pricing, billed in USD per character)',
+    'notes' => 'ElevenLabs Eleven Flash v2.5 - low-latency multilingual TTS model',
+  ),
+  'mode' => 'audio_speech',
+  'source' => 'https://elevenlabs.io/pricing/api',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/speech',
+  ),
+),
+    array (
+  'id' => 'elevenlabs/eleven_flash_v2',
+  'provider' => 'elevenlabs',
+  'input_cost_per_character' => 4.0E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.04/1000 characters (API usage pricing, billed in USD per character)',
+    'notes' => 'ElevenLabs Eleven Flash v2 - low-latency English-only TTS model',
+  ),
+  'mode' => 'audio_speech',
+  'source' => 'https://elevenlabs.io/pricing/api',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/speech',
+  ),
+),
+    array (
+  'id' => 'elevenlabs/eleven_turbo_v2_5',
+  'provider' => 'elevenlabs',
+  'input_cost_per_character' => 4.0E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.04/1000 characters (API usage pricing, billed in USD per character)',
+    'notes' => 'ElevenLabs Eleven Turbo v2.5 - multilingual TTS model',
+  ),
+  'mode' => 'audio_speech',
+  'source' => 'https://elevenlabs.io/pricing/api',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/speech',
+  ),
+),
+    array (
+  'id' => 'elevenlabs/eleven_turbo_v2',
+  'provider' => 'elevenlabs',
+  'input_cost_per_character' => 4.0E-5,
+  'metadata' => 
+  array (
+    'calculation' => '$0.04/1000 characters (API usage pricing, billed in USD per character)',
+    'notes' => 'ElevenLabs Eleven Turbo v2 - English-only TTS model',
+  ),
+  'mode' => 'audio_speech',
+  'source' => 'https://elevenlabs.io/pricing/api',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/speech',
+  ),
+),
+    array (
+  'id' => 'elevenlabs/scribe_v2',
+  'provider' => 'elevenlabs',
+  'input_cost_per_second' => 6.11E-5,
+  'mode' => 'audio_transcription',
+  'output_cost_per_second' => 0.0,
+  'source' => 'https://elevenlabs.io/pricing/api',
+  'supported_endpoints' => 
+  array (
+    0 => '/v1/audio/transcriptions',
   ),
 ),
 ];

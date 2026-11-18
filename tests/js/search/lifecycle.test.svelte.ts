@@ -10,23 +10,22 @@ import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {ModuleSearchRegistrar, SearchEntry} from '$lib/kernel/search/types.js';
+import {FakeSearchWorker} from './harness.js';
 
 async function fixture(declare: (registrar: ModuleSearchRegistrar) => void) {
     const connection = $state({id: 'hawki', isAuthenticated: true, userinfo: {id: 1, hash: 'user-one'}});
     const registry = new SearchRegistry();
-    const module = {name: 'test', plugin: {name: 'core'}, title: () => 'Test', search: declare} as HawkiModuleWithPlugin;
+    const module = {name: 'test', plugin: {name: 'core', isCorePlugin: true}, title: () => 'Test', search: declare} as HawkiModuleWithPlugin;
     registry.registerModule('core:test', module);
     const callbacks = new Map<string, () => void>();
-    const storage = new Map<string, string>();
     const app = {
         modules: {searchRegistry: registry, get: () => module},
         translator: {translate: (key: string) => key},
         localization: {locale: {lang: 'en_US'}},
         get connectionOrNull() {return connection;},
-        events: {async: {on: (name: string, callback: () => void) => {callbacks.set(name, callback); return () => callbacks.delete(name);}}},
-        localStorage: {getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value)}
+        events: {async: {on: (name: string, callback: () => void) => {callbacks.set(name, callback); return () => callbacks.delete(name);}}}
     } as unknown as HawkiApp;
-    const search = new SearchExtension();
+    const search = new SearchExtension({worker: {createWorker: () => new FakeSearchWorker() as unknown as Worker}});
     const bootstrapper = new Bootstrapper();
     search.ready(app, bootstrapper);
     await bootstrapper.run();
@@ -37,6 +36,9 @@ async function fixture(declare: (registrar: ModuleSearchRegistrar) => void) {
 function entry(id: string, title: string): SearchEntry {
     return {id, entityKey: id, title, onSelect() {}};
 }
+
+/** Lets worker replies (posted as microtasks) reach the sessions. */
+const settle = () => new Promise(resolve => setTimeout(resolve, 0));
 
 const titles = (session: ReturnType<SearchExtension['createSession']>) => session.state.groups.flatMap(group => group.items.map(row => row.title));
 
@@ -76,9 +78,11 @@ test('two bars share activation and observe nested edits, disablement and reacti
         const second = search.createSession();
         first.setInput({query: 'design'});
         second.setInput({query: ''});
+        await settle();
         assert.deepEqual(titles(first), ['Design']);
         assert.equal(loads, 1);
         flushSync(() => {data.rows[0].title = 'Renamed';});
+        await settle();
         assert.deepEqual(titles(first), []);
         assert.deepEqual(titles(second), ['Renamed']);
         flushSync(() => {data.enabled = false;});

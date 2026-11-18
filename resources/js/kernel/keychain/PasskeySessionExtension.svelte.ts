@@ -13,6 +13,7 @@ declare module '$lib/kernel/extendableTypes.js' {
  * bridge, but routed features depend only on the application extension.
  */
 export class PasskeySessionExtension implements HawkiAppExtension {
+    public cryptoReady = $state(false);
     private currentPasskey = $state<string | null>(null);
 
     /** The decrypted passkey for the current browser session. */
@@ -26,6 +27,7 @@ export class PasskeySessionExtension implements HawkiAppExtension {
 
     /** Removes the decrypted passkey from memory. */
     public clear(): void {
+        this.cryptoReady = false;
         this.currentPasskey = null;
     }
 

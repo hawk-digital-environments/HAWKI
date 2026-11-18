@@ -43,7 +43,7 @@ class ArmFinalKnowledgeCallSignalingOnAgentSending
         }
 
         $this->citations->setToolRoundLimit(
-            $this->resolveRoundLimit($settings, streaming: false),
+            $this->resolveRoundLimit($settings),
         );
     }
 
@@ -52,9 +52,9 @@ class ArmFinalKnowledgeCallSignalingOnAgentSending
      * resolve declared defaults on their own — attach the app's registry so
      * the read always resolves.
      */
-    private function resolveRoundLimit(AiModelSettings $settings, bool $streaming): int {
+    private function resolveRoundLimit(AiModelSettings $settings): int {
         $settings->setService(AiModelSettingRegistry::class, app(AiModelSettingRegistry::class));
 
-        return $settings->getMaxToolCallingRounds($streaming);
+        return $settings->getMaxToolCallingRounds();
     }
 }

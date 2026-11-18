@@ -5,11 +5,11 @@
   and what they say depends entirely on `ComposerContext` state:
 
   - Improve button only shows when `guard.showsAiUiElements` is true.
-  - Cancel button shows either while a non-default mode (edit/thread) is
+  - Cancel button shows either while a non-default mode (edit/regen/thread) is
     active but not yet sending, or while an abortable send is in progress —
     its label/action/tooltip adapt to which case applies.
-  - Send button's icon/label switch to a checkmark + "Save" in edit mode,
-    and it hides while an abortable send is active (the
+  - Send button's icon/label switch to a checkmark + "Save"/"Regenerate" in
+    edit/regen mode, and it hides while an abortable send is active (the
     cancel button takes its place).
 
   Renders nothing itself beyond these buttons — layout (flex row, gaps) is the
@@ -40,11 +40,10 @@
     const {__} = useTranslator();
 
     interface Props {
-        /** Called when the send button is clicked and `guard.canSend` allows it. The button
-         *  stays focusable while sending isn't allowed (`aria-disabled`, reason exposed via
-         *  `aria-describedby`), so the click handler guards the call itself. Typically wired
-         *  to `ComposerContext.send()` plus response handling in the parent (see
-         *  `ChatComposer.svelte`'s `handleSend`). */
+        /** Called when the send button is clicked. Does not itself check `guard.canSend` —
+         *  the button is `disabled` when sending isn't allowed, so this only fires when a
+         *  send is actually possible. Typically wired to `ComposerContext.send()` plus
+         *  response handling in the parent (see `ChatComposer.svelte`'s `handleSend`). */
         onSend?: () => void;
         /** Bindable reference to the send `<button>` element, e.g. so `ComposerFocusWrap`
          *  can focus it as a fallback when the textarea is disabled. */
@@ -56,21 +55,9 @@
         buttonRef = $bindable(null)
     }: Props = $props();
 
-    const uid = $props.id();
-    const sendHintId = `${uid}-send-hint`;
-
-    const canSend = $derived(composerContext.guard.canSend);
-
-    // Doubles as the button's accessible description, so the reason the button
-    // can't be used right now is read out along with it.
+    // The guard's reason for blocking a send doubles as the tooltip — including the
+    // assistant-specific ones (deactivated assistant, unreachable model).
     const sendTooltip = $derived(__(composerContext.guard.cannotSendReason ?? 'chat.composer.actions.sendTooltip'));
-
-    function handleSendClick() {
-        if (!composerContext.guard.canSend) {
-            return;
-        }
-        onSend?.();
-    }
 
     const sendLabel = $derived.by(() => {
         if (composerContext.mode.isEdit) {
@@ -153,7 +140,7 @@
     <div transition:growTransition={{mode: 'horizontal'}}>
         <ButtonWithTooltip
             tooltip={__('chat.composer.actions.improveTooltip')}
-            size="sm"
+            size="xs"
             variant="ghost"
             iconRight={GoogleGeminiIcon}
             onclick={handleImprovement}
@@ -168,7 +155,7 @@
             iconRight={SquareIcon}
             tooltip={cancelTooltip}
             aria-label={__('chat.composer.actions.cancelLabel')}
-            size="sm"
+            size="xs"
             variant="stroke"
             onclick={cancelAction}
         >
@@ -183,21 +170,17 @@
 
 {#if !(composerContext.sendStatus?.active && composerContext.sendStatus?.canBeAborted)}
     <div transition:growTransition={{mode: 'horizontal'}}>
-        <!-- aria-disabled instead of disabled keeps the button reachable, so the
-             reason it can't be used (aria-describedby) is discoverable by AT. -->
         <ButtonWithTooltip
             bind:ref={buttonRef}
             tooltip={sendTooltip}
             aria-label={sendLabel}
-            aria-describedby={sendHintId}
-            aria-disabled={!canSend}
-            aria-keyshortcuts="Enter"
-            variant="accent"
+            disabled={!composerContext.guard.canSend}
+            variant="fill"
             iconRight={SendIcon}
-            size="sm"
+            size="xs"
             class="chat-send-btn"
             onkeydown={handleSendButtonKeyDown}
-            onclick={handleSendClick}
+            onclick={onSend}
         >
             <Breakpoint>
                 {#snippet bpMdAndBigger()}
@@ -205,18 +188,19 @@
                 {/snippet}
             </Breakpoint>
         </ButtonWithTooltip>
-        <span id={sendHintId} class="u-sr-only">{sendTooltip}</span>
     </div>
 {/if}
 
 <style>
-    /* Inactive send button (aria-disabled, still focusable): mirror Button's
-       disabled fill look. Combined selectors out-specify the accent variant's
-       own background and hover rules. */
-    :global(.btn.chat-send-btn[aria-disabled="true"]),
-    :global(.btn.chat-send-btn[aria-disabled="true"]:hover) {
-        --btn-bg: var(--color-surface-light);
-        --btn-color: var(--color-text-disabled);
-        cursor: not-allowed;
+    /* Inactive (disabled) send button: the model picker's fill rather than
+       --color-disabled-bg. The doubled class out-specifies the fill variant's own
+       disabled input. */
+    :global(.btn--fill.chat-send-btn.chat-send-btn) {
+        --btn-bg-disabled: var(--color-surface-light);
+    }
+
+    /* --color-text-disabled is too close to that fill in dark mode to read. */
+    :global(html.darkMode .btn--fill.chat-send-btn.chat-send-btn) {
+        --btn-color-disabled: color-mix(in oklab, var(--color-text) 50%, var(--color-surface-light));
     }
 </style>

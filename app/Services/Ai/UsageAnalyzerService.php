@@ -45,7 +45,7 @@ class UsageAnalyzerService
 
             'prompt_tokens' => $usage->promptTokens,
             'completion_tokens' => $usage->completionTokens,
-            'model' => $usage->model->model_id,
+            'model' => $usage->model->getIdentifier(),
             'type' => $type,
         ]);
 

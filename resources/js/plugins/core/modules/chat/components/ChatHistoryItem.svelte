@@ -1,13 +1,12 @@
 <!--
-  @component One row of the chat sidebar's history list: a list item holding the
-  conversation link plus an actions menu (rename / delete) that only appears
-  while the row is hovered, focused, or its menu is open. Link and menu trigger
-  are siblings — a trigger nested inside the link would be invalid HTML.
+  @component One row of the chat sidebar's history list: the conversation row
+  itself plus an actions menu (pin / rename / delete) that only appears while the
+  row is hovered, focused, or its menu is open.
 
-  Renaming happens inline — the link is swapped for a text field that commits on
-  Enter / blur and cancels on Escape, after which focus returns to the row;
-  deleting goes through a `ConfirmDialog`. Both actions are reported through
-  `onRename` / `onDelete`, so the page owns the store calls and error handling.
+  Renaming happens inline — the row is swapped for a text field that commits on
+  Enter / blur and cancels on Escape; deleting goes through a `ConfirmDialog`.
+  The actions are reported through `onTogglePin` / `onRename` / `onDelete`, so
+  the page owns the store calls and error handling.
 -->
 <script lang="ts">
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
@@ -17,54 +16,40 @@
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import MoreHorizontalIcon from '$lib/components/ui/icons/iconset/MoreHorizontalIcon.svelte';
-    import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
+    import PinIcon from '$lib/components/ui/icons/iconset/PinIcon.svelte';
+    import PinOffIcon from '$lib/components/ui/icons/iconset/PinOffIcon.svelte';
+    import Edit03Icon from '$lib/components/ui/icons/iconset/Edit03Icon.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {tick, type ComponentProps, type Snippet} from 'svelte';
+    import type {Snippet} from 'svelte';
 
-    interface Props extends HTMLAttributes<HTMLLIElement> {
+    interface Props extends HTMLAttributes<HTMLDivElement> {
         name: string;
-        /** Where the row leads; a path or a named route (see `Link`). */
-        href: ComponentProps<typeof SidebarItem>['href'];
         active?: boolean;
+        pinned?: boolean;
         /** Leading visual, e.g. the "still generating" indicator. */
         media?: Snippet;
         /** Accessible name of the row, defaults to the conversation name. */
         rowLabel?: string;
+        onOpen: () => void;
+        onTogglePin: () => void;
         onRename: (name: string) => void | Promise<void>;
         onDelete: () => void | Promise<void>;
     }
 
-    const {name, href, active = false, media, rowLabel, onRename, onDelete, class: className, ...restProps}: Props = $props();
+    const {name, active = false, pinned = false, media, rowLabel, onOpen, onTogglePin, onRename, onDelete, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
     const toast = useToastContext();
-    const id = $props.id();
-    const errorId = `${id}-rename-error`;
 
     let menuOpen = $state(false);
     let deleteOpen = $state(false);
     let renaming = $state(false);
-    let renameInvalid = $state(false);
     let renameInput = $state<HTMLInputElement | null>(null);
-    let rowEl = $state<HTMLElement | null>(null);
 
-    // Removing the focused rename field drops focus onto <body>. Hand it back
-    // to the row — after a blur only when nothing else took it, since the user
-    // may have tabbed or clicked somewhere else on purpose.
-    async function stopRenaming(restoreFocus: boolean) {
-        renaming = false;
-        renameInvalid = false;
-        await tick();
-        const focusLost = document.activeElement === null || document.activeElement === document.body;
-        if (restoreFocus || focusLost) {
-            rowEl?.focus();
-        }
-    }
-
-    function commitRename(nextName: string, restoreFocus: boolean) {
+    function commitRename(nextName: string) {
         if (!renaming) return;
-        void stopRenaming(restoreFocus);
+        renaming = false;
         const trimmed = nextName.trim();
         if (!trimmed || trimmed === name) return;
         void onRename(trimmed);
@@ -75,14 +60,13 @@
         if (event.key === 'Enter') {
             event.preventDefault();
             if (!input.value.trim()) {
-                renameInvalid = true;
                 toast.error(__('chat.nameMenu.emptyNameError'));
                 return;
             }
-            commitRename(input.value, true);
+            commitRename(input.value);
         } else if (event.key === 'Escape') {
             event.preventDefault();
-            void stopRenaming(true);
+            renaming = false;
         }
     }
 
@@ -94,33 +78,26 @@
     });
 </script>
 
-<li {...restProps} class={["history-row", className]} class:menu-open={menuOpen} class:active>
+<div {...restProps} class={["history-row", className]} class:menu-open={menuOpen} class:active>
     {#if renaming}
         <input
             class="rename-input"
             bind:this={renameInput}
             value={name}
             aria-label={__('chat.nameMenu.newNameAriaLabel')}
-            aria-invalid={renameInvalid || undefined}
-            aria-describedby={renameInvalid ? errorId : undefined}
-            oninput={() => renameInvalid = false}
             onkeydown={onRenameKeyDown}
-            onblur={event => commitRename((event.target as HTMLInputElement).value, false)}
+            onblur={event => commitRename((event.target as HTMLInputElement).value)}
         />
-        {#if renameInvalid}
-            <span class="u-sr-only" id={errorId}>{__('chat.nameMenu.emptyNameError')}</span>
-        {/if}
     {:else}
         <SidebarItem
-            bind:ref={rowEl}
             {media}
             {active}
-            {href}
             label={name}
             aria-label={rowLabel ?? name}
+            onclick={onOpen}
         />
         <!-- Sits on top of the row rather than inside it: a nav row is a
-             link, so its trigger cannot be nested in the same element. -->
+             button, so its trigger cannot be nested in the same element. -->
         <div class="actions">
             <!-- alignOffset cancels the trigger's --action-gap inset (4px) so the
                  menu lines up with the row's trailing edge. -->
@@ -132,11 +109,13 @@
                         size="sm"
                         iconLeft={MoreHorizontalIcon}
                         tooltip={__('chat.nameMenu.actionsTooltip')}
-                        aria-label={__('chat.nameMenu.actionsForChat', {name})}
                         tooltipSide="right"
                     />
                 {/snippet}
-                <DropdownMenuItem iconLeft={Edit02Icon} onclick={() => renaming = true}>
+                <DropdownMenuItem iconLeft={pinned ? PinOffIcon : PinIcon} onclick={onTogglePin}>
+                    {__(pinned ? 'chat.nameMenu.unpin' : 'chat.nameMenu.pin')}
+                </DropdownMenuItem>
+                <DropdownMenuItem iconLeft={Edit03Icon} onclick={() => renaming = true}>
                     {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>
                 <DropdownMenuItem iconLeft={Delete02Icon} variant="destructive" onclick={() => deleteOpen = true}>
@@ -145,28 +124,31 @@
             </DropdownMenu>
         </div>
     {/if}
-</li>
+</div>
 
 <ConfirmDialog
     bind:open={deleteOpen}
     title={__('chat.nameMenu.deleteConfirmTitle', {name})}
     description={__('chat.nameMenu.deleteConfirmDescription')}
+    okLabel={__('chat.nameMenu.deleteConfirmLabel')}
+    confirmVariant="delete"
     onConfirm={onDelete}
 />
 
 <style>
     .history-row {
         /* The trigger sits inside the row's rounded rectangle with the same gap
-           on every side, one radius step tighter than the row. */
+           on every side, one radius step tighter than the row. `--nav-row-h`
+           is scoped by `SidebarRoot`, which the history list renders inside. */
         --action-gap: var(--space-1);
         --action-size: calc(var(--nav-row-h) - 2 * var(--action-gap));
         position: relative;
-        list-style: none;
     }
 
     /* The label has to stop before the trigger, otherwise a long chat name
        runs underneath it. */
     .history-row :global(.sidebar-item) {
+        padding-left: var(--history-text-inset);
         padding-right: calc(var(--nav-row-h) - var(--action-gap));
     }
 
@@ -185,7 +167,6 @@
         /* Hidden at rest — the list stays quiet until a row is pointed at. */
         opacity: 0;
         pointer-events: none;
-        transition: opacity var(--duration-fast);
     }
 
     .history-row:hover .actions,
@@ -203,6 +184,15 @@
         /* No plate behind the glyph — the row underneath already carries the
            hover / active surface. */
         background: transparent;
+        /* Only shows on a pointed-at row, so it takes that row's label color. */
+        color: var(--color-nav-text-hover);
+    }
+
+    /* Always showing on mobile, so it recedes like the sidebar's other icons. */
+    @media (--bp-md-and-smaller) {
+        .actions :global(button) {
+            color: var(--color-nav-icon);
+        }
     }
 
     /* The glyph sits directly on the selected row's surface, so it takes the
@@ -224,27 +214,18 @@
     .rename-input {
         width: 100%;
         min-height: var(--nav-row-h);
-        padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
+        padding: 0 var(--nav-item-pad-x) 0 var(--history-text-inset);
         border: 1px solid var(--color-focus-ring);
         border-radius: var(--corner-sm);
         background: var(--color-surface-raised);
         color: var(--color-text);
         font: inherit;
-        font-size: var(--font-size-xs);
+        font-size: var(--nav-font-size);
     }
 
     .rename-input:focus,
     .rename-input:focus-visible {
         outline: none;
         box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-focus-ring) 25%, transparent);
-    }
-
-    .rename-input[aria-invalid="true"] {
-        border-color: var(--color-error);
-    }
-
-    .rename-input[aria-invalid="true"]:focus,
-    .rename-input[aria-invalid="true"]:focus-visible {
-        box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-error) 25%, transparent);
     }
 </style>

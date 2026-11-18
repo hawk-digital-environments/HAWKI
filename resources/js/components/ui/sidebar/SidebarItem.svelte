@@ -3,44 +3,25 @@
   label — with neither, the row is label-only — and
   registers itself as a MenuListItem so the enclosing SidebarItems can track it with
   its proximity-hover and active highlights. When given `children` (its
-  sub-tree) it owns its own chevron and toggles the sub-tree inline — the
-  layout never injects a trailing icon. In the collapsed rail it shrinks to
-  an icon with a tooltip.
-
-  Rows that lead somewhere are links: pass `href` (a path or a named route, see
-  `Link`) and the row renders as `<a>` with `aria-current="page"` while active.
-  Rows that trigger something (a menu, a dialog) stay `<button>`s.
+  sub-items) it owns its own chevron and toggles the sub-tree inline — the
+  layout never injects a trailing icon.
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';
     import type {Attachment} from 'svelte/attachments';
-    import type {HTMLAnchorAttributes, HTMLButtonAttributes} from 'svelte/elements';
-    import type {ComponentProps} from 'svelte';
+    import type {HTMLButtonAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
-    import {cubicInOut} from 'svelte/easing';
-    import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
-    import Link from '$lib/components/util/link/Link.svelte';
+    import {slide} from 'svelte/transition';
+    import {cubicOut} from 'svelte/easing';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useMenuList} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
     import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import ChevronRightIcon from '$lib/components/ui/icons/iconset/ChevronRightIcon.svelte';
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import Link from '$lib/components/util/link/Link.svelte';
+    import type {ComponentProps} from 'svelte';
 
-    type RowElement = HTMLAnchorElement | HTMLButtonElement;
-    type RowClickEvent = MouseEvent & {currentTarget: EventTarget & RowElement};
-
-    interface Props extends Omit<HTMLButtonAttributes, 'children'> {
-        /** Navigation target. When set, the row renders as a `Link` (`<a>`)
-            instead of a `<button>`; accepts everything `Link`'s `href` does,
-            including a named route `{name, params}`. */
-        href?: ComponentProps<typeof Link>['href'];
-        /** Anchor target, only used together with `href` (e.g. `_blank` for an
-            external link — `Link` adds the matching `rel`). */
-        target?: HTMLAnchorAttributes['target'];
-        /** The rendered row element (`<a>` or `<button>`), e.g. to move focus
-            back onto the row. */
-        ref?: HTMLElement | null;
+    interface Props extends HTMLButtonAttributes {
         /** Hugeicons icon shown before the label. Ignored when `media` is provided.
             Optional: with neither `icon` nor `media` the row is label-only and
             the leading slot is omitted entirely. */
@@ -65,131 +46,64 @@
         trailing?: Snippet;
         /** Sub-items revealed beneath this row. Presence renders a chevron. */
         children?: Snippet;
+        /** Navigation target. When set, the row renders as a `Link` (`<a>`)
+            instead of a `<button>`; accepts everything `Link`'s `href` does,
+            e.g. `'/path'` or `{name: 'route.name'}`. */
+        href?: ComponentProps<typeof Link>['href'];
+        /** Anchor target, only used together with `href` (e.g. `_blank` for an
+            external link — `Link` adds the matching `rel`). */
+        target?: string;
     }
 
-    // Timing of the sub-tree's cascading rows: `staggerIn` staggers their
-    // entry, `staggerOut`/`rowOut` their bottom-up exit (which also sizes
-    // `collapseSubtree`'s height fold). Injected into the styles as
-    // `--stagger-in` / `--stagger-out` / `--row-out` by `staggerSubtreeRows`,
-    // so the CSS cascade and the fold share these as their single source of
-    // truth.
-    const SUBTREE_MOTION = {
-        staggerIn: 22,
-        staggerOut: 18,
-        rowOut: 100
-    } as const;
-
     let {
-        href,
-        target,
-        ref = $bindable(null),
         icon: Icon,
         media,
         label,
         active = false,
         indent = false,
         drill = false,
+        trailing,
         defaultExpanded = false,
         expanded = $bindable(defaultExpanded),
-        trailing,
         children,
+        href,
+        target,
         onclick,
         class: className,
         ...rest
     }: Props = $props();
 
     const sidebar = useSidebar();
-    const menuList = useMenuList();
 
-    const collapsed = $derived(!sidebar.navOpen);
     // Optional: rows used outside a list container (e.g. a footer) have no
     // sliding highlight behind them, so they paint their own hover surface.
-    const standalone = $derived(!menuList);
-    const isBranch = $derived(children !== undefined);
-    // Children never render in the rail; the chevron and sub-tree are hidden there.
-    const showSubtree = $derived(isBranch && expanded && !collapsed);
+    const standalone = !useMenuList();
+
     // A row wired up as a popup trigger is marked active while its surface is
     // showing, which is a pressed state — not "this is the current page". Let
     // the trigger's own aria-expanded carry it instead of claiming aria-current.
-    const isPopupTrigger = $derived(Boolean(rest['aria-haspopup']));
-    const showDrill = $derived(!isBranch && drill);
-    const showTrailing = $derived(!isBranch && !drill && trailing !== undefined);
+    const isPopupTrigger = $derived(!!rest['aria-haspopup']);
 
-    // The rail row still spans the full panel width, so a tooltip anchored to
-    // the button would open a row's width away from the icon it describes.
-    // Anchor it to the icon instead.
-    let iconEl = $state<HTMLElement | null>(null);
+    const hasChildren = $derived(!!children);
+    const showChildren = $derived(hasChildren && expanded);
 
-    // Hands the rendered element out through `ref`, next to the list's own
-    // registration attachment. The teardown guard keeps a newer mount's `ref`
-    // from being cleared by an older element's cleanup.
-    const attachRef: Attachment<HTMLElement> = (element) => {
-        ref = element;
-
-        return () => {
-            if (ref === element) ref = null;
-        };
-    };
-
-    // Numbers the sub-tree's rows so the styles can cascade them: `--i` is a
-    // row's position, `--n` the row count (the close runs bottom-up), and the
-    // timing properties hand the CSS the `SUBTREE_MOTION` values above.
-    const staggerSubtreeRows: Attachment<HTMLElement> = (element) => {
-        const rows = Array.from(element.children) as HTMLElement[];
-
-        element.style.setProperty('--n', String(rows.length));
-        element.style.setProperty('--stagger-in', `${SUBTREE_MOTION.staggerIn}ms`);
-        element.style.setProperty('--stagger-out', `${SUBTREE_MOTION.staggerOut}ms`);
-        element.style.setProperty('--row-out', `${SUBTREE_MOTION.rowOut}ms`);
-
-        rows.forEach((row, index) => row.style.setProperty('--i', String(index)));
-
-        return () => {
-            element.style.removeProperty('--n');
-            element.style.removeProperty('--stagger-in');
-            element.style.removeProperty('--stagger-out');
-            element.style.removeProperty('--row-out');
-
-            rows.forEach((row) => row.style.removeProperty('--i'));
-        };
-    };
-
-    /** Folds the sub-tree's height away underneath its rows' staggered exit,
-        lasting exactly as long as that cascade. Deliberately unclipped: the
-        rows leave by their own fade, and cutting them off at the shrinking
-        edge would read as a mask wiping over them. */
-    function collapseSubtree(node: Element) {
-        const rowCount = Math.max(1, node.childElementCount);
-        const duration = SUBTREE_MOTION.staggerOut * (rowCount - 1) + SUBTREE_MOTION.rowOut;
-        const height = node.scrollHeight;
-
-        return {
-            duration: motionDuration(duration),
-            easing: cubicInOut,
-            css: (t: number) => `height: ${t * height}px;`
-        };
-    }
-
-    function handleClick(event: RowClickEvent) {
-        // Expandable rows toggle their sub-tree inline (only when not collapsed)
-        // and never navigate, so the off-canvas nav stays open for them.
-        if (isBranch && !collapsed) {
+    function handleClick(event: MouseEvent & {currentTarget: EventTarget & HTMLButtonElement}) {
+        // Expandable rows toggle their sub-tree inline and never navigate, so the
+        // off-canvas nav stays open for them.
+        if (hasChildren) {
             expanded = !expanded;
         } else if (sidebar.mobile) {
             // Tapping a leaf row navigates; collapse the off-canvas overlay so it
             // doesn't cover the destination.
             sidebar.navOpen = false;
         }
-        // `SidebarItem` can render either a link or a button, while its public
-        // callback type comes from HTMLButtonAttributes. Both receive the same
-        // MouseEvent at runtime; narrow only for that callback boundary.
-        onclick?.(event as MouseEvent & {currentTarget: EventTarget & HTMLButtonElement});
+        onclick?.(event);
     }
 </script>
 
 {#snippet rowContent()}
     {#if media || Icon}
-        <span class="icon-wrap" bind:this={iconEl}>
+        <span class="icon-wrap">
             {#if media}
                 {@render media()}
             {:else if Icon}
@@ -197,31 +111,23 @@
             {/if}
         </span>
     {/if}
-
     <span class="label">{label}</span>
-
-    {#if isBranch}
+    {#if hasChildren}
         <span class="caret" class:open={expanded} aria-hidden="true">
             <ChevronRightIcon size={16} strokeWidth={2} />
         </span>
-    {:else if showDrill}
+    {:else if drill}
         <span class="caret" aria-hidden="true">
             <ChevronRightIcon size={16} strokeWidth={2} />
         </span>
-    {:else if showTrailing}
+    {:else if trailing}
         <span class="caret trailing" aria-hidden="true">
-            {@render trailing?.()}
+            {@render trailing()}
         </span>
     {/if}
 {/snippet}
 
-{#snippet interactiveRow(attach: Attachment<HTMLElement>, triggerProps: Record<string, unknown> = {})}
-    {@const rowProps = mergeProps(triggerProps, rest, {
-        class: ['sidebar-item', className, {active, indent, collapsed, drill, standalone}],
-        onclick: handleClick,
-        'aria-expanded': isBranch ? expanded : undefined
-    })}
-
+{#snippet row(attach: Attachment<HTMLElement>)}
     {#if href}
         <!-- A link row: `Link` computes navigation, rel, aria-current and the
              screen-reader hints, but the anchor itself is rendered here — an
@@ -229,11 +135,16 @@
              scoped `.sidebar-item` styles. -->
         <Link {href} target={target ?? undefined} active={active && !isPopupTrigger}>
             {#snippet child({props: linkProps, hints})}
-                <!-- Run the sidebar handler before Link prevents the default navigation event. -->
                 <a
                     {@attach attach}
-                    {@attach attachRef}
-                    {...(mergeProps(rowProps, linkProps) as Record<string, unknown>)}
+                    {...(mergeProps({
+                        class: ['sidebar-item', className],
+                        onclick: handleClick
+                    }, linkProps) as Record<string, unknown>)}
+                    class:active
+                    class:indent
+                    class:drill
+                    class:standalone
                 >
                     {@render rowContent()}{@render hints()}
                 </a>
@@ -243,9 +154,16 @@
         <button
             type="button"
             {@attach attach}
-            {@attach attachRef}
             aria-current={active && !isPopupTrigger ? 'page' : undefined}
-            {...rowProps}
+            aria-expanded={hasChildren ? expanded : undefined}
+            {...mergeProps(rest, {
+                class: ['sidebar-item', className],
+                onclick: handleClick
+            })}
+            class:active
+            class:indent
+            class:drill
+            class:standalone
         >
             {@render rowContent()}
         </button>
@@ -254,35 +172,21 @@
 
 <MenuListItem {active} inset={indent}>
     {#snippet children({attach})}
-        {#if collapsed}
-            <Tooltip
-                tooltip={label}
-                side="right"
-                sideOffset={24}
-                delayDuration={300}
-                customAnchor={iconEl}
-            >
-                {#snippet children({props})}
-                    {@render interactiveRow(attach, props)}
-                {/snippet}
-            </Tooltip>
-        {:else}
-            {@render interactiveRow(attach)}
-        {/if}
+        {@render row(attach)}
     {/snippet}
 </MenuListItem>
 
-{#if showSubtree}
-    <!-- Opening takes its space at once and the rows spring in one after the
-         other, purely in CSS (see `.subtree`): a measured grow kept the rows
-         hidden for its whole duration here, so they popped in late. Closing
-         cascades them back out bottom-up while the height folds away. -->
-    <div class="subtree" {@attach staggerSubtreeRows} out:collapseSubtree>
+{#if showChildren}
+    <div class="subtree" transition:slide={{duration: 120, easing: cubicOut}}>
         {@render children?.()}
     </div>
 {/if}
 
 <style>
+    a.sidebar-item {
+        text-decoration: none;
+    }
+
     .sidebar-item {
         position: relative;
         /* Rows paint above the sliding highlight behind them. */
@@ -290,37 +194,27 @@
         z-index: var(--sidebar-item-z);
         display: flex;
         align-items: center;
-        gap: var(--space-2_5);
+        gap: var(--space-2);
         width: 100%;
         min-height: var(--nav-row-h);
-        padding: 0 var(--nav-item-pad-x);
+        padding-inline: var(--nav-item-pad-x);
         border: none;
         background: transparent;
-        /* Rows recede at rest and come forward on hover — the same treatment as
-           the section switcher's chevron and the header actions, but held part
-           way to the full text color: a list of chat titles is content, not
-           chrome, so it stays comfortably readable while unselected. */
-        color: color-mix(in oklab, var(--color-text) 60%, var(--color-text-muted));
-        font-size: var(--font-size-xs);
+        color: var(--color-nav-text);
+        font-size: var(--nav-font-size);
         cursor: pointer;
         border-radius: var(--corner-sm);
         text-align: left;
-        text-decoration: none;
         transition: color var(--duration-fast);
     }
 
     /* Hover/active surfaces are provided by the sliding highlights in List. */
     .sidebar-item:hover {
-        color: var(--color-text);
+        color: var(--color-nav-text-hover);
     }
 
     .sidebar-item.active {
         color: var(--color-active-text);
-    }
-
-    .sidebar-item:disabled {
-        color: var(--color-text-disabled);
-        cursor: default;
     }
 
     /* The --drill-stop-* properties are registered in resources/css/properties.css;
@@ -363,27 +257,14 @@
         --drill-stop-3: var(--gradient-brand-hover-3);
     }
 
-    /* Child rows sit indented under their parent, aligning with the label. The
-       list insets their highlight by the icon column plus the row gap (see
-       SidebarItems), which leaves the same --nav-item-pad-x inside it. */
+    /* Child rows sit indented under their parent, aligning with the label. */
     .sidebar-item.indent {
-        padding-left: calc(var(--nav-item-pad-x) + var(--nav-icon-size) + var(--space-2_5));
-    }
-
-    /* Icon-only rail. The padding is deliberately unchanged: the icon keeps the
-       exact same offset from the panel edge in both states, so it never drifts
-       sideways while the column animates. Label and chevron fade out and are
-       clipped by the panel instead of being pulled from the flow. */
-    .sidebar-item.collapsed .label,
-    .sidebar-item.collapsed .caret {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 100ms ease;
+        padding-left: calc(var(--nav-item-pad-x) + var(--nav-icon-size) + var(--space-2));
     }
 
     /* Pinned to the icon column rather than shrink-wrapped, so leading visuals
        that are not glyph-sized — an avatar, say — still centre on the same
-       column as every icon, in the rail as well as the open panel. Media wider
+       column as every icon. Media wider
        than the column spills symmetrically; --nav-media-size declares the
        media's actual extent (an avatar's diameter, say) so the right-hand
        spill can be handed back and the gap before the label stays even with
@@ -397,6 +278,8 @@
         height: var(--nav-icon-size);
         margin-right: calc((var(--wrap-media-size) - var(--nav-icon-size)) / 2);
         flex-shrink: 0;
+        color: var(--color-nav-icon);
+        transition: color var(--duration-fast);
     }
 
     .label {
@@ -405,34 +288,31 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        /* Out fast, in late — the text is gone well before the rail is narrow
-           enough to squeeze it, and only returns once there is room again. */
-        transition: opacity 160ms ease 100ms;
     }
 
     /* Caret on expandable rows; rotates down when the sub-tree is open. */
     .caret {
         display: inline-flex;
         flex-shrink: 0;
-        color: inherit;
+        color: var(--color-nav-icon);
         transition:
             transform 120ms var(--easing-spring),
-            color var(--duration-fast),
-            opacity 160ms ease 100ms;
+            color var(--duration-fast);
     }
 
     .caret.open {
         transform: rotate(90deg);
     }
 
-    /* A trailing visual recedes at rest and comes forward on hover or while the
-       row is active — same treatment as the section switcher's chevron. */
-    .caret.trailing {
-        color: var(--color-text-muted);
-    }
-
-    .sidebar-item:hover .caret.trailing,
-    .sidebar-item.active .caret.trailing {
+    /* Icons recede at rest and come forward on hover or while the row is active
+       — same treatment as the section switcher's chevron. Drill rows sit on the
+       brand gradient, so their icons always take the row's color. */
+    .sidebar-item:hover .icon-wrap,
+    .sidebar-item.active .icon-wrap,
+    .sidebar-item.drill .icon-wrap,
+    .sidebar-item:hover .caret,
+    .sidebar-item.active .caret,
+    .sidebar-item.drill .caret {
         color: inherit;
     }
 
@@ -440,51 +320,6 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
-    }
-
-    /* The cascade moves each row's contents, never the row itself: the list
-       measures the row boxes to place its highlights, and a row in mid-flight
-       would hand it a position that is off by the travel. */
-    .subtree > :global(* > *) {
-        animation:
-            subtree-row-drop 240ms cubic-bezier(0.3, 1.7, 0.5, 1) both,
-            subtree-row-fade 90ms var(--easing-out) both;
-        animation-delay: calc(var(--i, 0) * var(--stagger-in));
-    }
-
-    /* Svelte marks an element inert for the length of its outro, and lifts it
-       again should the sub-tree be reopened mid-close. */
-    .subtree:global([inert]) > :global(* > *) {
-        animation: subtree-row-out var(--row-out, 100ms) var(--easing-in) both;
-        animation-delay: calc((var(--n, 1) - 1 - var(--i, 0)) * var(--stagger-out, 18ms));
-    }
-
-    @keyframes subtree-row-drop {
-        from {
-            transform: translateY(-8px);
-        }
-    }
-
-    @keyframes subtree-row-fade {
-        from {
-            opacity: 0;
-        }
-    }
-
-    @keyframes subtree-row-out {
-        to {
-            opacity: 0;
-            transform: translateY(-6px);
-        }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        /* Covers the outro variant too: its `[inert]` selector outranks the
-           plain rule above, so it needs the same override spelled out. */
-        .subtree > :global(* > *),
-        .subtree:global([inert]) > :global(* > *) {
-            animation: none;
-        }
     }
 
     /* Bump rows up a notch for easier tapping on small screens. */

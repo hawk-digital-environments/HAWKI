@@ -1,0 +1,169 @@
+name: '[MANUAL] - Rebuild Existing Legacy Image'
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for the rebuild'
+        required: true
+        default: 'Legacy image rebuild'
+      rebuild_ref:
+        description: 'Legacy release tag (2.0.1 up to 2.2.0) or full commit SHA of a tagged legacy release to rebuild from.'
+        required: true
+
+permissions:
+  packages: write
+  contents: read
+  attestations: write
+  id-token: write
+
+jobs:
+  build-and-publish:
+    name: Rebuild & Publish
+    runs-on: ubuntu-latest
+    steps:
+      # The "Use workflow from" dropdown does NOT select what gets rebuilt:
+      # it selects which copy of this workflow file runs. The rebuild target
+      # is therefore chosen by the rebuild_ref input, and dispatching from a
+      # tag is rejected to keep the two roles apart.
+      - name: Guard the dispatch and the rebuild target
+        env:
+          REBUILD_REF: ${{ inputs.rebuild_ref }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "::error::Do not dispatch this workflow from a tag: the 'Use workflow from' dropdown picks which workflow file runs, not what gets rebuilt. Dispatch from a branch instead and name the legacy tag or commit to rebuild in 'rebuild_ref'."
+            exit 1
+          fi
+
+          if ! echo "$REBUILD_REF" | grep -Eq '^([0-9]+\.[0-9]+\.[0-9]+|[0-9a-f]{40})$'; then
+            echo "::error::rebuild_ref must be a legacy release tag like '2.2.0' or a full commit SHA - got '$REBUILD_REF'."
+            exit 1
+          fi
+
+          echo "Dispatched from: $GITHUB_REF"
+          echo "Rebuilding from: $REBUILD_REF"
+
+      - name: Checkout the rebuild target
+        uses: actions/checkout@v7
+        with:
+          # The dropdown ref only selects which workflow file runs; this
+          # input selects what actually gets built.
+          ref: ${{ inputs.rebuild_ref }}
+
+      # For the report below: github.sha belongs to the dispatch ref, not to
+      # the rebuild target, so resolve the checked-out commit ourselves.
+      - name: Resolve the rebuilt commit
+        id: build_info
+        run: |
+          echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Legacy refs (2.2.0 and older) predate config/hawki_version.json, so
+      # detect-version@v1 cannot be used here. The release tag is the source
+      # of truth for the version - NOT the public/js_v* asset directory,
+      # which lags behind on patch releases (2.1.1 and 2.2.0 both still
+      # ship js_v2.1.0) and would mislabel and collide those images.
+      - name: Read version from the release tag
+        id: get_version
+        env:
+          REBUILD_REF: ${{ inputs.rebuild_ref }}
+        run: |
+          set -euo pipefail
+
+          VERSION=""
+
+          if echo "$REBUILD_REF" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            # Rebuild dispatched by tag name: the tag IS the version,
+            # exactly how the 2.2.0-era pipeline derived it (github.ref_name).
+            VERSION="$REBUILD_REF"
+          else
+            # Rebuild dispatched by commit SHA: resolve the release tag that
+            # points at the checked-out commit. All HAWKI tags are
+            # lightweight, so the ls-remote sha is the commit sha, and
+            # ls-remote works regardless of checkout depth (the same
+            # approach detect-version@v1 uses for its tag checks).
+            HEAD_SHA=$(git rev-parse HEAD)
+            VERSION=$(git ls-remote --tags --refs origin \
+              | awk -v sha="$HEAD_SHA" '$1 == sha { sub(/^refs\/tags\//, "", $2); print $2 }' \
+              | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
+              | sort -V | tail -n 1 \
+              || true)
+          fi
+
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not resolve the version: no release tag points at '$REBUILD_REF'. Legacy rebuilds need a tagged release (2.0.1 up to 2.2.0)."
+            exit 1
+          fi
+
+          # Anything 2.3.0 or newer carries config/hawki_version.json and is
+          # handled by the regular rebuild workflow.
+          NEWEST=$(printf '%s\n' "$VERSION" "2.3.0" | sort -V | tail -n 1)
+          if [ "$VERSION" = "2.3.0" ] || [ "$NEWEST" != "2.3.0" ]; then
+            echo "::error::Version $VERSION is not a legacy version. Use the 'Rebuild Existing Image' workflow for refs 2.3.0 and newer."
+            exit 1
+          fi
+
+          if [ ! -f Dockerfile ]; then
+            echo "::error::No Dockerfile at this ref - it cannot be rebuilt (releases before 2.0.1 predate the container image)."
+            exit 1
+          fi
+
+          echo "Detected version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Required to read the registry-backed build cache below
+      - name: Log in to the GitHub Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          target: app_prod
+          platforms: linux/amd64,linux/arm64
+          # No latest tag on purpose: every rebuildable legacy version is
+          # older than the current release, so republishing latest would
+          # regress it.
+          tags: |
+            digitalenvironments/hawki:${{ steps.get_version.outputs.version }}
+          # Imports the per-arch caches written by the release gate in
+          # trigger-release.yml. Legacy code will mostly miss these, which
+          # just means a slower build - never a failure.
+          cache-from: |
+            type=registry,ref=ghcr.io/hawk-digital-environments/hawki:buildcache-amd64
+            type=registry,ref=ghcr.io/hawk-digital-environments/hawki:buildcache-arm64
+          # No cache-to on purpose: exporting a combined multi-arch cache is
+          # what triggered the 504s, and nothing reads such a ref anyway.
+
+      - name: Generate artifact attestation
+        uses: actions/attest@v4
+        with:
+          subject-name: index.docker.io/digitalenvironments/hawki
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - uses: hawk-digital-environments/hawk-pipeline-actions/send-discord-notification@v1
+        with:
+          webhook-url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
+          release-name: "Legacy Rebuild: ${{ steps.get_version.outputs.version }}"
+          release-body: "Manual rebuild of a legacy image by workflow dispatch, rebuilding '${{ inputs.rebuild_ref }}' (${{ steps.build_info.outputs.head_sha }}). The digitalenvironments/hawki:latest tag was left untouched. Reason: ${{ inputs.reason }}"
+          release-url: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          content: "||@everyone|| ⚠️ **HAWKI ${{ steps.get_version.outputs.version }}** has been rebuilt and republished (Legacy Hotfix, ref: ${{ inputs.rebuild_ref }})."

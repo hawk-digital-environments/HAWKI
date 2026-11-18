@@ -7,7 +7,7 @@ import { createQueryState } from '../../../resources/js/components/ui/routing/ho
 import { createTransientRoutingStrategy } from '../../../resources/js/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
 import type { RouteComponent } from '../../../resources/js/components/ui/routing/logistics/RouteRegistrar.js';
 
-const Page: RouteComponent = () => {};
+const Page = (() => {}) as unknown as RouteComponent;
 
 function fixture() {
     let loads = 0;

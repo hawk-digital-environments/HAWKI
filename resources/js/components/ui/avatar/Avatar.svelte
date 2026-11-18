@@ -90,8 +90,8 @@
     }
 
     .avatar.neutral {
-        background: var(--color-active-surface);
-        color: var(--color-active-text);
+        background: var(--color-accent-100);
+        color: var(--color-accent-text);
     }
 
     .avatar img {

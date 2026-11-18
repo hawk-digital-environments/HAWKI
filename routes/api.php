@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Api\V1\AiCapabilityController;
 use App\Http\Controllers\Api\V1\AiConvController;
 use App\Http\Controllers\Api\V1\AiModelController;
@@ -7,22 +9,26 @@ use App\Http\Controllers\Api\V1\AiModelDescriptionController;
 use App\Http\Controllers\Api\V1\AiModelFlagController;
 use App\Http\Controllers\Api\V1\AiProviderController;
 use App\Http\Controllers\Api\V1\AiToolController;
+use App\Http\Controllers\Api\V1\AnnouncementController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\ConnectionController;
 use App\Http\Controllers\Api\V1\ExtAppController;
 use App\Http\Controllers\Api\V1\McpServerController;
 use App\Http\Controllers\Api\V1\MigrationController;
-use App\Http\Controllers\Api\V1\OpenaiResponsesController;
+use App\Http\Controllers\Api\V1\PasskeyBackupController;
+use App\Http\Controllers\Api\V1\RegistrationsController;
 use App\Http\Controllers\Api\V1\RoomMemberController;
 use App\Http\Controllers\Api\V1\RoomMessageController;
+use App\Http\Controllers\Api\V1\SessionsController;
+use App\Http\Controllers\Api\V1\OpenaiResponsesController;
+use App\Http\Controllers\OpenApiSpecController;
+use App\Services\Assistant\Routes\AssistantApiRoutes;
 use App\Http\Controllers\Api\V1\SystemModelController;
 use App\Http\Controllers\Api\V1\SystemPromptController;
 use App\Http\Controllers\Api\V1\TranslationLabelController;
 use App\Http\Controllers\Api\V1\UserKeychainValueController;
 use App\Http\Controllers\Api\V1\UsersController;
-use App\Services\Assistant\Routes\AssistantApiRoutes;
 use App\Http\Controllers\LinkPreviewController;
-use App\Http\Controllers\OpenApiSpecController;
 use App\Http\Controllers\StorageProxyController;
 use App\Http\Controllers\StreamController;
 use App\Http\Middleware\Api\ApiDataScopeContextSettingMiddleware;
@@ -39,7 +45,7 @@ use LaravelJsonApi\Laravel\Routing\ActionRegistrar;
 use LaravelJsonApi\Laravel\Routing\Relationships;
 use LaravelJsonApi\Laravel\Routing\ResourceRegistrar;
 
-Route::middleware(['auth:sanctum', 'deprecated:/api/hawki/v1/users/me'])->get('/user', function (Request $request) {
+Route::middleware(['auth:sanctum', 'deprecated:/api/hawki/v1/users/me'])->get('/user', static function (Request $request) {
     return $request->user();
 });
 
@@ -47,22 +53,26 @@ Route::middleware([
     ExternalAccessRequiredMiddleware::class,
     'auth:sanctum',
     BlockExtAppsIfNotAllowedMiddleware::class,
-    AppTokenForbiddenMiddleware::class
-])->group(function () {
+    AppTokenForbiddenMiddleware::class,
+])->group(static function (): void {
     Route::post('ai-req', [StreamController::class, 'handleExternalRequest']);
-});
-
-Route::group(['prefix' => Server::BASE_URL_PREFIX], static function (): void {
-    Route::get('/openapi.json', OpenApiSpecController::class);
 });
 
 Route::middleware([
     'auth:sanctum',
     BlockExtAppsIfNotAllowedMiddleware::class,
-    AppTokenForbiddenMiddleware::class
-])->group(function () {
-    Route::group(['prefix' => Server::BASE_URL_PREFIX], static function () {
+    AppTokenForbiddenMiddleware::class,
+])->group(static function (): void {
+    Route::group(['prefix' => Server::BASE_URL_PREFIX], static function (): void {
+        Route::get('/openapi.json', OpenApiSpecController::class);
+    });
 
+    Route::prefix('openai/v1')->group(static function (): void {
+        Route::post('/responses', OpenaiResponsesController::class)
+            ->name('api.openai.responses');
+    });
+
+    Route::group(['prefix' => Server::BASE_URL_PREFIX], static function (): void {
         Route::get('/proxy/link-preview/favicon', [LinkPreviewController::class, 'getFavicon'])
             ->name('api.link-preview.favicon');
         Route::get('/proxy/link-preview/image', [LinkPreviewController::class, 'getImage'])
@@ -75,11 +85,6 @@ Route::middleware([
         // The Assistant slice's client-schema endpoint for its frontend plugin.
         AssistantApiRoutes::plainRoutes();
     });
-
-    Route::prefix('openai/v1')->group(static function (): void {
-        Route::post('/responses', OpenaiResponsesController::class)
-            ->name('api.openai.responses');
-    });
 });
 
 JsonApiRoute::server('v1')
@@ -90,23 +95,43 @@ JsonApiRoute::server('v1')
         ApiDataScopeContextSettingMiddleware::class,
     )
     ->withoutMiddleware(ConvertEmptyStringsToNull::class)
-    ->resources(function (ResourceRegistrar $server) {
-
+    ->resources(static function (ResourceRegistrar $server): void {
         $server->resource('connections', ConnectionController::class)
             ->withoutMiddleware(AppTokenForbiddenMiddleware::class)
             ->only('show');
 
+        // How to become authenticated: a read-only singleton whose `redirect` link (present
+        // in redirect mode) starts the identity provider round trip at /auth/redirect.
+        $server->resource('auth', \App\Http\Controllers\Api\V1\AuthController::class)
+            ->only('show');
+
+        // Session lifecycle: POST /sessions logs in, DELETE /sessions/hawki logs out.
+        $server->resource('sessions', SessionsController::class)
+            ->only('store', 'destroy');
+
+        // Registration lifecycle: GET /registrations/hawki shows the policy awaiting
+        // consent, POST /registrations completes the registration.
+        $server->resource('registrations', RegistrationsController::class)
+            ->only('show', 'store');
+
+        $server->resource('passkey-backups', PasskeyBackupController::class)
+            ->middleware('auth:sanctum')
+            ->only('show');
+
         $server->resource('migrations', MigrationController::class)
-            ->actions(function (ActionRegistrar $actions) {
+            ->actions(static function (ActionRegistrar $actions): void {
                 $actions->post('actions/apply', 'markMigrationAsApplied');
             })
             ->only('index', 'show');
+
+        $server->resource('announcements', AnnouncementController::class)
+            ->only('index', 'show', 'update');
 
         $server->resource('ext-apps', ExtAppController::class)
             ->withoutMiddleware(ExternalAccessRequiredMiddleware::class)
             ->middleware(ExtAppUserOrTokenForbiddenMiddleware::class)
             ->only('show')
-            ->actions(function (ActionRegistrar $actions) {
+            ->actions(static function (ActionRegistrar $actions): void {
                 $actions->post('actions/establish-connection', 'establishConnection');
                 $actions->get('actions/proxy-logo/{appId}', 'logoProxy')
                     ->name('proxyLogo')
@@ -121,13 +146,13 @@ JsonApiRoute::server('v1')
 
         $server->resource('mcp-servers', McpServerController::class)
             ->only('index', 'show')
-            ->relationships(function ($relationships) {
+            ->relationships(static function ($relationships): void {
                 $relationships->hasMany('tools')->readOnly();
             });
 
         $server->resource('ai-tools', AiToolController::class)
             ->only('index', 'show')
-            ->relationships(function ($relationships) {
+            ->relationships(static function ($relationships): void {
                 $relationships->hasOne('server')->readOnly();
                 $relationships->hasMany('models')->readOnly();
             });
@@ -137,13 +162,13 @@ JsonApiRoute::server('v1')
 
         $server->resource('ai-providers', AiProviderController::class)
             ->only('index', 'show')
-            ->relationships(function ($relationships) {
+            ->relationships(static function ($relationships): void {
                 $relationships->hasMany('models')->readOnly();
             });
 
         $server->resource('ai-models', AiModelController::class)
             ->only('index', 'show')
-            ->relationships(function ($relationships) {
+            ->relationships(static function ($relationships): void {
                 $relationships->hasOne('provider')->readOnly();
                 $relationships->hasMany('tools')->readOnly();
             });
@@ -156,7 +181,7 @@ JsonApiRoute::server('v1')
 
         $server->resource('system-models', SystemModelController::class)
             ->readOnly()
-            ->relationships(function (Relationships $relationships) {
+            ->relationships(static function (Relationships $relationships): void {
                 $relationships->hasOne('model')->readOnly();
             });
 
@@ -165,7 +190,7 @@ JsonApiRoute::server('v1')
 
         $server->resource('users', UsersController::class)
             ->only('index', 'show', 'update')
-            ->actions(function (ActionRegistrar $actions) {
+            ->actions(static function (ActionRegistrar $actions): void {
                 $actions->get('me', 'handleMe')
                     ->withoutMiddleware(AppTokenForbiddenMiddleware::class);
                 $actions->post('actions/avatar', 'uploadAvatar');
@@ -174,7 +199,7 @@ JsonApiRoute::server('v1')
             });
 
         $server->resource('user-keychain-values', UserKeychainValueController::class)
-            ->actions(function (ActionRegistrar $actions) {
+            ->actions(static function (ActionRegistrar $actions): void {
                 $actions->get('actions/validator', 'getPasskeyValidator')
                     ->name('validator');
                 $actions->post('actions/batch-update', 'batchUpdate')
@@ -187,7 +212,7 @@ JsonApiRoute::server('v1')
 
         $server->resource('ai-convs', AiConvController::class)
             ->only('index', 'show', 'store', 'update', 'destroy')
-            ->actions(function (ActionRegistrar $actions) {
+            ->actions(static function (ActionRegistrar $actions): void {
                 $actions->post('actions/attachments', 'storeAttachment');
                 $actions->delete('actions/attachments/{uuid}', 'deleteAttachment');
                 $actions->withId()->post('actions/messages', 'storeMessage');

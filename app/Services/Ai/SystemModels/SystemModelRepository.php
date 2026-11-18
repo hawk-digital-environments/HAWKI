@@ -69,7 +69,7 @@ class SystemModelRepository extends AbstractRepositoryWithContextualScopes
     /**
      * Creates or updates the system-model assignment for the given type combination.
      *
-     * The unique key is `(model_type, usage_type)`; the only mutable column is `model_id`.
+     * The unique key is `(model_type, usage_type)`; the mutable column is `ai_model_id`.
      * Contextual scopes are bypassed so that inactive or tenant-filtered models can still
      * be referenced as system models.
      */
@@ -85,7 +85,7 @@ class SystemModelRepository extends AbstractRepositoryWithContextualScopes
                 'usage_type' => $usageType
             ],
             [
-                'model_id' => $model->model_id
+                'ai_model_id' => $model->id
             ]
         );
     }

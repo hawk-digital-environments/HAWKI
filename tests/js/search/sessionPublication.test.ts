@@ -28,7 +28,6 @@ function candidate(value: SearchRow, overrides: Partial<RankingCandidate> = {}):
     return {
         row: value,
         score: 0,
-        recency: 0,
         providerOrder: 0,
         entryOrder: 0,
         preferStatic: value.kind === 'static',

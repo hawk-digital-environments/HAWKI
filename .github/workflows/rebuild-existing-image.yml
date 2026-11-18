@@ -1,0 +1,128 @@
+name: '[MANUAL] - Rebuild Existing Image'
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for the rebuild'
+        required: true
+        default: 'Hotfix for current version'
+      rebuild_ref:
+        description: 'Branch, tag or full commit SHA to rebuild from. Only a rebuild of main also replaces the latest tag.'
+        required: true
+        default: 'main'
+
+permissions:
+  packages: write
+  contents: read
+  attestations: write
+  id-token: write
+
+jobs:
+  build-and-publish:
+    name: Rebuild & Publish
+    runs-on: ubuntu-latest
+    steps:
+      # The "Use workflow from" dropdown does NOT select what gets rebuilt:
+      # it selects which copy of this workflow file runs - and older tags
+      # still carry the previous pipeline without the rebuild_ref input.
+      # The rebuild target is therefore chosen by the rebuild_ref input, and
+      # dispatching from a tag is rejected to keep the two roles apart.
+      - name: Guard the dispatch and the rebuild target
+        env:
+          REBUILD_REF: ${{ inputs.rebuild_ref }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "::error::Do not dispatch this workflow from a tag: the 'Use workflow from' dropdown picks which workflow file runs, not what gets rebuilt. Dispatch from a branch instead and name the tag or commit to rebuild in 'rebuild_ref'."
+            exit 1
+          fi
+
+          if [ "$REBUILD_REF" != "main" ] \
+             && ! echo "$REBUILD_REF" | grep -Eq '^([0-9]+\.[0-9]+\.[0-9]+|[0-9a-f]{40})$'; then
+            echo "::error::rebuild_ref must be 'main', a release tag like '2.5.2' or a full commit SHA - got '$REBUILD_REF'. Rebuilding development or feature branches would republish unreleased versions."
+            exit 1
+          fi
+
+          echo "Dispatched from: $GITHUB_REF"
+          echo "Rebuilding from: $REBUILD_REF"
+
+      - name: Checkout the rebuild target
+        uses: actions/checkout@v7
+        with:
+          # The dropdown ref only selects which workflow file runs; this
+          # input selects what actually gets built.
+          ref: ${{ inputs.rebuild_ref }}
+
+      # For the report below: github.sha belongs to the dispatch ref, not to
+      # the rebuild target, so resolve the checked-out commit ourselves.
+      - name: Resolve the rebuilt commit
+        id: build_info
+        run: |
+          echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Read version from config
+        id: get_version
+        uses: hawk-digital-environments/hawk-pipeline-actions/detect-version@v1
+        with:
+          strategy: version-json
+          version-json: config/hawki_version.json
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Required to read the registry-backed build cache below
+      - name: Log in to the GitHub Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          target: app_prod
+          platforms: linux/amd64,linux/arm64
+          # Only a rebuild of main may replace the latest image tag -
+          # republishing anything older would regress it. The empty line
+          # for other refs is dropped by the action's list parser, which
+          # skips empty lines.
+          tags: |
+            ${{ inputs.rebuild_ref == 'main' && 'digitalenvironments/hawki:latest' || '' }}
+            digitalenvironments/hawki:${{ steps.get_version.outputs.version }}
+          # Imports the per-arch caches written by the release gate in
+          # trigger-release.yml. A hotfix rebuild of main may only hit these
+          # partially, which just means a slower build - never a failure.
+          cache-from: |
+            type=registry,ref=ghcr.io/hawk-digital-environments/hawki:buildcache-amd64
+            type=registry,ref=ghcr.io/hawk-digital-environments/hawki:buildcache-arm64
+          # No cache-to on purpose: exporting a combined multi-arch cache is
+          # what triggered the 504s, and nothing reads such a ref anyway.
+
+      - name: Generate artifact attestation
+        uses: actions/attest@v4
+        with:
+          subject-name: index.docker.io/digitalenvironments/hawki
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - uses: hawk-digital-environments/hawk-pipeline-actions/send-discord-notification@v1
+        with:
+          webhook-url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
+          release-name: "Hotfix Rebuild: ${{ steps.get_version.outputs.version }}"
+          release-body: "Manual rebuild triggering by workflow dispatch, rebuilding '${{ inputs.rebuild_ref }}' (${{ steps.build_info.outputs.head_sha }}).${{ inputs.rebuild_ref != 'main' && ' The digitalenvironments/hawki:latest tag was left untouched.' || '' }} Reason: ${{ inputs.reason }}"
+          release-url: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          content: "||@everyone|| ⚠️ **HAWKI ${{ steps.get_version.outputs.version }}** has been rebuilt and republished (Hotfix, ref: ${{ inputs.rebuild_ref }})."

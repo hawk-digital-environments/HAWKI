@@ -1,12 +1,8 @@
 <!--
 @component Renders one entry in the chat sidebar list (either an AI conversation or a group room),
-as a `<svelte-snippet>` entry point registered by `core.plugin.ts`. The row is a link that opens
-the conversation via `oldUiBridge.triggerOpenChat`; next to it — as a sibling, never nested — sits
-the actions menu (`RoomNameMenu`/`AiConvNameMenu` depending on `context`) whose "Rename" swaps the
-row for an inline text field. Rooms additionally show an unread-message indicator (with a
-screen-reader text equivalent).
-
-The menu trigger is hidden until the row is hovered, focused (keyboard) or its menu is open.
+as a `<svelte-snippet>` entry point registered by `core.plugin.ts`. Clicking it opens the
+conversation via `oldUiBridge.triggerOpenChat`; it also shows an inline rename menu
+(`RoomNameMenu`/`AiConvNameMenu` depending on `context`) and an unread-message indicator for rooms.
 
 This is probably a temporary component, since it mixes concerns between chat and room messages.
 However, as we want to merge them both anyway, it's not worth the effort to split out the
@@ -35,7 +31,6 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
     import EllipsisIcon from '$lib/components/ui/icons/iconset/EllipsisIcon.svelte';
     import RoomNameMenu from '$plugins/core/modules/chat/components/nameMenu/RoomNameMenu.svelte';
     import AiConvNameMenu from '$plugins/core/modules/chat/components/nameMenu/AiConvNameMenu.svelte';
-    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
         /** The slug of the conversation this button represents. Clicking the button will open the conversation with this slug. */
@@ -48,6 +43,8 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
         root: HTMLSvelteSnippetElement;
         /** Whether the conversation has unread messages. Shows a visual indicator if true. */
         hasUnreadMessages?: boolean;
+        /** The current user's role in the room (only for the "room" context). Room actions like renaming are limited to admins. */
+        role?: string;
     }
 
     const {
@@ -55,29 +52,13 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
         name,
         context,
         root,
-        hasUnreadMessages = false
+        hasUnreadMessages = false,
+        role
     }: Props = $props();
 
-    const {__} = useTranslator();
-
-    // While renaming, the name menu swaps in its text field and the row link
-    // is removed, so the field is never nested inside another control.
+    // Binding renaming allows us to prevent the click event from propagating and opening
+    // the conversation when the user is trying to rename it. (This includes hitting the space or enter key to confirm the rename, which would otherwise also trigger the conversation to open.)
     let isRenaming = $state(false);
-    // Keeps the (otherwise hover-only) trigger visible while its menu is showing.
-    let menuOpen = $state(false);
-    let rowLink = $state<HTMLAnchorElement | null>(null);
-
-    const showUnread = $derived(context === 'room' && hasUnreadMessages);
-    const href = $derived(oldUiBridge.resolveChatUrl(slug ?? '', context));
-
-    function openChat(event: MouseEvent) {
-        if (!slug || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
-            return;
-        }
-        event.preventDefault();
-        // @todo Remove when the legacy sidebar/oldUiBridge is retired.
-        oldUiBridge.triggerOpenChat(slug);
-    }
 
     $effect(() => {
         return oldUiBridge.onRenameChat((renamedSlug, newName) => {
@@ -90,45 +71,34 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
     const sharedProps: ComponentProps<typeof RoomNameMenu | typeof AiConvNameMenu> = $derived.by(() => ({
         slug: slug ?? '',
         name: name ?? '',
+        context,
         hasUnreadMessages,
-        showName: false,
+        block: true,
         triggerIcon: EllipsisIcon,
-        buttonProps: {class: 'chat-name-menu-button'},
-        // The row link is re-rendered once renaming ends; the menu focuses it after that.
-        focusAfterRename: () => rowLink
+        buttonProps: {class: 'chat-name-menu-button'}
     }));
 </script>
 
-<div class="chat-row" class:menu-open={menuOpen} class:renaming={isRenaming}>
-    {#if !isRenaming}
-        <a
-            {href}
-            class="sidebar-button"
-            bind:this={rowLink}
-            onclick={openChat}>
-            {#if showUnread}
-                <span class="dot-lg unread-dot" aria-hidden="true"></span>
-            {/if}
-            <span class="name">{name}</span>
-            {#if showUnread}
-                <span class="u-sr-only">, {__('chat.sidebar.unreadMessages')}</span>
-            {/if}
-        </a>
+<button
+    class="sidebar-button btn-md selection-item"
+    onclick={() => !isRenaming && slug && oldUiBridge.triggerOpenChat(slug)}>
+
+    {#if context === 'room'}
+        <div class="dot-lg" id="unread-msg-flag" style={'display: ' + (hasUnreadMessages ? 'block' : 'none')}></div>
     {/if}
     {#if context === 'room'}
         <RoomNameMenu
             bind:isRenaming={isRenaming}
-            bind:open={menuOpen}
+            role={role ?? ''}
             {...sharedProps}
         />
     {:else}
         <AiConvNameMenu
             bind:isRenaming={isRenaming}
-            bind:open={menuOpen}
             {...sharedProps}
         />
     {/if}
-</div>
+</button>
 
 <style>
     :global(.chat-name-menu-button) {
@@ -136,34 +106,23 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
         transition: opacity 0.2s ease-in-out;
     }
 
-    /* Touch has no hover, so the trigger stays visible there. */
-    @media (hover: none) {
-        :global(.chat-name-menu-button) {
-            opacity: 1;
-        }
-    }
-
-    .chat-row {
+    .sidebar-button {
         display: flex;
         flex-direction: row;
+        column-gap: .5rem;
         align-items: center;
-        column-gap: .25rem;
-        min-height: 2.5rem;
         padding-left: 1rem;
         padding-right: .5rem;
+        height: 2.5rem;
         border-radius: 5px;
         background-color: transparent;
-        transition: background-color var(--duration-fast);
+        transition: background-color var(--transition-fast);
         cursor: pointer;
         width: 100%;
         text-align: left;
         outline-offset: -2px;
 
-        /* The trigger shows for the pointer, for keyboard focus anywhere in
-           the row, and while its menu is open. */
-        &:hover,
-        &:focus-within,
-        &.menu-open {
+        &:hover {
             :global(.chat-name-menu-button) {
                 opacity: 1;
             }
@@ -174,46 +133,17 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
         }
 
         &:global(:not(.selected):hover) {
-            background-color: var(--color-hover);
-            /* border: var(--border); */
+            background-color: var(--panel-main);
+            /* border: var(--border-stroke-thin); */
         }
 
         &:global(.selected) {
-            background-color: var(--color-active-surface);
-            border: var(--border);
+            background-color: var(--panel-main);
+            border: var(--border-stroke-thin);
         }
     }
 
     :global(.active) .sidebar-button {
-        background-color: var(--color-highlight);
-    }
-
-    .sidebar-button {
-        display: flex;
-        flex: 1;
-        min-width: 0;
-        flex-direction: row;
-        column-gap: .5rem;
-        align-items: center;
-        height: 2.5rem;
-        padding: 0;
-        border: none;
-        background: transparent;
-        color: inherit;
-        font: inherit;
-        text-align: left;
-        cursor: pointer;
-        outline-offset: -2px;
-    }
-
-    .unread-dot {
-        flex-shrink: 0;
-    }
-
-    .name {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        background-color: var(--highlight-color);
     }
 </style>

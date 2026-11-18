@@ -27,10 +27,10 @@
         handle: string;
         /** The assistant's display name, used for the remove button's label. */
         label: string;
-        /** The assistant's emoji, from its appearance. */
+        /** The assistant's emoji, from `getAssistantAppearance`. */
         emoji: string;
-        /** The two stops the fill and the reveal are painted from, out of the
-         *  assistant's appearance — this is what color-codes the chip. */
+        /** The two stops the fill and the reveal are painted from, out of
+         *  `getAssistantAppearance` — this is what color-codes the chip. */
         colors: BeamColors;
         /** Disables the remove button (e.g. while a send is in flight). */
         disabled?: boolean;
@@ -42,14 +42,14 @@
 
     // Snappier than the component defaults: a handle is a handful of characters, so the
     // reveal should read as one quick sweep rather than a per-letter crawl.
-    const revealStagger = 7;
-    const revealDuration = 105;
+    const revealStagger = 22;
+    const revealDuration = 320;
 
     // How long the handle takes to finish revealing.
     const revealMs = $derived(textRevealDurationMs(handle, {stagger: revealStagger, duration: revealDuration}));
     // The pill starts just before the last characters settle. Overlapping the two beats
     // keeps the sequence tight — waiting for a clean hand-off reads as a stall.
-    const pillDelayMs = $derived(Math.max(revealMs - 45, 0));
+    const pillDelayMs = $derived(Math.max(revealMs - 140, 0));
 
     let pillArrived = $state(false);
 
@@ -157,10 +157,18 @@
            neutral hover grey the assistant button used to sit on. */
         background-color: color-mix(
             in oklab,
-            color-mix(in oklab, var(--assistant-from), var(--assistant-to)) 15%,
+            color-mix(in oklab, var(--assistant-from), var(--assistant-to)) var(--mention-chip-fill, 15%),
             transparent
         );
         opacity: 0;
+        transition: background-color var(--duration-fast);
+    }
+
+    /* Deepening the chip's own tint on hover, rather than swapping in the neutral hover
+       grey, keeps the pill in the assistant's colors while it signals it can be pressed. */
+    .mention-chip:hover:not(:disabled),
+    .mention-chip:focus-visible:not(:disabled) {
+        --mention-chip-fill: 25%;
     }
 
     /*
@@ -228,7 +236,7 @@
         */
         color: color-mix(in oklab, var(--mention-chip-lead) 55%, transparent);
         line-height: 0;
-        transition: color var(--duration-fast, 150ms);
+        transition: color var(--duration-fast);
     }
 
     /* Hovering anywhere on the chip lights the X — the X is the only part that

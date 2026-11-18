@@ -1,30 +1,27 @@
 /* ==========================================================================
-   Cascade Layer Declaration
-   These statements control ALL specificity ordering for new Svelte components.
+   Cascade Layers
+   The layer order is declared exactly once, in the HTML `<head>`, by the Blade
+   component `<x-css-layers />` (app/Services/Frontend/View/CssLayers.php).
+   The browser locks the order when it first sees each layer name and that
+   statement is guaranteed to precede every stylesheet — a second statement
+   here could never change the order, so this file deliberately has none.
    Order = lowest priority first → highest priority last.
 
    - reset:      box-sizing, margin resets
-   - legacy:     legacy Blade UI stylesheets (public/css, each wrapped in
-                 `@layer legacy`) — directly above reset, overridden by the
-                 design-system layers below
    - tokens:     CSS custom properties (:root variables)
    - base:       element defaults (body, :focus-visible, scrollbar, a)
+   - legacy:     legacy Blade UI stylesheets (public/css, each wrapped in
+                 `@layer legacy`) — above the base layers, below unlayered
+                 component styles and utilities
    - components: vendored stylesheets assigned via the vite `layer` option
                  (katex, monaco, markstream); Svelte scoped <style> blocks are
                  unlayered and beat every layer
    - utilities:  .u-* helper classes — always win against component styles
 
-   The order statement MUST stay the first rule in the file: @import rules are
-   only valid before any other rule (a @layer statement may precede them, but
-   an @import after any other statement is silently dropped — which once
-   unloaded the entire utilities layer). It must match the statement rendered
-   by `<x-css-layers />` (app/Services/Frontend/View/CssLayers.php), which the
-   browser sees first and which therefore establishes the effective order.
+   The @import rules MUST stay the first rules in the file: @import is only
+   valid before any other rule, and one placed after it is silently dropped —
+   which once unloaded the entire utilities layer.
    ========================================================================== */
-/* Previous ordering on this branch (legacy ABOVE tokens/base, so legacy Blade
-   pages kept their own look over the design system) — restore to revert:
-   @layer reset, tokens, base, legacy, components, utilities; */
-@layer reset, legacy, tokens, base, components, utilities;
 
 @import "pdfjs-dist/web/pdf_viewer.css";
 
@@ -47,25 +44,4 @@
 /* ── Svelte custom element display fix ──────────────────────────────────── */
 svelte-snippet {
     display: block;
-}
-
-/* ── Animatable layout tracks ───────────────────────────────────────────────
-   The app-layout grid animates its nav/aside column widths through these two
-   custom properties. Registering them with a type is what makes them
-   interpolate; it has to happen at the top level, not inside a scoped
-   component <style>.
-
-   `initial-value` must be computationally independent, so these are in px —
-   rem depends on the root font size and would invalidate the whole rule. The
-   values actually used at runtime are still authored in rem. */
-@property --nav-track {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 256px;
-}
-
-@property --aside-track {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 0px;
 }

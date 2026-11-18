@@ -1,7 +1,6 @@
 import {RestApi} from '$lib/kernel/api/RestApi.js';
+import {createDefaultTransport, type ApiTransport, type ApiTransportOptions} from '$lib/kernel/api/transport.js';
 import {ApiTransportError} from '$lib/kernel/api/errors.js';
-import type {ApiTransport} from '$lib/kernel/api/transport.js';
-import {createDefaultTransport} from '$lib/kernel/api/transport.js';
 import {type Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {HawkiClient} from '$lib/kernel/client/dummyClient.js';
@@ -12,6 +11,8 @@ import type {Connection} from '$lib/app/schemas/resources/connections.schema.js'
 import {AiApi} from '$lib/kernel/ai/AiApi.js';
 import {ConnectionHandle} from '$lib/kernel/client/connection/ConnectionHandle.svelte.js';
 import type {HawkiEvents} from '$lib/kernel/events/EventExtension.js';
+import {assignAuthPage, authPageUrl} from '$lib/kernel/auth/navigation.js';
+import {LogoutResponseSchema} from '$lib/kernel/auth/schemas.js';
 import {registerConnectionRefresher} from '$lib/kernel/client/connection/connectionRefresher.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
@@ -25,6 +26,7 @@ declare module '$lib/kernel/extendableTypes.js' {
         readonly connectionOrNull: Connection | null;
         readonly isAuthenticatedConnection: boolean;
         readonly isAuthenticated: boolean;
+        readonly cryptoReady: boolean;
         readonly authorizationRefreshing: boolean;
         readonly logoutState: 'idle' | 'pending' | 'failed';
 
@@ -64,9 +66,10 @@ export class ClientExtension implements HawkiAppExtension {
             this.sessionLost = true;
             this.connectionHandle.invalidate();
             this.events.sync.trigger('sessionLost');
-            window.location.assign('/');
+            if (this.app) assignAuthPage(this.app.router, 'login', undefined, 'session_expired');
         });
-        const transport = (async (path, options) => {
+        // A 403 from an established same-user session means grants changed: refresh once, silently.
+        const transport = (async (path: string, options: ApiTransportOptions) => {
             const actor = this.connectionHandle?.tryGetConnection();
             const actorId = actor?.isAuthenticated ? actor.userinfo.id : null;
             try {
@@ -123,7 +126,11 @@ export class ClientExtension implements HawkiAppExtension {
             } catch (error) {
                 console.error('A logout listener failed.', error);
             }
-            window.location.assign(this.uriBuilder.logoutUri());
+            const response = await this.client.restApi.fetch(this.uriBuilder.sessionUri(), {
+                method: 'DELETE',
+                schema: LogoutResponseSchema
+            });
+            window.location.assign(response.meta.redirect_url ?? authPageUrl(this.app!.router, 'login'));
         } catch (error) {
             this.logoutStatus = 'failed';
             throw error;
@@ -143,23 +150,29 @@ export class ClientExtension implements HawkiAppExtension {
         this.events.async.on('connectionRefreshFailed', () => {
             if (this.sessionLost || !this.hadUserInfo || this.logoutStatus !== 'idle' || !this.app) return;
             this.sessionLost = true;
-            this.connectionHandle.invalidate();
             this.events.sync.trigger('sessionLost');
-            window.location.assign('/');
+            assignAuthPage(this.app.router, 'login', undefined, 'session_expired');
         });
 
         // Public config is connection-dependent. Preserve the initial bootstrap
-        // ordering, but refresh it when an established session changes.
+        // ordering, but refresh it when an established session changes type
+        // (for example internal_registering_user -> internal_authenticated).
         this.events.async.on('connectionChanged', async connection => {
             // Logout owns navigation until its provider response or a successful retry arrives.
             if (this.sessionLost || this.logoutStatus !== 'idle') return;
             const established = this.hadUserInfo;
             this.hadUserInfo = connection.hasUserInfo;
-            if (established && this.app?.isMounted && !connection.hasUserInfo) {
-                this.connectionHandle.invalidate();
+            if (established && this.app?.isMounted) {
                 this.events.sync.trigger('sessionLost');
-                window.location.assign('/');
-                return;
+                const page = connection.isAuthenticated
+                    ? connection.keychain_state === 'setup_required' ? 'register'
+                    : connection.keychain_state === 'inconsistent' ? 'inconsistent' : 'handshake'
+                    : connection.hasUserInfo ? 'register' : 'login';
+                if (!connection.isAuthenticated && !connection.hasUserInfo) {
+                    // The session was rejected outright: stop any stale refresh from restoring it.
+                    this.connectionHandle.invalidate();
+                }
+                if (assignAuthPage(this.app.router, page)) return;
             }
             await app.config?.refresh();
         });
@@ -202,6 +215,10 @@ export class ClientExtension implements HawkiAppExtension {
             },
             get isAuthenticated(): boolean {
                 return extension.connectionHandle.tryGetConnection()?.isAuthenticated ?? false;
+            },
+            get cryptoReady(): boolean {
+                return extension.logoutStatus === 'idle' && !extension.sessionLost &&
+                    (extension.app?.passkeySession.cryptoReady ?? false);
             },
             get authorizationRefreshing() {
                 return extension.connectionHandle.refreshing;

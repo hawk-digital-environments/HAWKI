@@ -24,13 +24,8 @@
         flex-shrink: 0;
         display: flex;
         flex-direction: column;
-        /* Footer rows are separate groups (an action, the profile), so they take
-           the sidebar's group gap — the same separation the header leaves above
-           the nav rows — rather than the tight within-group row gap. The padding
-           above the footer is that same group gap, so the nav rows end at the
-           same distance from the first footer row as every other group
-           boundary. */
-        gap: var(--nav-group-gap);
-        padding-top: var(--nav-group-gap);
+        /* The same as the panel's padding. */
+        gap: var(--space-4);
+        padding-top: var(--space-4);
     }
 </style>

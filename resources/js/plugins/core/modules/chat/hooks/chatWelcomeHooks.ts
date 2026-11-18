@@ -1,3 +1,11 @@
+/**
+ * Hook contract for the chat empty state's welcome hero: plugins register a
+ * `chatWelcome` handler to keep the default hero (`null`) or replace it with a
+ * section describing the currently addressed participant — e.g. the assistants
+ * plugin shows the addressed assistant's name, greeting and starter prompts.
+ * `ChatWelcome.svelte` resolves the handlers; nothing in `core` provides a
+ * section yet, so the default hero shows until a plugin does.
+ */
 import type {ChatConversation} from '$plugins/core/modules/chat/types.js';
 import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 

@@ -20,8 +20,8 @@
 </script>
 
 <!-- Child rows are indented to align with their parent's label; their highlight
-     follows suit, pulled in by exactly the icon column and the row's gap so a
-     child keeps the same horizontal padding inside it as a top-level row. -->
-<MenuList {disabled} style="--list-inset: calc(var(--nav-icon-size) + var(--space-2_5));">
+     starts one row padding before that, so the text sits as far inside it as on
+     a top-level row. -->
+<MenuList {disabled} style="--list-inset: calc(var(--space-2) + var(--nav-icon-size));">
     {@render children()}
 </MenuList>

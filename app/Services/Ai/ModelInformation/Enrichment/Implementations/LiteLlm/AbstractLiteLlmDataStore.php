@@ -15,13 +15,23 @@ use Psr\Log\LoggerInterface;
  * this class handles provider-name resolution, model-ID matching, and merging of multiple
  * hits into a single consolidated record.
  *
+ * The parsed per-provider model list is memoized in memory, keyed by the resolved LiteLLM
+ * provider name, so repeated lookups do not re-read and re-parse the underlying source
+ * (the multi-megabyte cached catalog or the static provider file) for every single model.
+ * Freshness is delegated to the subclass: each memo carries an anchor snapshot taken via
+ * {@see self::createMemoAnchor()} and stays usable until {@see self::isMemoizedProviderListValid()}
+ * rejects it. Failed loads are never memoized, so lookups keep retrying as before.
+ *
  * @see LiteLlmApiDataStore for the live-API implementation with caching.
  * @see StaticLiteLlmDataStore for the offline file-based implementation.
  */
 abstract class AbstractLiteLlmDataStore
 {
+    /** @var array<string, array{list: array<LiteLlmModelData>, anchor: array<string, mixed>}> Parsed model lists by LiteLLM provider name. */
+    private array $memoizedProviderLists = [];
+
     public function __construct(
-        protected readonly LoggerInterface                      $logger,
+        protected readonly LoggerInterface                       $logger,
         protected readonly LiteLlmDriverNameProviderNameMapping $nameMapping
     )
     {
@@ -43,7 +53,7 @@ abstract class AbstractLiteLlmDataStore
     ): LiteLlmModelData|null
     {
         try {
-            $modelInformationList = $this->getProviderModelInformationList($provider);
+            $modelInformationList = $this->getMemoizedProviderModelInformationList($provider);
         } catch (\Throwable $e) {
             $this->logger->error('Error fetching model information', [
                 'provider_id' => $provider->provider_id,
@@ -82,24 +92,88 @@ abstract class AbstractLiteLlmDataStore
     /**
      * Returns all raw model data records available for the given provider.
      *
-     * @return array<LiteLlmModelData>
+     * @return iterable<LiteLlmModelData>
      */
-    abstract protected function getProviderModelInformationList(AiProviderProxy $provider): array;
+    abstract protected function getProviderModelInformationList(AiProviderProxy $provider): iterable;
 
     /**
-     * Parses and validates a raw array of model records into {@see LiteLlmModelData} objects.
+     * Snapshot of the underlying source's state, stored alongside a freshly built memo.
+     *
+     * Subclasses with freshness semantics capture whatever identifies the state the list
+     * was parsed from (e.g. a timestamp). The default anchor suits immutable sources,
+     * whose state never changes.
+     *
+     * @return array<string, mixed>
+     */
+    protected function createMemoAnchor(): array
+    {
+        return [];
+    }
+
+    /**
+     * Whether a memoized list built on the given anchor may still be served.
+     *
+     * The default is unconditional: memos stay valid for the lifetime of this instance,
+     * which suits immutable sources (e.g. static files deployed with the application).
+     *
+     * @param array<string, mixed> $anchor Anchor captured via {@see self::createMemoAnchor()}.
+     */
+    protected function isMemoizedProviderListValid(array $anchor): bool
+    {
+        return true;
+    }
+
+    /** Discards all memoized provider model lists (e.g. when the underlying cache is evicted). */
+    protected function clearMemoizedProviderLists(): void
+    {
+        $this->memoizedProviderLists = [];
+    }
+
+    /**
+     * Returns the provider's parsed model list, memoized by LiteLLM provider name.
+     *
+     * While the memo's anchor is still valid ({@see self::isMemoizedProviderListValid()}),
+     * the underlying source is not touched again; an invalid or missing memo triggers
+     * exactly one fresh load whose result replaces the memo. Loads that throw are not
+     * memoized, so every lookup retries as before.
+     *
+     * @return array<LiteLlmModelData>
+     */
+    private function getMemoizedProviderModelInformationList(AiProviderProxy $provider): array
+    {
+        $providerName = $this->nameMapping->getProviderNameFromProxy($provider);
+
+        $memo = $this->memoizedProviderLists[$providerName] ?? null;
+        if ($memo !== null && $this->isMemoizedProviderListValid($memo['anchor'])) {
+            return $memo['list'];
+        }
+
+        // Materialize once: subclasses may yield lazily, but the memo must be reusable
+        $list = [...$this->getProviderModelInformationList($provider)];
+
+        $this->memoizedProviderLists[$providerName] = [
+            'list'   => $list,
+            'anchor' => $this->createMemoAnchor(),
+        ];
+
+        return $list;
+    }
+
+    /**
+     * Parses and validates a stream of raw model records into {@see LiteLlmModelData}
+     * objects, lazily, so raw records and parsed objects never coexist in full.
      *
      * Each entry must be an associative array with at least `id` (string) and `provider`
      * (string matching the resolved provider name). Invalid or mismatched entries are skipped
      * with an error log.
      *
-     * @param array<mixed> $raw Raw records from the API response or a static file.
-     * @return array<LiteLlmModelData>
+     * @param iterable<mixed> $raw Raw records from the API response or a static file.
+     * @return iterable<int, LiteLlmModelData>
      */
     protected function loadModelDataList(
         AiProviderProxy $provider,
-        array           $raw
-    ): array
+        iterable        $raw
+    ): iterable
     {
         $providerName = $this->nameMapping->getProviderNameFromProxy($provider);
 
@@ -109,7 +183,6 @@ abstract class AbstractLiteLlmDataStore
             'provider_adapter_key' => $provider->adapter_key
         ];
 
-        $modelInformationList = [];
         foreach ($raw as $modelData) {
             if (!is_array($modelData)) {
                 $this->logger->error('Model data is not an array', [
@@ -132,9 +205,7 @@ abstract class AbstractLiteLlmDataStore
                 ]);
                 continue;
             }
-            $modelInformationList[] = LiteLlmModelData::fromApiData($modelData);
+            yield LiteLlmModelData::fromApiData($modelData);
         }
-
-        return $modelInformationList;
     }
 }

@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {createChatConfig, REQUIRED_FIELD_LABELS} from '../../../resources/js/plugins/assistants/components/testChat/stream/chatConfig.svelte.js';
 import {buildStreamRequestBody} from '../../../resources/js/plugins/assistants/components/testChat/stream/chatStore.svelte.js';
+import type {Assistant} from '../../../resources/js/plugins/assistants/types/assistant/Assistant.js';
 
 /** Minimal draft factory: only the fields the config/payload consume. */
-function draft(overrides = {}) {
+function draft(overrides: Record<string, unknown> = {}): Assistant {
     return {
         name: 'Test',
         handle: 'test-assistant',
@@ -14,7 +15,7 @@ function draft(overrides = {}) {
         temp: 0.7,
         topP: 0.95,
         ...overrides,
-    };
+    } as unknown as Assistant;
 }
 
 test('missingRequired: system prompt and tools both empty lists what is missing', () => {
@@ -57,7 +58,7 @@ test('required chips reuse the builder field labels', () => {
 
 test('payload: saved assistants stream through the assistant route without raw tools', () => {
     const body = buildStreamRequestBody(draft(), [], 'test');
-    const payload = body.payload;
+    const payload = body.payload as Record<string, any>;
 
     assert.deepEqual(payload.hawkiExtensions, {assistant_handle: 'test-assistant'});
     assert.equal(payload.tools, undefined, 'tools come from server-side composition');
@@ -70,7 +71,7 @@ test('payload: never-saved drafts keep the raw-fields contract', () => {
         [],
         'test',
     );
-    const payload = body.payload;
+    const payload = body.payload as Record<string, any>;
 
     assert.equal(payload.hawkiExtensions, undefined);
     assert.deepEqual(payload.tools, ['hawki-rag-full-emb-hawk']);
@@ -78,6 +79,7 @@ test('payload: never-saved drafts keep the raw-fields contract', () => {
 
 test('payload: an empty handle string is treated as unsaved', () => {
     const body = buildStreamRequestBody(draft({handle: ''}), [], 'test');
-    assert.equal(body.payload.hawkiExtensions, undefined);
-    assert.deepEqual(body.payload.tools, []);
+    const payload = body.payload as Record<string, any>;
+    assert.equal(payload.hawkiExtensions, undefined);
+    assert.deepEqual(payload.tools, []);
 });

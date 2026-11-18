@@ -4,19 +4,20 @@
     "type": "module",
     "scripts": {
         "dev": "npm install && vite",
-        "postinstall": "patch-package",
         "build": "vite build",
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
-        "test": "npm run test:admin && npm run test:assistants && npm run test:chat && npm run test:client-schema && npm run test:routing && npm run test:search && npm run test:tools",
+        "test": "npm run test:all",
+        "test:all": "node --conditions=browser --import ./tests/js/register.mjs --test \"tests/js/**/*.test.ts\" \"tests/js/**/*.test.svelte.ts\"",
         "test:admin": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/admin/*.test.ts tests/js/admin/*.test.svelte.ts",
         "test:assistants": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/assistants/*.test.ts tests/js/assistants/*.test.svelte.ts",
+        "test:chat": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/chat/*.test.ts tests/js/chat/*.test.svelte.ts",
         "test:client-schema": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/client-schema/*.test.ts tests/js/client-schema/*.test.svelte.ts",
         "test:routing": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/routing/*.test.ts tests/js/routing/*.test.svelte.ts",
         "test:search": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/search/*.test.ts tests/js/search/*.test.svelte.ts",
-        "tsc": "tsc -p ./tsconfig.json",
-        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json",
         "test:tools": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/tools/*.test.ts tests/js/tools/*.test.svelte.ts",
-        "test:chat": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/chat/*.test.ts tests/js/chat/*.test.svelte.ts"
+        "tsc": "tsc -p ./tsconfig.json",
+        "check:tests": "tsc -p ./tsconfig.test.json",
+        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json && tsc -p ./tsconfig.test.json"
     },
     "devDependencies": {
         "@antv/infographic": "^0.2.19",
@@ -26,7 +27,7 @@
         "@sveltejs/vite-plugin-svelte": "^7.2.0",
         "@tsconfig/svelte": "^5.0.8",
         "@types/node": "^26.1.2",
-        "bits-ui": "^2.18.1",
+        "bits-ui": "2.18.1",
         "class-variance-authority": "^0.7.1",
         "cropperjs": "^2.1.1",
         "docx": "^9.7.1",
@@ -38,10 +39,9 @@
         "katex": "^0.18.1",
         "laravel-echo": "^2.4.0",
         "laravel-vite-plugin": "^3.1.3",
-        "markstream-svelte": "^0.0.3",
+        "markstream-svelte": "^2.0.16",
         "mermaid": "^11.16.0",
         "monaco-editor": "^0.55.0",
-        "patch-package": "^8.0.1",
         "pdfjs-dist": "^6.2.108",
         "postcss-custom-media": "^12.0.1",
         "prettier": "^3.9.6",
@@ -49,6 +49,7 @@
         "pusher-js": "^8.6.0",
         "shadcn-svelte": "^1.4.2",
         "smob": "^1.6.2",
+        "stream-diffs": "0.0.2",
         "stream-monaco": "^0.0.49",
         "svelte": "^5.56.8",
         "svelte-check": "^4.7.4",
@@ -63,7 +64,6 @@
     "dependencies": {
         "@formkit/auto-animate": "^0.10.0",
         "@tanstack/svelte-table": "^9.3.1",
-        "emoji-picker-element": "^1.29.1",
-        "smob": "^1.6.2"
+        "emoji-picker-element": "^1.29.1"
     }
 }

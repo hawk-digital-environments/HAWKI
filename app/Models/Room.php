@@ -166,23 +166,27 @@ class Room extends Model
             try {
                 // Attempt to delete the member from the room based on user ID
                 $member = $this->members()->where('user_id', $userId)->firstOrFail();
+                // Resolve the user before revoking: afterwards the access scopes may hide the user/room
+                $user = $member->user;
                 $member->revokeMembership();
                 // Please don't do it like this. Don't torture your model with injecting
                 // random repositories. There should be a service, but the service itself is cumbersome.
                 // Will be removed in a future refactor.
                 /** @var UserKeychainRepository $repo */
                 $repo = app(UserKeychainRepository::class);
-                $repo->removeRoomKey($member->user, $member->room);
+                $repo->removeRoomKey($user, $this);
 
                 $this->triggerOrDeferMemberEvent(fn() => MemberRemovedFromRoomEvent::dispatch($member));
 
+                // The remaining members must be counted without the access scope: when a user leaves,
+                // the room is no longer visible to them, so the scoped counts would always be 0.
                 //Check if All the members have left the room.
-                if ($this->members()->count() === 1) {
+                if ($this->members()->withoutGlobalScopes()->count() === 1) {
                     $this->deleteRoom();
                 } else if ($member->hasRole(Member::ROLE_ADMIN)) {
                     // If the removed member was an admin, check if there are any admins left. If not, handle this as a "delete" action
-                    // @todo in the new api it should not be possible to leave a room without at least one admin!
-                    $adminsCount = $this->members()->where('role', Member::ROLE_ADMIN)->count();
+                    // Leaving as the last admin is prevented by RoomService::leave(), this covers e.g. account deletion
+                    $adminsCount = $this->members()->withoutGlobalScopes()->where('role', Member::ROLE_ADMIN)->count();
                     if ($adminsCount === 0) {
                         $this->delete();
                     }

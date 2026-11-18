@@ -44,7 +44,8 @@ function createComposer(store: AiHandleStore): ComposerContext {
         () => {},
         async () => '',
         (text: string) => store.getHandleMatchesIn(text),
-        () => store.assistants
+        () => store.assistants,
+        ({sync: {on: () => () => {}}, async: {on: () => () => {}}} as any)
     );
 }
 

@@ -105,6 +105,18 @@ Use CSS media queries (via the `--bp-*` custom media tokens) for purely visual a
   - External `http(s)` links → `TextLink` with favicon + `UrlPreviewTooltip` on hover
   - Same-origin and `mailto:` links → plain `TextLink`
   - Any other protocol (`javascript:`, etc.) → rendered as text only, no anchor
+- **`MathNode`** wraps the built-in `MathBlockNode` for `math_block` nodes and adds a hover-reveal button that copies the raw LaTeX source (`node.raw`).
+
+**Style overrides** — the component's `<style>` block also corrects `markstream-svelte` output to match HAWKI's design. All overrides are unlayered app CSS and therefore win over the package's `@layer components` rules without `!important`:
+
+| Rule | Why |
+|---|---|
+| `li:has(> p > .checkbox-node) { list-style: none }` | Task items render GitHub-style: the checkbox replaces the list marker (the package shows both). |
+| `input.checkbox-node { width/height/min-width/min-height: 0.8em; vertical-align: middle; accent-color }` | Checkboxes at native ~13px (0.8em at the 16px message font), middle-aligned, theme-tinted. The explicit **minimums are essential**: `public/css/style.css` gives every `input` `min-width: 10rem; min-height: 2.5rem` (text-field sizing) — and `min-*` clamps `width`/`height` regardless of importance, which rendered task checkboxes at 160×40px before the page rule was scoped with `:not([type="checkbox"]):not([type="radio"])`. |
+| `[data-node-type="table"] { overflow-x: auto }` + `blockquote { overflow-x: auto }` | Wide tables scroll inside the message column. Top-level tables scroll via their node-slot wrapper; tables nested in a blockquote have no slot wrapper, so the blockquote is their scroll container. |
+| `.html-preview-frame { width: 100%; height: 24rem; … }` | The HTML/SVG preview frame ships viewport-sized (80vw × 70vh) but renders inline — see `MARKSTREAM-SVELTE.md` (repo root) for the upstream stopgap details. |
+
+Overrides marked as upstream stopgaps in `MARKSTREAM-SVELTE.md` are removed when the fixed package version is released and bumped.
 
 ```svelte
 <script lang="ts">

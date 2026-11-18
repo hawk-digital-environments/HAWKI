@@ -8,7 +8,6 @@
     import InfoPopover from "$lib/components/ui/popover/InfoPopover.svelte";
     import RequiredMark from "$plugins/assistants/modules/builder/components/RequiredMark.svelte";
     import ModelPicker from "$plugins/core/modules/chat/components/composer/ModelPicker.svelte";
-    import ModelPickerV2 from "$plugins/core/modules/chat/components/composer/ModelPickerV2.svelte";
 
     const {
         disabled = false,
@@ -23,8 +22,6 @@
 
     const modelStore = useStore('ai-models');
     modelStore.loadData(useApp());
-
-    const experiments = useStore('experiments');
 
     // The assistant stores the provider-side model identifier (`model_id`,
     // e.g. "gpt-4.1-nano"); `getOneById` also resolves legacy drafts that
@@ -50,10 +47,6 @@
     <!-- Same picker (and experiment switch) as the chat composer, revealed
          like every other field (see BuilderInput). -->
     <AiFillReveal field="model">
-        {#if experiments.isEnabled('modelPickerV2')}
-            <ModelPickerV2 id="modelSelector" variant="field" {model} {disabled} onSelect={handleSelect}/>
-        {:else}
-            <ModelPicker id="modelSelector" variant="field" {model} {disabled} onSelect={handleSelect}/>
-        {/if}
+        <ModelPicker id="modelSelector" variant="field" {model} {disabled} onSelect={handleSelect}/>
     </AiFillReveal>
 </div>

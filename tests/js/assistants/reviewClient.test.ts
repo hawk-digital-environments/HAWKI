@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {setHawkiApp} from '../../../resources/js/legacy/legacy.js';
+import type {RestApi} from '../../../resources/js/kernel/api/RestApi.js';
 import {
     AssistantReviewWireSchema,
     ReviewTargetWireSchema,
@@ -23,35 +24,37 @@ import {mayReviewAssistants, probeReviewPermission} from '../../../resources/js/
  * the legacy global fallback (`setHawkiApp`), which is exactly how it
  * behaves outside a component tree.
  */
-const handlers = {};
-const calls = [];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- typed loosely on purpose: the fakes only record calls.
+const handlers: Record<string, ((...args: any[]) => any) | undefined> = {};
+const calls: Array<{method: string; resourceType?: string; id?: string; options?: any; action?: string; body?: unknown; attributes?: unknown}> = [];
 setHawkiApp({
+    // A partial RestApi fake: it only records calls and answers from the handler map.
     restApi: {
-        getResourceCollection: async (resourceType, options) => {
+        getResourceCollection: async (resourceType: string, options: unknown) => {
             calls.push({method: 'getResourceCollection', resourceType, options});
-            return handlers.getResourceCollection(options);
+            return handlers.getResourceCollection?.(options);
         },
-        getResource: async (resourceType, id, options) => {
+        getResource: async (resourceType: string, id: string, options: unknown) => {
             calls.push({method: 'getResource', resourceType, id, options});
-            return handlers.getResource(id, options);
+            return handlers.getResource?.(id, options);
         },
-        updateResource: async (resourceType, id, attributes, options) => {
+        updateResource: async (resourceType: string, id: string, attributes: unknown, options: unknown) => {
             calls.push({method: 'updateResource', resourceType, id, attributes, options});
             return handlers.updateResource?.(resourceType, id, attributes) ?? {};
         },
-        postToResourceAction: async (resourceType, action, body) => {
+        postToResourceAction: async (resourceType: string, action: string, body: unknown) => {
             calls.push({method: 'postToResourceAction', resourceType, action, body});
             return handlers.postToResourceAction?.(resourceType, action, body) ?? {};
         },
-        getFromResourceAction: async (resourceType, action, options) => {
+        getFromResourceAction: async (resourceType: string, action: string, options: unknown) => {
             calls.push({method: 'getFromResourceAction', resourceType, action, options});
             return handlers.getFromResourceAction?.(action);
         }
-    }
-});
+    } as unknown as RestApi
+} as never);
 
 /** Replaces the handlers and clears the call log; returns the log. */
-function installRestApi(next) {
+function installRestApi(next: Record<string, any>) {
     for (const key of Object.keys(handlers)) {
         delete handlers[key];
     }
@@ -122,15 +125,15 @@ test('schemas: the review target parses with review, versions, creator and relat
         ai_tools: [{name: 'Web search'}]
     });
 
-    assert.equal(target.assistant_review.id, '7');
-    assert.equal(target.assistant_review.history?.length, 2);
-    assert.equal(target.assistant_review.history?.[1]?.status, 'denied');
-    assert.equal(target.assistant_review.history?.[0]?.reason, 'Tighten the greeting.');
-    assert.equal(target.assistant_versions.length, 2);
+    assert.equal(target.assistant_review!.id, '7');
+    assert.equal(target.assistant_review!.history?.length, 2);
+    assert.equal(target.assistant_review!.history?.[1]?.status, 'denied');
+    assert.equal(target.assistant_review!.history?.[0]?.reason, 'Tighten the greeting.');
+    assert.equal(target.assistant_versions!.length, 2);
     // The draft row arrives numeric on the wire; the page detects it by its
     // stringified version.
-    assert.equal(String(target.assistant_versions[0].version), DRAFT_VERSION);
-    assert.equal(target.creator.display_name, 'Jane');
+    assert.equal(String(target.assistant_versions![0].version), DRAFT_VERSION);
+    assert.equal(target.creator!.display_name, 'Jane');
     assert.equal(target.detail_description, 'dd');
     assert.equal(target.assistant_category?.text, 'assistants.categories.academic_writing');
     assert.equal(target.assistant_setting_values?.[0]?.setting?.key, 'language');

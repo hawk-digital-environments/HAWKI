@@ -1,4 +1,4 @@
-import {createHmrSafeContext} from '$lib/utils/hmrSafeContext.js';
+import {createStableContext} from '$lib/utils/stableContext.js';
 import {getReviewTarget, submitReviewDecision} from '../api/reviewClient.js';
 import type {ReviewTargetWire} from '../api/schemas.js';
 import {ApiError} from '$plugins/assistants/api/errors.js';
@@ -91,7 +91,7 @@ export class ReviewDetailContext {
     }
 }
 
-const [get, set] = createHmrSafeContext<ReviewDetailContext>('hawki.assistants.review-detail');
+const [get, set] = createStableContext<ReviewDetailContext>('hawki.assistants.review-detail');
 
 /** Returns the review detail state published by the `/:assistantId` layout. */
 export function useReviewDetailContext(): ReviewDetailContext {

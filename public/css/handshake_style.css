@@ -50,7 +50,6 @@
         justify-content: center;
     }
 
-
     #data-protection {
         display: flex;
         backdrop-filter: none;
@@ -82,12 +81,12 @@
         margin: 1rem 0;
     }
 
-
     #passkey-form {
         width: 100%;
     }
 
-    input {
+    /* Checkbox/radio inputs are excluded to keep their native size. */
+    input:not([type='checkbox']):not([type='radio']) {
         width: 100%;
         height: 3rem;
         padding: 0 2rem;
@@ -96,15 +95,14 @@
         font-size: var(--font-lg);
     }
 
-    input::placeholder {
+    input:not([type='checkbox']):not([type='radio'])::placeholder {
         font-size: var(--font-sm);
     }
-
 
     .backup-hash-row {
         display: grid;
         grid-template-columns: 1fr auto auto;
-        column-gap: .5rem;
+        column-gap: 0.5rem;
         /* width: 80%; */
         align-items: center;
     }
