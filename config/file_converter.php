@@ -30,6 +30,7 @@ return [
     */ 
     'converters' => [
         'hawki_converter' => [
+            // Base URL of the converter service. A legacy value that still contains the "/extract" endpoint is tolerated.
             'api_url' => env('HAWKI_FILE_CONVERTER_API_URL'),
             'api_key' => env('HAWKI_FILE_CONVERTER_API_KEY'),
             'class' => HawkiDocConverter::class,

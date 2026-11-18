@@ -124,4 +124,42 @@ class UrlResolverTest extends TestCase
     {
         static::assertSame($expectedBase, UrlResolver::baseUrl($givenUrl));
     }
+
+    // =========================================================================
+    // stripPathSuffix
+    // =========================================================================
+
+    #[DataProvider('provideTestItStripsPathSuffixData')]
+    public function testItStripsPathSuffix(string $url, string $suffix, string $expected): void
+    {
+        static::assertSame($expected, UrlResolver::stripPathSuffix($url, $suffix));
+    }
+
+    public static function provideTestItStripsPathSuffixData(): iterable
+    {
+        yield 'suffix is the whole path' => ['https://example.com/extract', '/extract', 'https://example.com'];
+        yield 'suffix below a sub path' => ['https://example.com/sub/extract', '/extract', 'https://example.com/sub'];
+        yield 'deep sub path with port' => ['http://example.com:8080/a/b/extract', '/extract', 'http://example.com:8080/a/b'];
+        yield 'suffix without leading slash' => ['https://example.com/sub/extract', 'extract', 'https://example.com/sub'];
+        yield 'multi-segment suffix' => ['https://example.com/sub/api/v1', '/api/v1', 'https://example.com/sub'];
+        yield 'trailing slash on url' => ['https://example.com/sub/extract/', '/extract', 'https://example.com/sub'];
+        yield 'trailing slash on suffix' => ['https://example.com/sub/extract', 'extract/', 'https://example.com/sub'];
+        yield 'query and fragment are dropped' => ['https://example.com/sub/extract?x=1#frag', '/extract', 'https://example.com/sub'];
+        yield 'non-matching suffix keeps path' => ['https://example.com/sub/convert', '/extract', 'https://example.com/sub/convert'];
+        yield 'partial segment does not match' => ['https://example.com/myextract', '/extract', 'https://example.com/myextract'];
+        yield 'suffix only in the middle' => ['https://example.com/extract/sub', '/extract', 'https://example.com/extract/sub'];
+        yield 'url without path' => ['https://example.com', '/extract', 'https://example.com'];
+        yield 'url with root path' => ['https://example.com/', '/extract', 'https://example.com'];
+        yield 'empty suffix keeps path' => ['https://example.com/sub/', '/', 'https://example.com/sub'];
+        yield 'schemeless url' => ['127.0.0.1/extract', '/extract', '127.0.0.1'];
+        yield 'schemeless url with sub path' => ['example.com/sub/extract', '/extract', 'example.com/sub'];
+        yield 'schemeless url with port' => ['localhost:8000/sub/extract', '/extract', 'localhost:8000/sub'];
+    }
+
+    public function testItStripPathSuffixThrowsForUrlWithoutHost(): void
+    {
+        $this->expectException(InvalidBaseUrlException::class);
+
+        UrlResolver::stripPathSuffix('/only/a/path', '/path');
+    }
 }
