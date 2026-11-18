@@ -61,7 +61,7 @@ class UrlResolver
 
     /**
      * Extract the origin (scheme + host + port) from a URL.
-     * 
+     *
      * Example:
      *   http://localhost:8000/asd/qwe?awe=123
      * becomes:
@@ -98,5 +98,32 @@ class UrlResolver
         }
 
         return "{$parts['scheme']}://{$host}{$port}";
+    }
+
+    /**
+     * Remove a specific path suffix from a URL, if it exists.
+     * Also removes query parameters and fragments from the URL before checking for the suffix.
+     * The part of the path, that does not match the suffix will be preserved, and the base URL will be returned if the entire path matches the suffix.
+     *
+     * @param string $url The original URL.
+     * @param string $pathToRemove The path suffix to remove (e.g., '/api/v1').
+     * @return string The modified URL with the specified path suffix removed, if it was present.
+     */
+    public static function stripPathSuffix(string $url, string $pathToRemove): string
+    {
+        $baseUrl = self::baseUrl($url);
+
+        // Mirror baseUrl(): without a scheme, parse_url() treats the host as part of the path.
+        $parseableUrl = isset(parse_url($url)['scheme']) ? $url : 'http://' . $url;
+
+        // Trailing slashes are ignored on both sides, so "/sub/extract/" matches "extract/".
+        $path = rtrim('/' . ltrim((string)parse_url($parseableUrl, PHP_URL_PATH), '/'), '/');
+        $normalizedPathToRemove = rtrim('/' . ltrim($pathToRemove, '/'), '/');
+
+        if ($normalizedPathToRemove !== '' && str_ends_with($path, $normalizedPathToRemove)) {
+            $path = substr($path, 0, -strlen($normalizedPathToRemove));
+        }
+
+        return rtrim($baseUrl . $path, '/');
     }
 }

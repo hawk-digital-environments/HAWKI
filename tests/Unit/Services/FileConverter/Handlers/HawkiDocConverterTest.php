@@ -18,7 +18,8 @@ use ZipArchive;
 #[CoversClass(HawkiDocConverter::class)]
 class HawkiDocConverterTest extends TestCase
 {
-    private const API_URL = 'http://hawki-converter.test/convert';
+    private const API_URL = 'http://hawki-converter.test';
+    private const EXTRACT_URL = self::API_URL . '/extract';
     private const API_KEY = 'test-api-key';
 
     // =========================================================================
@@ -116,10 +117,43 @@ class HawkiDocConverterTest extends TestCase
 
         $types = $this->makeSut()->getAllowedMimeTypes();
 
-        static::assertIsArray($types);
         static::assertContains('application/pdf', $types);
         // docx MIME type
         static::assertContains('application/vnd.openxmlformats-officedocument.wordprocessingml.document', $types);
+    }
+
+    #[DataProvider('provideTestItRequestsServiceInfoFromServiceRootData')]
+    public function testItRequestsServiceInfoFromServiceRoot(string $apiUrl, string $expectedInfoUrl): void
+    {
+        Http::fake(['*' => Http::response(['supported_formats' => ['pdf']], 200)]);
+
+        $sut = new HawkiDocConverter($this->makeCache(), new CarbonClock());
+        $sut->setConfig(['api_url' => $apiUrl, 'api_key' => self::API_KEY]);
+
+        static::assertContains('application/pdf', $sut->getAllowedMimeTypes());
+        Http::assertSent(fn($request) => $request->method() === 'GET' && $request->url() === $expectedInfoUrl);
+        Http::assertSentCount(1);
+    }
+
+    public static function provideTestItRequestsServiceInfoFromServiceRootData(): iterable
+    {
+        yield 'base url at domain root' => ['https://converter.test', 'https://converter.test'];
+        yield 'base url below a sub path' => ['https://example.test/hawki/converter', 'https://example.test/hawki/converter'];
+        yield 'base url with trailing slash' => ['https://example.test/hawki/converter/', 'https://example.test/hawki/converter'];
+        yield 'base url with port' => ['http://localhost:8001', 'http://localhost:8001'];
+        yield 'legacy url with extract endpoint at domain root' => ['https://converter.test/extract', 'https://converter.test'];
+        yield 'legacy url with extract endpoint below sub path' => ['https://example.test/hawki/converter/extract', 'https://example.test/hawki/converter'];
+        yield 'legacy url with extract endpoint and trailing slash' => ['https://example.test/converter/extract/', 'https://example.test/converter'];
+        yield 'legacy url with extract endpoint and port' => ['http://localhost:8001/extract', 'http://localhost:8001'];
+        yield 'base url with query string' => ['https://example.test/converter?token=abc', 'https://example.test/converter?token=abc'];
+        yield 'legacy url with query string' => ['https://example.test/converter/extract?token=abc', 'https://example.test/converter?token=abc'];
+    }
+
+    public function testItGetAllowedMimeTypesReturnsEmptyArrayWhenServiceListsNoFormats(): void
+    {
+        Http::fake(['*' => Http::response(['status' => 'ok'], 200)]);
+
+        static::assertSame([], $this->makeSut()->getAllowedMimeTypes());
     }
 
     // =========================================================================
@@ -134,7 +168,7 @@ class HawkiDocConverterTest extends TestCase
         ]);
 
         Http::fake([
-            self::API_URL => Http::response($zipContent, 200, ['Content-Type' => 'application/zip']),
+            self::EXTRACT_URL => Http::response($zipContent, 200, ['Content-Type' => 'application/zip']),
         ]);
 
         $result = $this->makeSut()->convert(FileReference::fromContent('report.pdf', '%PDF-1.4'));
@@ -147,7 +181,7 @@ class HawkiDocConverterTest extends TestCase
         $zipContent = $this->makeZipContent(['document.md' => '# Content']);
 
         Http::fake([
-            self::API_URL => Http::response($zipContent, 200),
+            self::EXTRACT_URL => Http::response($zipContent, 200),
         ]);
 
         $result = $this->makeSut()->convert(FileReference::fromContent('report.pdf', '%PDF-1.4'));
@@ -161,7 +195,7 @@ class HawkiDocConverterTest extends TestCase
         $zipContent = $this->makeZipContent(['doc.md' => 'content']);
 
         Http::fake([
-            self::API_URL => Http::response($zipContent, 200),
+            self::EXTRACT_URL => Http::response($zipContent, 200),
         ]);
 
         $this->makeSut()->convert(FileReference::fromContent('doc.pdf', '%PDF-1.4'));
@@ -171,6 +205,33 @@ class HawkiDocConverterTest extends TestCase
         });
     }
 
+    #[DataProvider('provideTestItConvertPostsToExtractEndpointData')]
+    public function testItConvertPostsToExtractEndpoint(string $apiUrl, string $expectedExtractUrl): void
+    {
+        $zipContent = $this->makeZipContent(['document.md' => '# Content']);
+
+        Http::fake(['*' => Http::response($zipContent, 200)]);
+
+        $sut = new HawkiDocConverter($this->makeCache(), new CarbonClock());
+        $sut->setConfig(['api_url' => $apiUrl, 'api_key' => self::API_KEY]);
+
+        $sut->convert(FileReference::fromContent('doc.pdf', '%PDF-1.4'));
+
+        Http::assertSent(fn($request) => $request->method() === 'POST' && $request->url() === $expectedExtractUrl);
+        Http::assertSentCount(1);
+    }
+
+    public static function provideTestItConvertPostsToExtractEndpointData(): iterable
+    {
+        yield 'base url at domain root' => ['https://converter.test', 'https://converter.test/extract'];
+        yield 'base url below a sub path' => ['https://example.test/hawki/converter', 'https://example.test/hawki/converter/extract'];
+        yield 'base url with trailing slash' => ['https://example.test/converter/', 'https://example.test/converter/extract'];
+        yield 'legacy url containing the extract endpoint' => ['https://example.test/hawki/converter/extract', 'https://example.test/hawki/converter/extract'];
+        yield 'legacy url containing the extract endpoint with trailing slash' => ['https://example.test/hawki/converter/extract/', 'https://example.test/hawki/converter/extract'];
+        yield 'base url with query string' => ['https://example.test/converter?token=abc', 'https://example.test/converter/extract?token=abc'];
+        yield 'legacy url with query string' => ['https://example.test/converter/extract?token=abc', 'https://example.test/converter/extract?token=abc'];
+    }
+
     // =========================================================================
     // convert — error handling
     // =========================================================================
@@ -178,7 +239,7 @@ class HawkiDocConverterTest extends TestCase
     public function testItConvertThrowsConversionFailedExceptionOnNonSuccessResponse(): void
     {
         Http::fake([
-            self::API_URL => Http::response('Forbidden', 403),
+            self::EXTRACT_URL => Http::response('Forbidden', 403),
         ]);
 
         $this->expectException(ConversionFailedException::class);
@@ -190,7 +251,7 @@ class HawkiDocConverterTest extends TestCase
     public function testItConvertThrowsConversionFailedExceptionWhenResponseIsNotValidZip(): void
     {
         Http::fake([
-            self::API_URL => Http::response('this is not a zip file', 200),
+            self::EXTRACT_URL => Http::response('this is not a zip file', 200),
         ]);
 
         $this->expectException(ConversionFailedException::class);
