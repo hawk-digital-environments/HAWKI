@@ -52,10 +52,13 @@
     const locale = $derived(app.localization.locale);
     const hookCtx = $derived({locale, translate, router});
 
-    const spaces: Space[] = $derived([
-        ...modules.map(module => {
+    const spaces: Space[] = $derived.by(() => {
+        // Modules come first; hook entries fold over them and win on id
+        // collision (a plugin declaring both keeps its authored label/icon/onSelect).
+        const byId = new Map<string, Space>();
+        for (const module of modules) {
             const icon = module.icon?.(locale);
-            return {
+            byId.set(`${module.plugin.name}:${module.name}`, {
                 id: `${module.plugin.name}:${module.name}`,
                 label: module.title?.(translate, locale) ?? module.name,
                 // The tabs render icons as components; a string (URL) icon has no slot here.
@@ -64,17 +67,18 @@
                     const prefix = getModuleRoutePrefix(module.plugin.name, module.name, module.plugin.isCorePlugin);
                     void ctx.router.goTo(ctx.router.p(prefix));
                 }
-            };
-        }),
-        // A focused flow (e.g. the assistant builder's wizard) may empty the
-        // collected entries to take the switcher out of the sidebar altogether.
-        ...moduleSelector.entries.map(entry => ({
-            id: entry.id,
-            label: entry.label,
-            icon: typeof entry.icon === 'string' ? undefined : entry.icon as IconComponent | undefined,
-            onSelect: entry.onSelect
-        }))
-    ]);
+            });
+        }
+        for (const entry of moduleSelector.entries) {
+            byId.set(entry.id, {
+                id: entry.id,
+                label: entry.label,
+                icon: typeof entry.icon === 'string' ? undefined : entry.icon as IconComponent | undefined,
+                onSelect: entry.onSelect
+            });
+        }
+        return [...byId.values()];
+    });
 
     const current = $derived.by(() => {
         const module = modules.find(candidate =>

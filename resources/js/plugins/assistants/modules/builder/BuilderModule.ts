@@ -4,6 +4,12 @@ import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteReg
 export class BuilderModule implements HawkiCoreModule {
     public readonly name = 'builder';
     public readonly pluginNameInRoutes = true;
+
+    // A wizard, not a destination: entered via "Create", never a space tab.
+    public visible(): boolean {
+        return false;
+    }
+
     routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar.group('/advanced', (builder)=> {
             // The group root redirects to /general via its page's `loadData`
