@@ -12,6 +12,9 @@ use Illuminate\Database\Eloquent\Builder;
 
 class UserRepository extends AbstractRepositoryWithContextualScopes
 {
+    public const SEARCH_MIN_LENGTH = 3;
+    public const SEARCH_LIMIT = 5;
+
     public function insert(
         string $username,
         string $name,
@@ -48,18 +51,36 @@ class UserRepository extends AbstractRepositoryWithContextualScopes
      * user lookup. Runs without contextual scopes: sharing must find users
      * the sharer has no other relation to yet; removed and system/app
      * accounts are never searchable.
+     *
+     * Terms shorter than {@see self::SEARCH_MIN_LENGTH} match nothing, LIKE
+     * wildcards in the term are matched literally, and at most
+     * {@see self::SEARCH_LIMIT} users are returned. The cap is applied by
+     * pre-selecting ids, because JSON:API pagination overrides a plain limit().
      */
     public function filterBySearchTerm(Builder $query, string $term): Builder
     {
-        return $query
-            ->withoutGlobalScopes()
-            ->where(static function (Builder $q) use ($term): void {
-                $q->where('name', 'like', "%{$term}%")
-                    ->orWhere('username', 'like', "%{$term}%")
-                    ->orWhere('email', 'like', "%{$term}%");
+        $query->withoutGlobalScopes();
+
+        $term = trim($term);
+        if (mb_strlen($term) < self::SEARCH_MIN_LENGTH) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $pattern = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term) . '%';
+
+        $ids = (clone $query)
+            ->where(static function (Builder $q) use ($pattern): void {
+                $q->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("username LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("email LIKE ? ESCAPE '!'", [$pattern]);
             })
             ->where('isRemoved', false)
-            ->whereNotIn('employeetype', ['system', 'app']);
+            ->whereNotIn('employeetype', ['system', 'app'])
+            ->orderBy('name')
+            ->limit(self::SEARCH_LIMIT)
+            ->pluck('id');
+
+        return $query->whereKey($ids);
     }
 
     /**
