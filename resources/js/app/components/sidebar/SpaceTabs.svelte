@@ -87,9 +87,18 @@
     });
 
     const current = $derived.by(() => {
-        const module = modules.find(candidate =>
+        // The active tab follows route ownership: invisible modules (the builder
+        // wizard) light their plugin's space, hook-contributed spaces (the admin
+        // tab) their own `active` flag.
+        const activeModule = app.modules.all.find(candidate =>
             router.isRouteActive(getModuleRouteGroupName(candidate.plugin.name, candidate.name)));
-        return module ? `${module.plugin.name}:${module.name}` : spaces[0]?.id ?? null;
+        if (activeModule) {
+            const ownId = `${activeModule.plugin.name}:${activeModule.name}`;
+            return spaces.find(space => space.id === ownId)?.id
+                ?? spaces.find(space => space.id.startsWith(`${activeModule.plugin.name}:`))?.id
+                ?? spaces[0]?.id ?? null;
+        }
+        return moduleSelector.entries.find(entry => entry.active)?.id ?? spaces[0]?.id ?? null;
     });
 
     // Null until the user first pins or unpins, so that until then spaces registered
