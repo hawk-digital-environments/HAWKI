@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories\Assistants;
 
+use App\Models\Ai\AiModel;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantCategory;
 use App\Models\Organization;
@@ -31,7 +32,10 @@ class AssistantFactory extends Factory
             'category_id' => AssistantCategory::factory(),
             'release_stage' => 'private',
             'requested_release_stage' => null,
-            'model' => 'gpt-4',
+            // A model that is actually offered — the store's model_available filter
+            // hides assistants whose model no longer resolves.
+            'model' => AiModel::query()->inRandomOrder()->value('model_id')
+                ?? 'openAi/gpt-6.1-terra',
             'max_tokens' => fake()->numberBetween(100, 4096),
             'temp' => fake()->randomFloat(2, 0, 1),
             'top_p' => fake()->randomFloat(2, 0, 1),
