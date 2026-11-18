@@ -16,6 +16,8 @@ use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\Providers\Repositories\AiProviderRepository;
+use App\Services\Ai\Models\Settings\AiModelSettingRegistry;
 use App\Services\Ai\Models\Settings\Values\AiModelSettings;
 use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
@@ -56,6 +58,7 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
 {
     use DatabaseTransactions;
 
+    private const string PROVIDER_ID = 'fake-openai';
     private const string MODEL_ID = 'regen-target-model';
 
     private CapturingTextGateway $gateway;
@@ -309,7 +312,8 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
             'messageId' => '2.001',
             'slug' => '',
             'payload' => [
-                'model' => $modelId,
+                // Inside HAWKI the frontend references models by their qualified id.
+                'model' => self::PROVIDER_ID . '/' . $modelId,
                 'broadcast' => false,
                 'stream' => true,
                 'messages' => $messages ?? [
@@ -364,8 +368,12 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
             $mock->shouldReceive('resolveForModel')->andReturn($proxy);
         });
 
-        $this->mock(AiModelRepository::class, fn ($mock) => $mock->shouldReceive('findOneOrFail')
-            ->andReturnUsing(fn (string $modelId): AiModel => $this->makeModel($modelId)));
+        // The real ModelFinder resolves the qualified payload id through both repositories.
+        $this->mock(AiProviderRepository::class, fn ($mock) => $mock->shouldReceive('findOneByProviderId')
+            ->with(self::PROVIDER_ID, null)
+            ->andReturn($this->createMock(\App\Models\Ai\AiProvider::class)));
+        $this->mock(AiModelRepository::class, fn ($mock) => $mock->shouldReceive('findOneByProvider')
+            ->andReturnUsing(fn ($provider, string $modelId): AiModel => $this->makeModel($modelId)));
 
         // LoggingMiddleware resolves logger/auth through its service locator, whose
         // container fallback is auto-disabled under PHPUnit — re-enable it so the
@@ -385,10 +393,12 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
         $input = $this->nextModel['input'];
         // Missing keys read as false (`AiModelSettings::canUseTools`/`canHandleFiles`
         // default to false), so false values may be omitted or passed explicitly.
-        $settings = [
+        // Registry injected explicitly: the settings' service locator has no container fallback under PHPUnit.
+        $settings = AiModelSettings::fromArray([
             'tool_calling' => $this->nextModel['toolCalling'],
             'file_upload' => $this->nextModel['fileUpload'],
-        ];
+        ]);
+        $settings->setService(AiModelSettingRegistry::class, $this->app->make(AiModelSettingRegistry::class));
 
         $model = $this->createMock(AiModel::class);
         // AiModel exposes cast properties via Eloquent's magic __get → getAttribute.
@@ -396,7 +406,7 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
             static fn (string $key): mixed => match ($key) {
                 'flags' => $flags,
                 'model_id' => $modelId,
-                'settings' => AiModelSettings::fromArray($settings),
+                'settings' => $settings,
                 'parameters' => \App\Services\Ai\Models\Parameters\Values\AiModelParameters::fromArray([]),
                 'input' => AiModelIoMethods::fromArray($input),
                 'native_capabilities' => NativeAiModelCapabilities::fromArray([]),
