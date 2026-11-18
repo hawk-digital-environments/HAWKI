@@ -4,22 +4,8 @@
   Use ConfirmDialog or InfoDialog for pre-built variants; use this directly
   for dialogs that need custom body content or a non-standard layout.
 
-  The content is a flex column: pinned header and footer (flex: none) around
-  a `.dialog-body` region that grows with the content and becomes the scroll
-  container once the dialog hits its max-height (`flex: 1 1 auto` with
-  `min-height: 0` and `overflow-y: auto`). Consumers that need to style the
-  scroll region itself (scrollbar gutter, hidden scrollbars) can pass
-  `bodyProps`; consumers that manage their own internal scrollers keep the
-  content shrinkable (`min-height: 0`) so the body never double-scrolls.
-
-  The dialog is fully controlled: bits-ui never flips the open state on its
-  own. Every close request (Escape, outside click, the X button) is reported
-  via `onOpenChange(false)` and the dialog only closes once the parent sets
-  `open` to false. A parent can therefore veto a close (e.g. to ask about
-  unsaved changes first) simply by leaving `open` untouched.
-
   Usage — custom body content with a title, description and footer:
-    <Dialog {open} onOpenChange={(o) => open = o} title="Edit prompt" description="Changes apply immediately.">
+    <Dialog bind:open title="Edit prompt" description="Changes apply immediately.">
         {#snippet children()}
             <Textarea bind:value={draft}/>
         {/snippet}
@@ -38,17 +24,6 @@
         {#snippet title()}Settings{/snippet}
         {#snippet children()}...{/snippet}
     </Dialog>
-
-  Initial focus: the close button is the first element in DOM order, so when
-  the dialog opens, keyboard/screen-reader users land on it first and can
-  leave immediately (bits-ui focuses the first tabbable element). Dialogs
-  that deliberately want to focus an input instead should NOT rely on the
-  `autofocus` attribute (bits-ui's auto focus runs afterwards and would win);
-  pass `contentProps.onOpenAutoFocus`, call `event.preventDefault()` and focus
-  the input yourself.
-
-  Use `role="alertdialog"` for blocking confirmations (see ConfirmDialog); the
-  default is a regular `dialog`.
 -->
 <script lang="ts">
 
@@ -57,15 +32,14 @@
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
-    import {ActionIcon} from '$lib/components/ui/icons';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();
     
     interface Props {
-        /** Whether the dialog is open. Controlled: update it from `onOpenChange`. */
+        /** Whether the dialog is open. Supports bind:open for two-way binding. */
         open?: boolean;
-        /** Called when the dialog requests an open-state change; the parent decides by updating `open`. */
+        /** Called when the dialog requests an open-state change. */
         onOpenChange?: (open: boolean) => void;
         /** When true, the dialog shows a "close button" in the top-right corner. */
         closable?: boolean;
@@ -79,31 +53,27 @@
         description?: Snippet | string;
         /** Additional props to apply to the DialogDescription component. */
         descriptionProps?: Omit<DialogDescriptionProps, 'children'>;
-        /**
-         * Optional media (an avatar, an icon) right of the title/description
-         * column; turns the header into a row.
-         */
-        headerTrailing?: Snippet;
         /** Additional props to apply to the header container. */
         headerProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
-        /** Additional props to apply to the body region that wraps the main content. */
+        /** When provided, wraps the main content in a `.dialog-body` region that
+            grows with the content and becomes the scroll container once the dialog
+            hits its max-height; consumers managing their own scrollers style it
+            through these props (e.g. to opt out of clipping). */
         bodyProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
         /** An optional footer to display at the bottom of the dialog. Can be either a string or a snippet. */
         footer?: Snippet | string;
+        /** Rendered at the end of the header row (e.g. an avatar next to the title). */
+        headerTrailing?: Snippet;
         /** Additional props to apply to the footer container. */
         footerProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
         /** The main content of the dialog, rendered between the header and footer. This is a Svelte snippet that receives no arguments. */
         children?: Snippet;
         /** Additional props to apply to the DialogContent component. */
         contentProps?: Omit<DialogContentProps, 'children'>;
+        /** ARIA role of the dialog surface; `alertdialog` for blocking confirmations. */
+        role?: 'dialog' | 'alertdialog';
         /** Additional props to apply to the DialogOverlay component. */
         overlayProps?: Omit<DialogOverlayProps, 'children'>;
-        /**
-         * ARIA role of the dialog surface. Use `alertdialog` for modal
-         * confirmations that interrupt the user and require a response.
-         * @default 'dialog'
-         */
-        role?: 'dialog' | 'alertdialog';
     }
 
     const {
@@ -115,23 +85,20 @@
         titleProps,
         description,
         descriptionProps,
-        headerTrailing,
         headerProps,
         bodyProps,
         footer,
         footerProps,
+        headerTrailing,
         children,
         contentProps,
         overlayProps,
-        role = 'dialog'
+        role
+
     }: Props = $props();
 </script>
 
-<!-- Function binding: bits-ui reads `open` from our prop and routes every
-     change request through `onOpenChange` instead of mutating its own copy.
-     Without this, an outside click or Escape would close the dialog locally
-     while the parent's `open` still says true, leaving both out of sync. -->
-<DialogPrimitive.Root bind:open={() => open, (value) => onOpenChange?.(value)}>
+<DialogPrimitive.Root {open} onOpenChange={onOpenChange}>
     {#if trigger}
         <DialogPrimitive.Trigger>
             {#snippet child({props})}
@@ -145,67 +112,46 @@
     {/if}
     <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay {...mergeProps({class: 'dialog-overlay'}, overlayProps)}/>
-        <DialogPrimitive.Content {...mergeProps({class: 'dialog-content'}, contentProps)}>
-            <!-- bits-ui always emits role="dialog" on its content props, so the
-                 element is rendered here to let `role` override it. -->
-            {#snippet child({props})}
-                <div {...props} {role}>
-                    {#if closable}
-                        <DialogPrimitive.Close>
-                            {#snippet child({props})}
-                                <ActionIcon
-                                    icon={Cancel01Icon}
-                                    label={__('ui.dialog.closeLabel')}
-                                    size="sm"
-                                    class="dialog-close"
-                                    {...props}
-                                />
-                            {/snippet}
-                        </DialogPrimitive.Close>
-                    {/if}
+        <DialogPrimitive.Content {...mergeProps({class: 'dialog-content', ...(role ? {role} : {})}, contentProps)}>
+            {#if title || description || headerTrailing}
+                <div {...mergeProps({class: headerTrailing ? 'dialog-header dialog-header--row' : 'dialog-header'}, headerProps)}>
+                    <div class="dialog-header-text">
+                        {#if title}
+                            <DialogPrimitive.Title {...mergeProps({class: 'dialog-title'}, titleProps)}>
+                                <SnippetOrString value={title}/>
+                            </DialogPrimitive.Title>
+                        {/if}
 
-                    {#if title || description || headerTrailing}
-                        <div
-                            {...mergeProps(
-                                {class: headerTrailing ? 'dialog-header dialog-header--row' : 'dialog-header'},
-                                headerProps
-                            )}
-                        >
-                            {#if title || description}
-                                <div class="dialog-header-text">
-                                    {#if title}
-                                        <DialogPrimitive.Title {...mergeProps({class: 'dialog-title'}, titleProps)}>
-                                            <SnippetOrString value={title}/>
-                                        </DialogPrimitive.Title>
-                                    {/if}
-
-                                    {#if description}
-                                        <DialogPrimitive.Description {...mergeProps({class: 'dialog-description'}, descriptionProps)}>
-                                            <SnippetOrString value={description}/>
-                                        </DialogPrimitive.Description>
-                                    {/if}
-                                </div>
-                            {/if}
-
-                            {#if headerTrailing}
-                                <div class="dialog-header-trailing">
-                                    {@render headerTrailing()}
-                                </div>
-                            {/if}
-                        </div>
-                    {/if}
-
-                    <div {...mergeProps({class: 'dialog-body'}, bodyProps)}>
-                        {@render children?.()}
+                        {#if description}
+                            <DialogPrimitive.Description {...mergeProps({class: 'dialog-description'}, descriptionProps)}>
+                                <SnippetOrString value={description}/>
+                            </DialogPrimitive.Description>
+                        {/if}
                     </div>
-
-                    {#if footer}
-                        <div {...mergeProps({class: 'dialog-footer'}, footerProps)}>
-                            <SnippetOrString value={footer}/>
-                        </div>
+                    {#if headerTrailing}
+                        {@render headerTrailing()}
                     {/if}
                 </div>
-            {/snippet}
+            {/if}
+
+            {#if bodyProps}
+                <div {...mergeProps({class: 'dialog-body'}, bodyProps)}>
+                    {@render children?.()}
+                </div>
+            {:else}
+                {@render children?.()}
+            {/if}
+
+            {#if footer}
+                <div {...mergeProps({class: 'dialog-footer'}, footerProps)}>
+                    <SnippetOrString value={footer}/>
+                </div>
+            {/if}
+            {#if closable}
+                <DialogPrimitive.Close class="dialog-close" aria-label={__('ui.dialog.closeLabel')}>
+                    <Cancel01Icon size={16}/>
+                </DialogPrimitive.Close>
+            {/if}
         </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
 </DialogPrimitive.Root>
@@ -215,13 +161,8 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
-        flex: none;
     }
 
-    /* Trailing media (an avatar, an icon) turns the header into a row around
-       the title/description column. Doubled class to out-specify the plain
-       `.dialog-header` rule regardless of stylesheet order. The inline-end
-       padding keeps the media clear of the corner close button. */
     :global(.dialog-header.dialog-header--row) {
         flex-direction: row;
         align-items: center;
@@ -229,23 +170,12 @@
         padding-inline-end: calc(var(--space-4) + var(--space-6) + var(--space-2));
     }
 
-    .dialog-header-trailing {
-        flex-shrink: 0;
-    }
-
-    .dialog-header-text {
+    :global(.dialog-header-text) {
         display: flex;
+        flex: 1;
         flex-direction: column;
         gap: var(--space-1);
-        flex: 1;
         min-width: 0;
-    }
-
-    :global(.dialog-body) {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow-y: auto;
-        overscroll-behavior: contain;
     }
 
     :global(.dialog-title) {
@@ -269,13 +199,9 @@
         top: 50%;
         left: 50%;
         z-index: var(--layer-overlay);
-        display: flex;
-        flex-direction: column;
+        display: grid;
         width: 100%;
         max-width: 32rem;
-        /* Bounds the dialog so `.dialog-body` becomes the scroll container
-           for long content (mirrors the BottomSheet's cap). */
-        max-height: min(85vh, 40rem);
         translate: -50% -50%;
         gap: var(--space-4);
         border: var(--border);
@@ -294,12 +220,39 @@
         }
     }
 
-    /* Doubled class to out-specify ActionIcon's scoped `button.svelte-… { position: relative }`
-       (both live in the `components` cascade layer, so specificity decides). */
-    :global(.dialog-close.dialog-close) {
+    :global(.dialog-body) {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+    }
+
+    :global(.dialog-close) {
         position: absolute;
         top: var(--space-4);
         right: var(--space-4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--corner-sm);
+        opacity: 0.7;
+        transition: opacity var(--duration-fast, 150ms);
+        color: var(--color-text-muted);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: var(--space-1);
+
+        &:hover {
+            opacity: 1;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-focus-ring);
+            outline-offset: 2px;
+        }
 
         &:disabled {
             pointer-events: none;
@@ -348,7 +301,6 @@
         flex-direction: row;
         justify-content: flex-end;
         gap: var(--space-2, calc(0.25rem * 2));
-        flex: none;
     }
 
     @keyframes dialog-fade-in {
