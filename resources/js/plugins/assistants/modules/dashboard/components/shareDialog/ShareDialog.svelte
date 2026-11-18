@@ -17,6 +17,7 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import Copy01Icon from '$lib/components/ui/icons/iconset/Copy01Icon.svelte';
+    import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
     import { ApiError } from '$plugins/assistants/api/errors';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import AssistantAvatarIcon from '$plugins/assistants/components/avatarBuilder/AssistantAvatarIcon.svelte';
@@ -24,7 +25,12 @@
         listAssistantShares,
         syncAssistantShares
     } from '$plugins/assistants/api/resources/assistantsClient';
-    import { searchUsers, type ShareUserCandidate } from '$plugins/assistants/api/resources/usersClient';
+    import {
+        SEARCH_LIMIT,
+        SEARCH_MIN_LENGTH,
+        searchUsers,
+        type ShareUserCandidate
+    } from '$plugins/assistants/api/resources/usersClient';
     import { useApp } from '$lib/app/hooks/useApp.svelte.js';
     import { useRouter } from '$lib/components/ui/routing/index.js';
     import type { Assistant } from '$plugins/assistants/types/assistant';
@@ -50,8 +56,6 @@
     const connection = useConnection();
     const app = useApp();
     const router = useRouter();
-
-    const MIN_QUERY_LENGTH = 3;
 
     const selection = createShareSelection();
 
@@ -97,7 +101,7 @@
     const runSearch = debounce(async (value: string): Promise<void> => {
         const seq = ++searchSeq;
         const trimmed = value.trim();
-        if (trimmed.length < MIN_QUERY_LENGTH) {
+        if (trimmed.length < SEARCH_MIN_LENGTH) {
             results = [];
             searching = false;
             searchError = false;
@@ -212,6 +216,27 @@
     </Tooltip>
 {/snippet}
 
+{#snippet searchInfo()}
+    <!-- The search row's rules: minimum length and results cap, both
+         enforced server-side (UserRepository). -->
+    <Tooltip
+        tooltip={__('assistants.detail.share_search_info', {min: String(SEARCH_MIN_LENGTH), limit: String(SEARCH_LIMIT)})}
+        side="bottom"
+        sideOffset={4}
+    >
+        {#snippet children({props})}
+            <button
+                {...props}
+                type="button"
+                class="search-info"
+                aria-label={__('assistants.detail.share_search_info', {min: String(SEARCH_MIN_LENGTH), limit: String(SEARCH_LIMIT)})}
+            >
+                <InformationCircleIcon size="1em" />
+            </button>
+        {/snippet}
+    </Tooltip>
+{/snippet}
+
 {#snippet personRow(person: SharePerson)}
     <!-- The name side is a real button: native focus/keyboard semantics, and
          the edit grant's switch is its sibling, not nested inside it. -->
@@ -272,13 +297,14 @@
                     placeholder={__('assistants.detail.share_search_ph')}
                     ariaLabel={__('assistants.detail.share_search_ph')}
                 />
+                {@render searchInfo()}
             </div>
 
             {#if searching}
                 <p class="hint" aria-live="polite">{__('assistants.detail.share_searching')}</p>
             {:else if searchError}
                 <p class="hint" aria-live="polite">{__('assistants.detail.share_search_failed')}</p>
-            {:else if query.trim().length >= MIN_QUERY_LENGTH && results.length === 0}
+            {:else if query.trim().length >= SEARCH_MIN_LENGTH && results.length === 0}
                 <p class="hint" aria-live="polite">{__('assistants.detail.share_no_results')}</p>
             {/if}
 
@@ -364,6 +390,24 @@
     .search-icon {
         display: inline-flex;
         flex-shrink: 0;
+    }
+
+    /* Trailing info trigger for the search rules; button semantics for
+       keyboard access, styled like the leading search icon. */
+    .search-info {
+        display: inline-flex;
+        flex-shrink: 0;
+        padding: 0;
+        border: none;
+        border-radius: var(--corner-sm);
+        background: none;
+        color: inherit;
+        cursor: help;
+    }
+
+    .search-info:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
     }
 
     /* Person rows: [toggle | edit switch]. The list is the dialog's internal

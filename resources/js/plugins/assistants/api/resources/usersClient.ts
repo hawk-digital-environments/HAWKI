@@ -5,6 +5,10 @@ import { logApiError } from '$plugins/assistants/api/errors';
 
 const USERS = 'users';
 
+/** Mirror of the backend's search bounds (UserRepository::SEARCH_*). */
+export const SEARCH_MIN_LENGTH = 3;
+export const SEARCH_LIMIT = 5;
+
 /** A user as offered by the share dialog's lookup (see {@link searchUsers}). */
 export interface ShareUserCandidate {
     userId: number;
@@ -20,7 +24,7 @@ export interface ShareUserCandidate {
  */
 export async function searchUsers(query: string, signal?: AbortSignal): Promise<ShareUserCandidate[]> {
     const trimmed = query.trim();
-    if (trimmed.length < 3) return [];
+    if (trimmed.length < SEARCH_MIN_LENGTH) return [];
 
     const request: FetchCollectionQuery = {
         filter: { search: trimmed }

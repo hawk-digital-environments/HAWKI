@@ -167,6 +167,7 @@
             "share_title": "Share assistant",
             "share_description": "Decide who may use or edit this assistant.",
             "share_search_ph": "Search name, username or email…",
+            "share_search_info": "Search needs at least :min characters — the first :limit matches are shown.",
             "share_searching": "Searching…",
             "share_no_results": "No users found.",
             "share_search_failed": "The user search failed.",

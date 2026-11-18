@@ -167,6 +167,7 @@
             "share_title": "Assistent teilen",
             "share_description": "Lege fest, wer diesen Assistenten nutzen oder bearbeiten darf.",
             "share_search_ph": "Name, Benutzername oder E-Mail suchen…",
+            "share_search_info": "Suche ab :min Zeichen — es werden die ersten :limit Treffer angezeigt.",
             "share_searching": "Suche läuft…",
             "share_no_results": "Keine Benutzer:innen gefunden.",
             "share_search_failed": "Die Benutzer:innensuche ist fehlgeschlagen.",
