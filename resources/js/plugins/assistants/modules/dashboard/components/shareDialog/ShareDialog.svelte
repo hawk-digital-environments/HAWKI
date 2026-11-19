@@ -82,12 +82,12 @@
     let linkUrl = $state<string | null>(null);
     let linkExpiresAt = $state<string | null>(null);
 
-    // A link carries the grant it was minted with: flipping the switch re-mints.
+    // The grant a link was minted with; flipping the switch or reopening the
+    // section (via reset below) drifts from it and mints a fresh link.
+    let mintedGrant: boolean | null = null;
+
     $effect(() => {
-        linkCanEdit;
-        untrack(() => {
-            if (linkOpen) void mintLink();
-        });
+        if (linkOpen && mintedGrant !== linkCanEdit) untrack(() => void mintLink());
     });
 
     // Every open starts fresh: reload the share list, drop stale picks and
@@ -209,12 +209,12 @@
     function resetLink(): void {
         linkUrl = null;
         linkExpiresAt = null;
+        mintedGrant = null;
     }
 
-    /** Opens the link section for good; a link already shown is reused. */
+    /** Opens the link section for good; the mint effect takes it from here. */
     function openLink(): void {
         linkOpen = true;
-        if (!linkUrl && !minting) void mintLink();
     }
 
     /** Guards against a slow earlier mint overwriting a newer one. */
@@ -225,6 +225,7 @@
         if (!assistant.id) return;
         const seq = ++mintSeq;
         resetLink();
+        mintedGrant = linkCanEdit;
         minting = true;
         try {
             const link = await createAssistantShareLink(assistant.id, linkCanEdit);
