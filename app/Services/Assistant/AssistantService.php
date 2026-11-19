@@ -23,6 +23,7 @@ use App\Services\Assistant\Values\AssistantShareLinkToken;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\FileReference;
 use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\System\Time\CarbonClockInterface;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use Illuminate\Database\DatabaseManager;
@@ -40,6 +41,7 @@ readonly class AssistantService
         private FileStorageService $fileStorage,
         private AssistantAttachmentRepository $assistantAttachmentRepository,
         private AssistantConfig $config,
+        private CarbonClockInterface $clock,
     ) {
     }
 
@@ -105,7 +107,7 @@ readonly class AssistantService
      */
     public function createShareLink(Assistant $assistant, User $creator, bool $canEdit): AssistantShareLinkToken
     {
-        $expiresAt = now()->addHours($this->config->shareLinkTtlHours);
+        $expiresAt = $this->clock->now()->addHours($this->config->shareLinkTtlHours);
         $token = $this->repository->createShareLink($assistant, $creator, $canEdit, $expiresAt);
 
         return new AssistantShareLinkToken($token, $canEdit, $expiresAt);

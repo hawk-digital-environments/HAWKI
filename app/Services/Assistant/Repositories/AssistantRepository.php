@@ -16,6 +16,7 @@ use App\Services\Assistant\Values\AssistantShareGrant;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
+use App\Services\System\Time\CarbonClockInterface;
 use App\Services\Users\Repositories\UserRepository;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,6 +27,7 @@ class AssistantRepository extends AbstractRepository
 {
     public function __construct(
         private readonly UserRepository $users,
+        private readonly CarbonClockInterface $clock,
     ) {
     }
 
@@ -257,7 +259,7 @@ class AssistantRepository extends AbstractRepository
         return AssistantShareLink::query()
             ->with('assistant')
             ->where('token_hash', self::hashShareToken($token))
-            ->where('expires_at', '>', now())
+            ->where('expires_at', '>', $this->clock->now())
             ->first();
     }
 

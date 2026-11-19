@@ -7,6 +7,8 @@ namespace Tests\Feature\Api\Assistant;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantShareLink;
 use App\Models\User;
+use App\Services\System\Time\CarbonClockInterface;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
@@ -23,7 +25,7 @@ class AssistantShareLinkTest extends TestCase
     public function testCreatorCanCreateShareLink(): void
     {
         config(['assistant.share_links.ttl_hours' => 24]);
-        $this->freezeTime();
+        $at = $this->freezeClock();
 
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $owner->id, 'release_stage' => 'draft']);
@@ -35,7 +37,7 @@ class AssistantShareLinkTest extends TestCase
         ])
             ->assertOk()
             ->assertJsonPath('data.can_edit', true)
-            ->assertJsonPath('data.expires_at', now()->addHours(24)->toIso8601String());
+            ->assertJsonPath('data.expires_at', $at->addHours(24)->toIso8601String());
 
         $token = $response->json('data.token');
         self::assertIsString($token);
@@ -65,7 +67,7 @@ class AssistantShareLinkTest extends TestCase
     {
         config(['assistant.share_links.ttl_hours' => 2]);
         $this->app->forgetInstance(\App\Services\Assistant\Config\AssistantConfig::class);
-        $this->freezeTime();
+        $at = $this->freezeClock();
 
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
@@ -74,7 +76,7 @@ class AssistantShareLinkTest extends TestCase
 
         $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share-link", ['data' => []])
             ->assertOk()
-            ->assertJsonPath('data.expires_at', now()->addHours(2)->toIso8601String());
+            ->assertJsonPath('data.expires_at', $at->addHours(2)->toIso8601String());
     }
 
     public function testNonCreatorCannotCreateShareLink(): void
@@ -201,13 +203,11 @@ class AssistantShareLinkTest extends TestCase
 
     public function testExpiredLinkIsRejected(): void
     {
-        config(['assistant.share_links.ttl_hours' => 24]);
-
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
         $token = $this->createLink($owner, $assistant, canEdit: false);
 
-        $this->travel(25)->hours();
+        AssistantShareLink::query()->update(['expires_at' => now()->subHour()]);
 
         $this->actingAsUser(User::factory()->create());
         $this->jsonApiRaw('post', self::REDEEM_URI, ['data' => ['token' => $token]])
@@ -264,9 +264,14 @@ class AssistantShareLinkTest extends TestCase
     {
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+
+        // The model's prunable() reads the real wall clock: minted 25h ago,
+        // the first link is past its 24h TTL; the second stays inside it.
+        $now = CarbonImmutable::now('UTC');
+        $this->freezeClock($now->subHours(25));
         $this->createLink($owner, $assistant, canEdit: false);
 
-        $this->travel(25)->hours();
+        $this->advanceClock($now);
         $this->createLink($owner, $assistant, canEdit: false);
 
         $this->artisan('model:prune', ['--model' => [AssistantShareLink::class]])->assertSuccessful();
@@ -282,4 +287,39 @@ class AssistantShareLinkTest extends TestCase
             'data' => ['can_edit' => $canEdit],
         ])->assertOk()->json('data.token');
     }
+
+    /**
+     * The mock clock must be installed while the application is created:
+     * route registration resolves the assistant schema and its repository
+     * — and with them the clock — during boot, before any test method runs.
+     */
+    protected function refreshApplication(): void
+    {
+        parent::refreshApplication();
+
+        // Real time unless a test freezes it; pinned once so unfrozen tests
+        // never see the clock jump mid-test.
+        $this->clockNow ??= CarbonImmutable::now('UTC');
+
+        $clock = $this->createMock(CarbonClockInterface::class);
+        $clock->method('now')->willReturnCallback(fn (): CarbonImmutable => $this->clockNow ?? throw new \LogicException('Clock not frozen'));
+        $this->app->instance(CarbonClockInterface::class, $clock);
+    }
+
+    /**
+     * Freezes the mocked application clock — Laravel's freezeTime() only
+     * mocks Carbon and never reaches the injected clock. Advance it via
+     * {@see advanceClock()}; every service holding the mock observes it.
+     */
+    private function freezeClock(?CarbonImmutable $at = null): CarbonImmutable
+    {
+        return $this->clockNow = $at ?? new CarbonImmutable('2026-11-19 12:00:00', 'UTC');
+    }
+
+    private function advanceClock(CarbonImmutable $to): void
+    {
+        $this->clockNow = $to;
+    }
+
+    private ?CarbonImmutable $clockNow = null;
 }
