@@ -435,4 +435,89 @@ class AssistantReleaseTest extends TestCase
             'status' => AssistantReviewStatus::PENDING->value,
         ]);
     }
+
+    public function testSubmittingADraftForPublicationMakesItPrivateWhilePending(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::DRAFT->value,
+        ]);
+
+        $this->actingAsUser($user);
+        Event::fake(AssistantReleaseStageChangedEvent::class);
+
+        $this->releaseTo($assistant, AssistantReleaseStage::FEDERATED);
+
+        $assistant->refresh();
+        static::assertSame(AssistantReleaseStage::PRIVATE, $assistant->release_stage);
+        static::assertSame(AssistantReleaseStage::FEDERATED, $assistant->requested_release_stage);
+        static::assertSame(AssistantReviewStatus::PENDING, AssistantReview::where('assistant_id', $assistant->id)->sole()->status);
+
+        Event::assertDispatched(
+            AssistantReleaseStageChangedEvent::class,
+            static fn (AssistantReleaseStageChangedEvent $event): bool => AssistantReleaseStage::DRAFT === $event->oldStage
+                && AssistantReleaseStage::PRIVATE === $event->newStage,
+        );
+    }
+
+    /**
+     * The draft -> private move runs the real listener, which tears reviews
+     * down on non-public stages; the reopened pending review must survive it.
+     */
+    public function testSubmittedDraftKeepsItsReopenedReviewAndHistory(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::DRAFT->value,
+        ]);
+        AssistantReview::forceCreate([
+            'assistant_id' => $assistant->id,
+            'status' => AssistantReviewStatus::PENDING->value,
+            'history' => [['status' => 'needs_revision', 'reason' => 'earlier round']],
+        ]);
+
+        $this->actingAsUser($user);
+
+        $this->releaseTo($assistant, AssistantReleaseStage::ORGANIZATIONAL);
+
+        $assistant->refresh();
+        static::assertSame(AssistantReleaseStage::PRIVATE, $assistant->release_stage);
+        static::assertSame(AssistantReleaseStage::ORGANIZATIONAL, $assistant->requested_release_stage);
+
+        $review = AssistantReview::where('assistant_id', $assistant->id)->sole();
+        static::assertSame(AssistantReviewStatus::PENDING, $review->status);
+        static::assertSame([['status' => 'needs_revision', 'reason' => 'earlier round']], $review->history);
+    }
+
+    public function testMovingASubmittedAssistantBackToDraftStillDropsItsReview(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => AssistantReleaseStage::DRAFT->value,
+        ]);
+
+        $this->actingAsUser($user);
+
+        $this->releaseTo($assistant, AssistantReleaseStage::ORGANIZATIONAL);
+        $this->releaseTo($assistant, AssistantReleaseStage::DRAFT);
+
+        $assistant->refresh();
+        static::assertSame(AssistantReleaseStage::DRAFT, $assistant->release_stage);
+        static::assertNull($assistant->requested_release_stage);
+        $this->assertDatabaseMissing('assistant_reviews', ['assistant_id' => $assistant->id]);
+    }
+
+    private function releaseTo(Assistant $assistant, AssistantReleaseStage $stage): void
+    {
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => ['release_stage' => $stage->value],
+            ],
+        ])->assertOk();
+    }
 }

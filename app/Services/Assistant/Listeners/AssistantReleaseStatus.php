@@ -23,6 +23,11 @@ class AssistantReleaseStatus
         // touch the review here: the AssistantService records pending requests
         // directly, and a real promotion only happens once the review is
         // APPROVED.
+        // A pending publication request keeps its review: a submitted draft waits for approval as private.
+        if (null !== $event->assistant->requested_release_stage) {
+            return;
+        }
+
         if (AssistantReleaseStage::PRIVATE === $event->newStage || AssistantReleaseStage::DRAFT === $event->newStage) {
             $this->reviewRepository->deleteReviewForAssistantUnlessDenied($event->assistant->id);
         }

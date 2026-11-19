@@ -152,7 +152,8 @@ readonly class AssistantService
             // takes effect by itself.
             //
             // Record the desired stage and (re)open the review as pending. The
-            // assistant stays at its current stage until an admin approves it.
+            // assistant stays at its current stage (a draft moves to private)
+            // until an admin approves it.
             // Reopening starts a fresh round, so a previous denial reason is
             // cleared — a resubmission after NEEDS_REVISION is judged on its
             // own merits.
@@ -161,6 +162,12 @@ readonly class AssistantService
                 ['status' => AssistantReviewStatus::PENDING->value, 'reason' => null],
             );
             $this->repository->setRequestedReleaseStage($assistant, $target);
+
+            // A submitted draft waits for approval as private, so its creator can already use it.
+            if (AssistantReleaseStage::DRAFT === $oldStage) {
+                $this->repository->setReleaseStage($assistant, AssistantReleaseStage::PRIVATE);
+                $this->events->dispatch(new AssistantReleaseStageChangedEvent($assistant, $oldStage, AssistantReleaseStage::PRIVATE));
+            }
 
             return $assistant;
         });
