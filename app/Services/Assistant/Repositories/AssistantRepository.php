@@ -6,6 +6,7 @@ namespace App\Services\Assistant\Repositories;
 
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantSharedUser;
+use App\Models\Assistants\AssistantShareLink;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Assistant\Exceptions\UnshareableUserException;
@@ -16,7 +17,9 @@ use App\Services\Storage\Values\StoredFileIdentifier;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
 use App\Services\Users\Repositories\UserRepository;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 #[UseModel(Assistant::class)]
 class AssistantRepository extends AbstractRepository
@@ -207,6 +210,60 @@ class AssistantRepository extends AbstractRepository
         $assistant->sharedUsers()->sync($pivotData);
 
         return $this->listShares($assistant);
+    }
+
+    /**
+     * Adds one user to the share list, as a share link redemption does. An
+     * existing grant is only ever widened, never narrowed; the creator is a no-op.
+     *
+     * @throws UnshareableUserException when the user cannot be shared with
+     */
+    public function grantShare(Assistant $assistant, int $userId, bool $canEdit): void
+    {
+        if ($assistant->creator_id === $userId) {
+            return;
+        }
+
+        $this->assertShareableTargets($assistant, [$userId]);
+
+        $pivot = AssistantSharedUser::query()->firstOrNew([
+            'assistant_id' => $assistant->id,
+            'user_id' => $userId,
+        ]);
+        $pivot->can_edit = $pivot->can_edit || $canEdit;
+        $pivot->save();
+    }
+
+    /**
+     * Stores a new share link and returns its plain token; only the hash is persisted.
+     */
+    public function createShareLink(Assistant $assistant, User $creator, bool $canEdit, CarbonInterface $expiresAt): string
+    {
+        $token = Str::random(48);
+
+        AssistantShareLink::query()->create([
+            'assistant_id' => $assistant->id,
+            'created_by' => $creator->id,
+            'token_hash' => self::hashShareToken($token),
+            'can_edit' => $canEdit,
+            'expires_at' => $expiresAt,
+        ]);
+
+        return $token;
+    }
+
+    public function findRedeemableShareLink(string $token): ?AssistantShareLink
+    {
+        return AssistantShareLink::query()
+            ->with('assistant')
+            ->where('token_hash', self::hashShareToken($token))
+            ->where('expires_at', '>', now())
+            ->first();
+    }
+
+    private static function hashShareToken(string $token): string
+    {
+        return hash('sha256', $token);
     }
 
     /**

@@ -172,12 +172,19 @@
             "share_no_results": "No users found.",
             "share_search_failed": "The user search failed.",
             "share_can_edit": "Can edit",
-            "share_copy_link": "Copy link to assistant",
+            "share_copy_link": "Share via link",
             "share_link_copied": "Link copied to clipboard.",
             "share_copy_failed": "The link could not be copied.",
             "share_save": "Save shares",
             "share_saved": "Shares saved.",
-            "share_save_failed": "The shares could not be saved."
+            "share_save_failed": "The shares could not be saved.",
+            "share_link_label": "Share link",
+            "share_link_placeholder": "Creating link…",
+            "share_link_copy": "Copy link",
+            "share_link_expires": "Valid until :date. Anyone signed in who opens it gets access.",
+            "share_link_create_failed": "The share link could not be created.",
+            "share_link_redeemed": "The assistant has been shared with you.",
+            "share_link_invalid": "This share link is invalid or has expired."
         },
         "feedback": {
             "feedback_to": "Feedback to",

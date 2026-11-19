@@ -7,8 +7,10 @@ namespace App\Http\Controllers\Assistant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Assistant\AddFavoriteAssistantRequest;
 use App\Http\Requests\Assistant\AssistantHandlesRequest;
+use App\Http\Requests\Assistant\CreateShareLinkAssistantRequest;
 use App\Http\Requests\Assistant\DeleteAssistantAttachmentRequest;
 use App\Http\Requests\Assistant\ListSharesAssistantRequest;
+use App\Http\Requests\Assistant\RedeemShareLinkAssistantRequest;
 use App\Http\Requests\Assistant\RemixAssistantRequest;
 use App\Http\Requests\Assistant\RemoveFavoriteAssistantRequest;
 use App\Http\Requests\Assistant\SyncSharesAssistantRequest;
@@ -208,6 +210,39 @@ class AssistantController extends Controller
         Assistant $assistant,
     ): JsonResponse {
         return $this->shareDocument($this->assistantService->syncShares($assistant, $request->shares()));
+    }
+
+    /**
+     * Mints a new share link (`actions/share-link`), creator-only. The plain
+     * token is answered exactly once; the client builds the URL from it.
+     */
+    public function createShareLink(
+        CreateShareLinkAssistantRequest $request,
+        Assistant $assistant,
+    ): JsonResponse {
+        $link = $this->assistantService->createShareLink($assistant, $request->user(), $request->canEdit());
+
+        return response()->json([
+            'data' => [
+                'token' => $link->token,
+                'can_edit' => $link->canEdit,
+                'expires_at' => $link->expiresAt->toIso8601String(),
+            ],
+        ]);
+    }
+
+    /**
+     * Redeems a share link (`actions/redeem-share-link`): adds the caller to
+     * the link's assistant like a share would, then answers with the assistant.
+     */
+    public function redeemShareLink(
+        RedeemShareLinkAssistantRequest $request,
+        Route $route,
+        StoreContract $store,
+    ): Responsable {
+        $assistant = $this->assistantService->redeemShareLink($request->user(), $request->token());
+
+        return $this->refetchedResponse($route, $store, $assistant);
     }
 
     /**

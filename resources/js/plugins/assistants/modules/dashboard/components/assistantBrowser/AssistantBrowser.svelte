@@ -16,8 +16,12 @@
     import { useQueryState } from '$lib/components/ui/routing/hooks/useQueryState.svelte';
     import AssistantDetailModal from '$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetailModal.svelte';
     import CategoryBar from '$plugins/assistants/modules/dashboard/components/categoryBar/CategoryBar.svelte';
+    import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import { redeemAssistantShareLink } from '$plugins/assistants/api/resources/assistantsClient';
+    import { ApiError } from '$plugins/assistants/api/errors';
 
     const { __ } = useTranslator();
+    const toast = useToastContext();
 
     // Read the list published by the page that owns it. No props to thread
     // through, and nothing is retained once that page unmounts.
@@ -126,6 +130,33 @@
             await dismissDetail();
             returnFocusToCard(id);
         });
+    }
+
+    // --- Share link -----------------------------------------------------
+    // `?invite=<token>` joins the link's assistant before its detail opens;
+    // the modal waits, as it could not load the assistant before that.
+    const invite = useQueryState('invite');
+    let redeeming = $state(Boolean(invite.current));
+
+    $effect(() => {
+        const token = invite.current;
+        if (token) untrack(() => void redeemInvite(token));
+    });
+
+    async function redeemInvite(token: string): Promise<void> {
+        redeeming = true;
+        try {
+            const id = await redeemAssistantShareLink(token);
+            router.setQuery({ invite: null, assistant: id }, { replace: true });
+            toast.success(__('assistants.detail.share_link_redeemed'));
+            void list.load();
+        } catch (err) {
+            const error = ApiError.from(err);
+            router.setQuery({ invite: null, assistant: null }, { replace: true });
+            toast.error(error.status === 403 ? __('assistants.detail.share_link_invalid') : error.userMessage);
+        } finally {
+            redeeming = false;
+        }
     }
 
     /** A deleted assistant has no card to morph back into: close plainly, refresh. */
@@ -272,7 +303,7 @@
     </div>
 {/if}
 
-{#if detailId.current}
+{#if detailId.current && !redeeming}
     <AssistantDetailModal
         id={detailId.current}
         initial={list.assistants.find((item) => item.id === detailId.current)}

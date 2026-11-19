@@ -114,6 +114,15 @@ class AssistantPolicy implements DefinesSensitiveIncludes
     }
 
     /**
+     * Share links grant the same access as the share list, so minting one
+     * sits with the same creator-only tier.
+     */
+    public function createShareLink(User $user, Assistant $assistant): bool
+    {
+        return $this->syncShares($user, $assistant);
+    }
+
+    /**
      * Knowledge-file uploads are creator-only, matching the update tier.
      * End users of an assistant never upload — they only consume whatever
      * the creator attached via the prompt composer.

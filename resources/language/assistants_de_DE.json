@@ -172,12 +172,19 @@
             "share_no_results": "Keine Benutzer:innen gefunden.",
             "share_search_failed": "Die Benutzer:innensuche ist fehlgeschlagen.",
             "share_can_edit": "Darf bearbeiten",
-            "share_copy_link": "Link zum Assistenten kopieren",
+            "share_copy_link": "Per Link teilen",
             "share_link_copied": "Link in die Zwischenablage kopiert.",
             "share_copy_failed": "Der Link konnte nicht kopiert werden.",
             "share_save": "Freigaben speichern",
             "share_saved": "Freigaben gespeichert.",
-            "share_save_failed": "Die Freigaben konnten nicht gespeichert werden."
+            "share_save_failed": "Die Freigaben konnten nicht gespeichert werden.",
+            "share_link_label": "Freigabelink",
+            "share_link_placeholder": "Link wird erstellt…",
+            "share_link_copy": "Link kopieren",
+            "share_link_expires": "Gültig bis :date. Alle Angemeldeten, die ihn öffnen, erhalten Zugriff.",
+            "share_link_create_failed": "Der Freigabelink konnte nicht erstellt werden.",
+            "share_link_redeemed": "Der Assistent wurde mit dir geteilt.",
+            "share_link_invalid": "Dieser Freigabelink ist ungültig oder abgelaufen."
         },
         "feedback": {
             "feedback_to": "Feedback an",
