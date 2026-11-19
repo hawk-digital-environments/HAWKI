@@ -25,7 +25,7 @@ jobs:
           ref: lernki/prod
 
       # github.sha belongs to the ref the workflow was dispatched from, not
-      # to hawk/prod, so resolve the actually checked-out commit for the
+      # to lernki/prod, so resolve the actually checked-out commit for the
       # image tags and the cache buster below.
       - name: Resolve the deployed commit
         id: build_info
