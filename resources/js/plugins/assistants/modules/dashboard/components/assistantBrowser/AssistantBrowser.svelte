@@ -8,6 +8,7 @@
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import autoAnimate, { type AutoAnimationPlugin } from '@formkit/auto-animate';
     import { tick, untrack, type Snippet } from 'svelte';
+    import Loader from '$lib/components/ui/loader/Loader.svelte';
     import { useReducedMotion } from '$lib/utils/transitions/reducedMotion.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useAssistantListContext } from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
@@ -239,19 +240,23 @@
 {/if}
 
 <div class="wrapper">
-    <div
-        class="grid-responsive"
-        use:autoAnimate={gridMotion}
-    >
-        {#each list.assistants as assistant (assistant.id)}
-            <AssistantCard
-                {assistant}
-                onOpen={(card) => {
-                    if (assistant.id) openDetail(card, assistant.id);
-                }}
-            />
-        {/each}
-    </div>
+    <!-- While an ?invite= token is redeemed the assistant cannot be shown
+         yet; the spinner stands in for the grid until it is. -->
+    <Loader active={redeeming} label={__('ui.loading')}>
+        <div
+            class="grid-responsive"
+            use:autoAnimate={gridMotion}
+        >
+            {#each list.assistants as assistant (assistant.id)}
+                <AssistantCard
+                    {assistant}
+                    onOpen={(card) => {
+                        if (assistant.id) openDetail(card, assistant.id);
+                    }}
+                />
+            {/each}
+        </div>
+    </Loader>
 
     <PageNavigation
         currentPage={list.currentPage}
