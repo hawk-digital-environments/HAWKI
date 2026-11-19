@@ -224,6 +224,29 @@ class AssistantShareLinkTest extends TestCase
             ->assertForbidden();
     }
 
+    public function testRedeemIsIdempotentForTheSameUser(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+        $token = $this->createLink($owner, $assistant, canEdit: false);
+
+        $guest = User::factory()->create();
+        $this->actingAsUser($guest);
+
+        foreach ([1, 2] as $_) {
+            $this->jsonApiRaw('post', self::REDEEM_URI, ['data' => ['token' => $token]])
+                ->assertOk()
+                ->assertJsonPath('data.id', (string) $assistant->id);
+        }
+
+        $this->assertDatabaseHas('assistant_shared_users', [
+            'assistant_id' => $assistant->id,
+            'user_id' => $guest->id,
+            'can_edit' => false,
+        ]);
+        self::assertSame(1, $assistant->sharedUsers()->wherePivot('user_id', $guest->id)->count());
+    }
+
     public function testMissingTokenFailsValidation(): void
     {
         $this->actingAsUser(User::factory()->create());

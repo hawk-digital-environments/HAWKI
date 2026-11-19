@@ -18,6 +18,7 @@ class AssistantConfigTest extends TestCase
             'assistant' => [
                 'assistant_versions' => ['debounce_seconds' => 30],
                 'builder' => ['guide_model' => 'some-model'],
+                'share_links' => ['ttl_hours' => 2],
             ],
         ]);
 
@@ -25,6 +26,7 @@ class AssistantConfigTest extends TestCase
 
         static::assertSame(30, $sut->assistantVersionsDebounceSeconds);
         static::assertSame('some-model', $sut->builderGuideModel);
+        static::assertSame(2, $sut->shareLinkTtlHours);
     }
 
     public function testItFallsBackToTheDefaults(): void
@@ -33,5 +35,6 @@ class AssistantConfigTest extends TestCase
 
         static::assertSame(10, $sut->assistantVersionsDebounceSeconds);
         static::assertSame('gpt-5.6-luna', $sut->builderGuideModel);
+        static::assertSame(24, $sut->shareLinkTtlHours);
     }
 }
