@@ -542,6 +542,16 @@ export async function redeemAssistantShareLink(token: string): Promise<string> {
     }
 }
 
+/** Revokes every outstanding share link of the assistant, creator-only. */
+export async function invalidateAssistantShareLink(id: string): Promise<void> {
+    if (!id) return;
+    try {
+        await useApp().restApi.deleteFromResourceAction(ASSISTANTS, `${id}/actions/share-link`);
+    } catch (err) {
+        throw logApiError('invalidateAssistantShareLink', err, { id });
+    }
+}
+
 /**
  * The handle-namespace probe (`GET /assistants/actions/handles`): which of
  * the given candidate handles already exist — globally, regardless of

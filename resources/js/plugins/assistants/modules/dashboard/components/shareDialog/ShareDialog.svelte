@@ -18,12 +18,14 @@
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import Copy01Icon from '$lib/components/ui/icons/iconset/Copy01Icon.svelte';
     import Link01Icon from '$lib/components/ui/icons/iconset/Link01Icon.svelte';
+    import TrashIcon from '$lib/components/ui/icons/iconset/TrashIcon.svelte';
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
     import { ApiError } from '$plugins/assistants/api/errors';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import AssistantAvatarIcon from '$plugins/assistants/components/avatarBuilder/AssistantAvatarIcon.svelte';
     import {
         createAssistantShareLink,
+        invalidateAssistantShareLink,
         listAssistantShares,
         syncAssistantShares
     } from '$plugins/assistants/api/resources/assistantsClient';
@@ -249,6 +251,19 @@
             toast.error(__('assistants.detail.share_copy_failed'));
         }
     }
+
+    /** Revokes every outstanding link; the section folds, the avatar mints anew. */
+    async function invalidateLink(): Promise<void> {
+        if (!assistant.id || !linkUrl) return;
+        try {
+            await invalidateAssistantShareLink(assistant.id);
+            linkOpen = false;
+            resetLink();
+            toast.success(__('assistants.detail.share_link_invalidated'));
+        } catch (err) {
+            toast.error(`${__('assistants.detail.share_link_invalidate_failed')} ${ApiError.from(err).userMessage}`);
+        }
+    }
 </script>
 
 {#snippet avatarWithBadge()}
@@ -375,6 +390,20 @@
                             <span class="u-label">{__('assistants.detail.share_can_edit')}</span>
                             <Switch bind:checked={linkCanEdit} />
                         </label>
+                        <Tooltip tooltip={__('assistants.detail.share_link_invalidate')} side="bottom" sideOffset={4}>
+                            {#snippet children({props})}
+                                <button
+                                    {...props}
+                                    type="button"
+                                    class="share-link-revoke"
+                                    aria-label={__('assistants.detail.share_link_invalidate')}
+                                    disabled={!linkUrl}
+                                    onclick={invalidateLink}
+                                >
+                                    <TrashIcon size="1em" />
+                                </button>
+                            {/snippet}
+                        </Tooltip>
                     </div>
                     {#if linkExpiresAt}
                         <p class="share-link-hint">{__('assistants.detail.share_link_expires', {date: formatDateTime(linkExpiresAt)})}</p>
@@ -527,6 +556,33 @@
     }
 
     .share-link-copy:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+        border-radius: var(--corner-sm);
+    }
+
+    .share-link-revoke {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+    }
+
+    .share-link-revoke:hover:not(:disabled) {
+        color: var(--color-text);
+    }
+
+    .share-link-revoke:disabled {
+        cursor: default;
+        opacity: 0.5;
+    }
+
+    .share-link-revoke:focus-visible {
         outline: 2px solid var(--color-focus-ring);
         outline-offset: 2px;
         border-radius: var(--corner-sm);

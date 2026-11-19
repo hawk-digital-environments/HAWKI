@@ -255,6 +255,71 @@ class AssistantShareLinkTest extends TestCase
             ->assertUnprocessable();
     }
 
+    // --- actions/share-link: revoke ---
+
+    public function testInvalidatedLinkIsRejected(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+        $token = $this->createLink($owner, $assistant, canEdit: false);
+
+        $this->actingAsUser($owner);
+        $this->jsonApiRaw('delete', "/api/hawki/v1/assistants/{$assistant->id}/actions/share-link")
+            ->assertNoContent();
+
+        $this->actingAsUser(User::factory()->create());
+        $this->jsonApiRaw('post', self::REDEEM_URI, ['data' => ['token' => $token]])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('assistant_shared_users', ['assistant_id' => $assistant->id]);
+    }
+
+    public function testInvalidateKillsEveryMintedLink(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+        $first = $this->createLink($owner, $assistant, canEdit: false);
+        $second = $this->createLink($owner, $assistant, canEdit: true);
+
+        $this->actingAsUser($owner);
+        $this->jsonApiRaw('delete', "/api/hawki/v1/assistants/{$assistant->id}/actions/share-link")
+            ->assertNoContent();
+
+        self::assertSame(0, AssistantShareLink::query()->count());
+
+        $this->actingAsUser(User::factory()->create());
+        foreach ([$first, $second] as $token) {
+            $this->jsonApiRaw('post', self::REDEEM_URI, ['data' => ['token' => $token]])
+                ->assertForbidden();
+        }
+    }
+
+    public function testNonCreatorCannotInvalidate(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+        $this->createLink($owner, $assistant, canEdit: false);
+
+        $editor = User::factory()->create();
+        $assistant->sharedUsers()->sync([$editor->id => ['can_edit' => true]]);
+
+        $this->actingAsUser($editor);
+        $this->jsonApiRaw('delete', "/api/hawki/v1/assistants/{$assistant->id}/actions/share-link")
+            ->assertForbidden();
+
+        self::assertSame(1, AssistantShareLink::query()->count());
+    }
+
+    public function testInvalidateWithoutLinksIsNoOp(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+
+        $this->actingAsUser($owner);
+        $this->jsonApiRaw('delete', "/api/hawki/v1/assistants/{$assistant->id}/actions/share-link")
+            ->assertNoContent();
+    }
+
     public function testSystemUserCannotRedeem(): void
     {
         $owner = User::factory()->create();

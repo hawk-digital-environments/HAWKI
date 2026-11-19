@@ -9,6 +9,7 @@ use App\Http\Requests\Assistant\AddFavoriteAssistantRequest;
 use App\Http\Requests\Assistant\AssistantHandlesRequest;
 use App\Http\Requests\Assistant\CreateShareLinkAssistantRequest;
 use App\Http\Requests\Assistant\DeleteAssistantAttachmentRequest;
+use App\Http\Requests\Assistant\InvalidateShareLinkAssistantRequest;
 use App\Http\Requests\Assistant\ListSharesAssistantRequest;
 use App\Http\Requests\Assistant\RedeemShareLinkAssistantRequest;
 use App\Http\Requests\Assistant\RemixAssistantRequest;
@@ -223,6 +224,20 @@ class AssistantController extends Controller
         $link = $this->assistantService->createShareLink($assistant, $request->user(), $request->canEdit());
 
         return response()->json(['data' => $link->toArray()]);
+    }
+
+    /**
+     * Revokes every outstanding share link of the assistant (`DELETE
+     * actions/share-link`), creator-only. Tokens already sent stop working
+     * immediately; minting a fresh link is unaffected.
+     */
+    public function invalidateShareLink(
+        InvalidateShareLinkAssistantRequest $request,
+        Assistant $assistant,
+    ): Response {
+        $this->assistantService->invalidateShareLink($assistant);
+
+        return response()->noContent();
     }
 
     /**

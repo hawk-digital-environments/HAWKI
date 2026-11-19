@@ -130,6 +130,15 @@ readonly class AssistantService
         return $link->assistant;
     }
 
+    /**
+     * Revokes every outstanding share link of the assistant; minting stays
+     * untouched and may issue a fresh link afterwards.
+     */
+    public function invalidateShareLink(Assistant $assistant): void
+    {
+        $this->repository->invalidateShareLinks($assistant);
+    }
+
     public function release(Assistant $assistant, AssistantReleaseStage $target, ?string $note = null): Assistant
     {
         return $this->db->transaction(function () use ($assistant, $target, $note): Assistant {

@@ -263,6 +263,18 @@ class AssistantRepository extends AbstractRepository
             ->first();
     }
 
+    /**
+     * Deletes every share link of the assistant. Plain tokens are never
+     * stored, so revocation is all-or-nothing — one action kills all links
+     * minted so far, whatever grant they carry.
+     */
+    public function invalidateShareLinks(Assistant $assistant): int
+    {
+        return AssistantShareLink::query()
+            ->where('assistant_id', $assistant->id)
+            ->delete();
+    }
+
     private static function hashShareToken(string $token): string
     {
         return hash('sha256', $token);
