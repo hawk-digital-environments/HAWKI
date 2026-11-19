@@ -183,6 +183,8 @@
             "share_link_copy": "Copy link",
             "share_link_expires": "Valid until :date. Anyone signed in who opens it gets access.",
             "share_link_create_failed": "The share link could not be created.",
+            "share_link_can_edit": "Link recipients can edit",
+            "share_link_view_only": "Link recipients can only view",
             "share_link_invalidate": "Revoke all share links",
             "share_link_invalidated": "The share link has been revoked.",
             "share_link_invalidate_failed": "The share link could not be revoked.",

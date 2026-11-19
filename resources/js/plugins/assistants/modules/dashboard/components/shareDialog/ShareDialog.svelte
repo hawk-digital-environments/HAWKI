@@ -389,7 +389,7 @@
                                 {/snippet}
                             </Tooltip>
                         </div>
-                        <Tooltip tooltip={__('assistants.detail.share_can_edit')} side="bottom" sideOffset={4}>
+                        <Tooltip tooltip={__(linkCanEdit ? 'assistants.detail.share_link_can_edit' : 'assistants.detail.share_link_view_only')} side="bottom" sideOffset={4}>
                             {#snippet children({props})}
                                 <button
                                     {...props}
@@ -397,7 +397,7 @@
                                     class="share-link-edit"
                                     role="switch"
                                     aria-checked={linkCanEdit}
-                                    aria-label={__('assistants.detail.share_can_edit')}
+                                    aria-label={__(linkCanEdit ? 'assistants.detail.share_link_can_edit' : 'assistants.detail.share_link_view_only')}
                                     onclick={() => (linkCanEdit = !linkCanEdit)}
                                 >
                                     {#if linkCanEdit}
@@ -618,17 +618,14 @@
         cursor: pointer;
     }
 
-    /* The granted state is the affirmative one: it carries the accent. */
+    /* The granted state reads at full strength, like the dropdown checkbox
+       items' muted-vs-full opacity convention. */
     .share-link-edit[aria-checked='true'] {
-        color: var(--color-accent-500);
+        color: var(--color-text);
     }
 
     .share-link-edit:hover {
         color: var(--color-text);
-    }
-
-    .share-link-edit[aria-checked='true']:hover {
-        color: var(--color-accent-400);
     }
 
     .share-link-edit:focus-visible {

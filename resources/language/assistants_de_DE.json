@@ -183,6 +183,8 @@
             "share_link_copy": "Link kopieren",
             "share_link_expires": "Gültig bis :date. Alle Angemeldeten, die ihn öffnen, erhalten Zugriff.",
             "share_link_create_failed": "Der Freigabelink konnte nicht erstellt werden.",
+            "share_link_can_edit": "Empfänger des Links dürfen bearbeiten",
+            "share_link_view_only": "Empfänger des Links können nur ansehen",
             "share_link_invalidate": "Alle Freigabelinks widerrufen",
             "share_link_invalidated": "Der Freigabelink wurde widerrufen.",
             "share_link_invalidate_failed": "Der Freigabelink konnte nicht widerrufen werden.",
