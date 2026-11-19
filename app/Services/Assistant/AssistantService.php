@@ -110,7 +110,7 @@ readonly class AssistantService
         $expiresAt = $this->clock->now()->addHours($this->config->shareLinkTtlHours);
         $token = $this->repository->createShareLink($assistant, $creator, $canEdit, $expiresAt);
 
-        return new AssistantShareLinkToken($token, $canEdit, $expiresAt);
+        return AssistantShareLinkToken::mint($token, $canEdit, $expiresAt);
     }
 
     /**

@@ -222,13 +222,7 @@ class AssistantController extends Controller
     ): JsonResponse {
         $link = $this->assistantService->createShareLink($assistant, $request->user(), $request->canEdit());
 
-        return response()->json([
-            'data' => [
-                'token' => $link->token,
-                'can_edit' => $link->canEdit,
-                'expires_at' => $link->expiresAt->toIso8601String(),
-            ],
-        ]);
+        return response()->json(['data' => $link->toArray()]);
     }
 
     /**
