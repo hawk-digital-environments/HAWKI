@@ -8,11 +8,11 @@
   current crumb's tooltip.
 
   Without a `leaf`, the active section ends the trail as its current crumb
-  (the list pages). With a leaf — the detail route's assistant — the section
-  stays navigable (falling back to the store, the detail's back target;
-  opted out of current while the leaf is missing, since the trail then
-  changes shape in place) and the leaf becomes the current crumb, shown as
-  the assistant's avatar disc.
+  (the list pages). With a leaf — the detail route's assistant, or the one
+  open in a list's detail modal (`openDetail`) — the section stays navigable
+  (falling back to the store, the detail's back target; opted out of current
+  while the leaf is missing, since the trail then changes shape in place) and
+  the leaf becomes the current crumb, shown as the assistant's avatar disc.
 -->
 <script lang="ts">
     import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
@@ -22,6 +22,9 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte';
     import type {AssistantAvatar} from '$plugins/assistants/types/assistant/AssistantAvatar';
+    import {openDetail} from '$plugins/assistants/components/breadcrumb/openDetail.svelte';
+    import {resolveAssistantAvatar} from '$plugins/assistants/utils/resolveAssistantAvatar';
+    import {cssDeclaration, overlayContrastMode} from '$lib/utils/color.js';
 
     interface Props {
         /** The page's full title — the bar's visually hidden h1 and the
@@ -61,16 +64,33 @@
 
     /** Without an active section (the detail route): the store, the back target. */
     const parent = $derived(section ?? menu.entries.find(entry => entry.id === 'dashboard.store') ?? null);
+
+    /** The trail's leaf: the explicit one (the detail route), else the
+     *  assistant open in a list's detail modal (its breadcrumb counterpart). */
+    const leafCrumb = $derived(
+        leaf
+        ?? (openDetail.assistant ? {
+            label: openDetail.assistant.name,
+            avatar: resolveAssistantAvatar(openDetail.assistant.avatar, openDetail.assistant.name)
+        } : null)
+    );
+
+    /** The leaf's cover background decides the chips' shade — but only where
+     *  the bar actually floats over the cover (the list modal's leaf, not
+     *  the standalone route's, whose bar sits on the page background). */
+    const coverMode = $derived(
+        !leaf && leafCrumb?.avatar ? overlayContrastMode(cssDeclaration(leafCrumb.avatar.iconCss, 'background')) : null
+    );
 </script>
 
-<PageHeaderBar srHeading={title}>
-    <BreadcrumbTrail>
-        {#if leaf}
+<PageHeaderBar srHeading={leafCrumb?.label ?? title} overCover={leafCrumb !== null} data-cover-mode={coverMode ?? undefined}>
+    <BreadcrumbTrail mode={coverMode}>
+        {#if leafCrumb}
             <BreadcrumbItem label={moduleLabel} icon={moduleIcon} route="assistants.dashboard.index" />
             {#if parent}
                 <BreadcrumbItem label={parent.label} icon={parent.icon} route={parent.route} current={false} />
             {/if}
-            <BreadcrumbItem label={leaf.label} avatar={leaf.avatar} current />
+            <BreadcrumbItem label={leafCrumb.label} avatar={leafCrumb.avatar} current />
         {:else if section}
             <BreadcrumbItem label={moduleLabel} icon={moduleIcon} route="assistants.dashboard.index" />
             <BreadcrumbItem label={title ?? section.label} icon={section.icon} />

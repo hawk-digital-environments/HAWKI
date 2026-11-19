@@ -22,18 +22,24 @@
          *  visible content is not a heading (e.g. the chat header's name
          *  menu). Never combine with `heading`, that would duplicate h1s. */
         srHeading?: string;
+        /** A full-bleed cover runs behind the bar (the assistant detail):
+         *  the bar drops its backdrop and floats transparent above portaled
+         *  overlays, letting clicks pass through its empty areas — content
+         *  that must stay clickable re-enables pointer-events on its own
+         *  root. */
+        overCover?: boolean;
         /** Bar content: menus, actions — when no `heading` is given. */
         children?: Snippet;
         /** Empty spacer reserving the header row while a page loads. */
         spacer?: boolean;
     }
 
-    const {heading, srHeading, children, spacer = false, class: className, ...rest}: Props = $props();
+    const {heading, srHeading, overCover = false, children, spacer = false, class: className, ...rest}: Props = $props();
 </script>
 
 <header
     {...rest}
-    class={['page-header-bar', spacer && 'spacer', className]}
+    class={['page-header-bar', overCover && 'over-cover', spacer && 'spacer', className]}
     aria-hidden={spacer ? 'true' : undefined}
 >
     {#if srHeading}
@@ -108,6 +114,31 @@
 
     .page-header-bar.spacer::before {
         display: none;
+    }
+
+    /* Over a full-bleed cover: no backdrop (the cover's colour is the
+       background), and above portaled overlays (the detail modal, z-index 2)
+       so the bar's own rows stay reachable. The bar's box lets clicks pass
+       through its empty areas to the cover beneath — content that must stay
+       clickable re-enables pointer-events on its own root (the trail does;
+       a snippet's roots cannot be matched from here). */
+    .page-header-bar.over-cover {
+        z-index: 3;
+        pointer-events: none;
+    }
+
+    .page-header-bar.over-cover::before {
+        display: none;
+    }
+
+    /* The row centers on the cover's own top-bar actions (fav/menu at
+       --cover-inset = --space-6): same centre, so the trail and the heart
+       button share a midline. Below sm the cover insets by --space-4, which
+       the default row formula already matches. */
+    @media (--bp-bigger-than-sm) {
+        .page-header-bar.over-cover {
+            min-height: calc(2 * var(--space-6) + var(--nav-row-h));
+        }
     }
 
     /* Single-line title. */

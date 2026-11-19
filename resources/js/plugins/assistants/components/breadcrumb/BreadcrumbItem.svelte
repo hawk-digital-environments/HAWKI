@@ -173,7 +173,7 @@
     .separator {
         display: flex;
         align-items: center;
-        color: color-mix(in oklab, var(--color-text-muted) 70%, transparent);
+        color: var(--crumb-separator-color, color-mix(in oklab, var(--color-text-muted) 70%, transparent));
         user-select: none;
     }
 
@@ -199,11 +199,16 @@
         color: var(--color-text-muted);
         cursor: pointer;
         transition: color var(--duration-fast);
+        border-radius: var(--corner-sm);
     }
 
     .crumb.link:hover,
     .crumb.link:focus-visible {
         color: var(--color-text);
+        /* Over a cover (fg set) the colour shift alone is invisible: a faint
+           fg tint gives the hover, like the cover's own buttons. Plain trails
+           resolve this to nothing (the var is undefined there). */
+        background: color-mix(in oklch, var(--crumb-fg) 16%, transparent);
     }
 
     .crumb.current {
@@ -216,6 +221,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        /* A trail over a cover sets --crumb-fg (its group pill's shade);
+           plain trails leave it undefined and the glyph inherits. */
+        color: var(--crumb-fg, inherit);
     }
 
     .glyph :global(svg) {

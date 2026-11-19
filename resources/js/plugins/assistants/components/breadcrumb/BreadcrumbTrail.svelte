@@ -25,6 +25,7 @@
 <script lang="ts">
     import type {Snippet} from 'svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
+    import type {OverlayContrastMode} from '$lib/utils/color.js';
     import {provideBreadcrumbTrail} from './breadcrumbContext';
 
     interface Props {
@@ -35,9 +36,13 @@
         /** Accessible name for the landmark; defaults to the translated
          *  `ui.navigation.breadcrumb`. */
         label?: string;
+        /** Contrast mode of the cover the trail floats over (the assistant
+         *  detail's bar): the crumbs switch from bare muted icons to chips
+         *  in the mode's shade. Null/undefined keeps the plain look. */
+        mode?: OverlayContrastMode | null;
     }
 
-    const {children, separator, label}: Props = $props();
+    const {children, separator, label, mode}: Props = $props();
     const {__} = useTranslator();
 
     // Context is set once at init; a trail does not swap its separator
@@ -46,7 +51,7 @@
     provideBreadcrumbTrail({separator: separator ?? null});
 </script>
 
-<nav class="breadcrumb-trail" aria-label={label ?? __('ui.navigation.breadcrumb')}>
+<nav class="breadcrumb-trail" data-mode={mode ?? undefined} aria-label={label ?? __('ui.navigation.breadcrumb')}>
     <ol>
         {@render children()}
     </ol>
@@ -67,5 +72,33 @@
         margin: 0;
         padding: 0;
         list-style: none;
+    }
+
+    /* Chips over a cover: the contrast mode picks the shade (see
+       utils/color) and the whole trail becomes one translucent group pill in
+       it — the cover-adaptive backdrop the detail's own top-bar buttons use,
+       one shared shape instead of one per icon. Plain trails set none of
+       these, so their crumbs keep the bare muted icons. The pill also
+       re-enables pointer-events for itself: an over-cover bar disables them
+       (its empty areas pass clicks through to the cover), and a snippet's
+       roots cannot be re-enabled from the bar's own stylesheet. */
+    .breadcrumb-trail[data-mode='dark'] {
+        --crumb-fg: oklch(100% 0 0);
+    }
+
+    .breadcrumb-trail[data-mode='light'] {
+        --crumb-fg: oklch(24% 0 0);
+    }
+
+    .breadcrumb-trail[data-mode] {
+        --crumb-separator-color: color-mix(in oklab, var(--crumb-fg) 70%, transparent);
+        pointer-events: auto;
+    }
+
+    .breadcrumb-trail[data-mode] ol {
+        background: color-mix(in oklch, var(--crumb-fg) 14%, transparent);
+        border-radius: var(--corner-full);
+        padding-inline: var(--space-2);
+        min-height: var(--nav-row-h);
     }
 </style>
