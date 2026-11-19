@@ -139,7 +139,8 @@ class Assistant extends Model
      */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'creator_id');
+        return $this->belongsTo(User::class, 'creator_id')
+            ->withoutGlobalScope(self::userAccessScopeKey());
     }
 
     /**
@@ -147,7 +148,17 @@ class Assistant extends Model
      */
     public function remix_creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'remixed_creator_id');
+        return $this->belongsTo(User::class, 'remixed_creator_id')
+            ->withoutGlobalScope(self::userAccessScopeKey());
+    }
+
+    /**
+     * Whoever may see the assistant may see its (remix) creator, so these
+     * relations skip the User `access` scope, which hides users outside one's group chats.
+     */
+    private static function userAccessScopeKey(): string
+    {
+        return User::scopeContext()->getFullScopeKey('access');
     }
 
     /**
