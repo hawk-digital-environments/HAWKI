@@ -26,6 +26,7 @@
             "collapse": "Collapse sidebar",
             "expand": "Expand sidebar",
             "mainLabel": "Main navigation",
+            "breadcrumb": "Breadcrumb",
             "accessibilityStatement": "Accessibility statement"
         },
         "dialog": {

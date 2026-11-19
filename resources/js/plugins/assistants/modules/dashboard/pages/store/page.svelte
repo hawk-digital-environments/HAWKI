@@ -9,6 +9,7 @@
     import { createAssistantListContext } from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
     import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
     import Page from '$lib/components/ui/page/Page.svelte';
+    import DashboardHeader from '$plugins/assistants/components/breadcrumb/DashboardHeader.svelte';
     import type { AssistantAvatar } from '$plugins/assistants/types/assistant/AssistantAvatar';
 
     /**
@@ -169,7 +170,10 @@
     });
 </script>
 
-<Page title={''}>
+<Page>
+    {#snippet header()}
+        <DashboardHeader title={__('assistants.store.title')} />
+    {/snippet}
     <div class="page-content">
         <AssistantBrowser
             {searchQuery}

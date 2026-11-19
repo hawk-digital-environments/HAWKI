@@ -5,10 +5,12 @@
 -->
 <script lang="ts">
     import Page from '$lib/components/ui/page/Page.svelte';
-    import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
+    import DashboardHeader from '$plugins/assistants/components/breadcrumb/DashboardHeader.svelte';
     import AssistantDetail from '$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetail.svelte';
     import { useRouter } from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
     import type { RouteParams } from '$lib/components/ui/routing/index.js';
+    import type { Assistant } from '$plugins/assistants/types/assistant/Assistant';
+    import { resolveAssistantAvatar } from '$plugins/assistants/utils/resolveAssistantAvatar';
 
     /**
      * The kernel's route renderer hands each matched page its route params
@@ -31,31 +33,34 @@
     // Entered directly, there is no list to return to: back goes to the store.
     const goBack = () => void router.goToRoute('assistants.dashboard.store');
 
-    // The bar shows the assistant's name once its detail resolves; until then
-    // the row stays reserved (PageHeaderBar's spacer shape).
-    let assistantName = $state<string | null>(null);
+    // The trail's leaf — and the bar's hidden h1: the loaded assistant.
+    let assistant = $state<Assistant | null>(null);
 
-    // A different assistant: drop the stale name while its detail loads.
+    // A different assistant: drop the stale one while its detail loads.
     $effect(() => {
         id;
-        assistantName = null;
+        assistant = null;
     });
 </script>
 
 <Page>
     {#snippet header()}
-        {#if assistantName}
-            <PageHeaderBar heading={assistantName} />
-        {:else}
-            <PageHeaderBar spacer />
-        {/if}
+        <DashboardHeader
+            title={assistant?.name}
+            leaf={assistant
+                ? {
+                    label: assistant.name,
+                    avatar: resolveAssistantAvatar(assistant.avatar, assistant.name)
+                }
+                : null}
+        />
     {/snippet}
     {#snippet body()}
         <AssistantDetail
             {id}
             onBack={goBack}
             underHeaderBar
-            onLoaded={(assistant) => (assistantName = assistant.name)}
+            onLoaded={(loaded) => (assistant = loaded)}
         />
     {/snippet}
 </Page>
