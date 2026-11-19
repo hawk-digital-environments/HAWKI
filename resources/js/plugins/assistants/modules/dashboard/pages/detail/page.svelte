@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
     import Page from '$lib/components/ui/page/Page.svelte';
+    import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
     import AssistantDetail from '$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetail.svelte';
     import { useRouter } from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
     import type { RouteParams } from '$lib/components/ui/routing/index.js';
@@ -29,13 +30,32 @@
 
     // Entered directly, there is no list to return to: back goes to the store.
     const goBack = () => void router.goToRoute('assistants.dashboard.store');
+
+    // The bar shows the assistant's name once its detail resolves; until then
+    // the row stays reserved (PageHeaderBar's spacer shape).
+    let assistantName = $state<string | null>(null);
+
+    // A different assistant: drop the stale name while its detail loads.
+    $effect(() => {
+        id;
+        assistantName = null;
+    });
 </script>
 
-<Page fade="short">
+<Page>
+    {#snippet header()}
+        {#if assistantName}
+            <PageHeaderBar heading={assistantName} />
+        {:else}
+            <PageHeaderBar spacer />
+        {/if}
+    {/snippet}
     {#snippet body()}
         <AssistantDetail
             {id}
             onBack={goBack}
+            underHeaderBar
+            onLoaded={(assistant) => (assistantName = assistant.name)}
         />
     {/snippet}
 </Page>

@@ -56,10 +56,9 @@
     applyFilter();
 </script>
 
-<Page fade="short">
+<Page title={__('assistants.drafts.title')}>
     <div class="page-content">
         <AssistantBrowser
-            title={__('assistants.drafts.title')}
             {searchQuery}
             {activeFilters}
             onSearchChange={handleSearchChange}

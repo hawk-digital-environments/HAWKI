@@ -169,7 +169,7 @@
     });
 </script>
 
-<Page fade="short">
+<Page title={''}>
     <div class="page-content">
         <AssistantBrowser
             {searchQuery}
@@ -180,11 +180,14 @@
             emptyDescription={__('assistants.store.empty_description')}
         >
             {#snippet hero()}
-                <h1
+                <!-- Decorative: the bar's h1 (the short sidebar label) carries the
+                     page outline; this hero repeats the full title as art. -->
+                <p
                     class="store-title"
                     class:open={titleOpen && titleAvatars.length > 0}
                     class:closing={titleClosing}
                     style:--count={titleAvatars.length}
+                    aria-hidden="true"
                     onpointerenter={handleTitleEnter}
                     onpointerleave={handleTitleLeave}
                 >
@@ -210,7 +213,7 @@
                         {/each}
                     </span>
                     <span>{titleEnd}</span>
-                </h1>
+                </p>
             {/snippet}
         </AssistantBrowser>
     </div>

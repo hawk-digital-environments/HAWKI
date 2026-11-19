@@ -90,9 +90,16 @@
          *  right away while the full detail — versions, tags, permissions —
          *  is fetched. */
         initial?: Assistant;
+        /** Whether a page header bar owns the top zone above this view (the
+         *  standalone route). The modal passes nothing and keeps its own
+         *  reserve for the floating nav trigger. */
+        underHeaderBar?: boolean;
+        /** Called once the assistant's detail resolves — the standalone route
+         *  lifts the name into its header bar. */
+        onLoaded?: (assistant: Assistant) => void;
     }
 
-    const { id, onBack, onDeleted, initial }: Props = $props();
+    const { id, onBack, onDeleted, initial, underHeaderBar = false, onLoaded }: Props = $props();
     // The handle is kept (not just `goToRoute` destructured off it) because
     // `path` is a live getter — the builder needs it read at click time.
     const router = useRouter();
@@ -150,6 +157,7 @@
             .then((result) => {
                 if (controller.signal.aborted) return;
                 assistant = result;
+                onLoaded?.(result);
                 // `assistant_feedback` is a permission-gated relationship
                 // (`viewAssistantFeedback`) — requesting it as part of the main
                 // include list would 403 the *whole* fetch when denied, so it's
@@ -393,6 +401,7 @@
 <div
     class="detail-shell"
     class:test-open={chatOpen}
+    class:under-bar={underHeaderBar}
     data-content-fade="none"
 >
     <!-- data-pull-to-close: the region AssistantDetailModal's pull gesture starts in. -->
@@ -1041,15 +1050,20 @@
         margin: 0;
     }
 
-    /* Where the nav trigger floats over the page, its reserve moves into
-       the full-bleed cover (it grows by the same amount), and the top bar
-       shares the trigger's row, beside it. */
+    /* Where the nav trigger floats over the view (the modal, which has no
+       header bar above), its reserve moves into the full-bleed cover (it
+       grows by the same amount), and the top bar shares the trigger's row,
+       beside it. Under the standalone route's header bar (.under-bar) that
+       zone belongs to the bar, so the cover keeps its plain height. */
     @media (--bp-md-and-smaller) {
         .page-content {
-            --nav-reserve: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
+            --nav-reserve: 0rem;
             --cover-height: calc(18rem + var(--nav-reserve));
         }
-        .topbar {
+        .detail-shell:not(.under-bar) .page-content {
+            --nav-reserve: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
+        }
+        .detail-shell:not(.under-bar) .topbar {
             top: var(--space-2_5);
             left: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
             right: var(--cover-inset);

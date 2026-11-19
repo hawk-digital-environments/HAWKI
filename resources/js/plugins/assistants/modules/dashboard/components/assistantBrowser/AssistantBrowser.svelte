@@ -29,7 +29,6 @@
         onSearchChange,
         onFilterChange,
         hero,
-        title,
         filters,
         emptyTitle = __('assistants.browser.empty_title'),
         emptyDescription = __('assistants.browser.empty_description')
@@ -42,11 +41,9 @@
         onSearchChange: (query: string) => void;
         /** Called with the next filter set whenever a category is toggled or reset. */
         onFilterChange?: (filters: Set<string>) => void;
-        /** Hero content (e.g. a page title) rendered above the search controls;
-         *  turns the controls into a vertically centred hero section. */
+        /** Hero content (e.g. the store's title art) rendered above the search
+         *  controls; turns the controls into a vertically centred hero section. */
         hero?: Snippet;
-        /** Page title rendered as the h1 above the search controls. */
-        title?: string;
         /**
          * Replaces the category bar with the page's own filter controls (e.g.
          * the reviews page's status tabs). Categories are the wrong axis for
@@ -201,9 +198,6 @@
         </div>
     </section>
 {:else}
-    {#if title}
-        <h1 class="browser-title">{title}</h1>
-    {/if}
     {@render controls()}
 {/if}
 
@@ -309,15 +303,6 @@
         .hero-controls {
             --categories-wrap: wrap;
         }
-    }
-    /* Same type as the page header bar's title it replaces. */
-    .browser-title {
-        margin: 0;
-        font-size: var(--font-size-lg);
-        line-height: var(--line-height-tight);
-        font-weight: var(--font-weight-medium);
-        letter-spacing: -0.01em;
-        color: var(--color-text);
     }
     .wrapper {
         display: flex;
