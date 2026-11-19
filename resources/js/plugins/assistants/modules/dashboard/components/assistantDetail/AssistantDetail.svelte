@@ -82,17 +82,26 @@
     interface Props {
         /** Id of the assistant to show. */
         id: string;
-        /** The back button: leave the detail view (close the modal / return to the list). */
-        onBack: () => void;
+        /** The back button: leave the detail view (close the modal / return
+         *  to the list). Omitted by surfaces whose back navigation lives in
+         *  the header bar's breadcrumb (the list modal). */
+        onBack?: () => void;
         /** After a successful delete. Defaults to `onBack`. */
         onDeleted?: () => void;
         /** The assistant as already loaded elsewhere (the list's card), shown
          *  right away while the full detail — versions, tags, permissions —
          *  is fetched. */
         initial?: Assistant;
+        /** Whether a page header bar owns the top zone above this view (the
+         *  standalone route; the list modal, whose bar floats over the
+         *  cover in over-cover mode). */
+        underHeaderBar?: boolean;
+        /** Called once the assistant's detail resolves — the standalone route
+         *  lifts the name into its header bar. */
+        onLoaded?: (assistant: Assistant) => void;
     }
 
-    const { id, onBack, onDeleted, initial }: Props = $props();
+    const { id, onBack, onDeleted, initial, underHeaderBar = false, onLoaded }: Props = $props();
     // The handle is kept (not just `goToRoute` destructured off it) because
     // `path` is a live getter — the builder needs it read at click time.
     const router = useRouter();
@@ -150,6 +159,7 @@
             .then((result) => {
                 if (controller.signal.aborted) return;
                 assistant = result;
+                onLoaded?.(result);
                 // `assistant_feedback` is a permission-gated relationship
                 // (`viewAssistantFeedback`) — requesting it as part of the main
                 // include list would 403 the *whole* fetch when denied, so it's
@@ -280,7 +290,7 @@
             throw err;
         }
         toast.success(__('assistants.detail.deleted'));
-        (onDeleted ?? onBack)();
+        (onDeleted ?? onBack)?.();
     }
 
     /** The menu's publish submenu: the release stages, iconed like the
@@ -393,6 +403,7 @@
 <div
     class="detail-shell"
     class:test-open={chatOpen}
+    class:under-bar={underHeaderBar}
     data-content-fade="none"
 >
     <!-- data-pull-to-close: the region AssistantDetailModal's pull gesture starts in. -->
@@ -455,15 +466,17 @@
                     style={avatar.iconCss}
                 >
                     <div class="topbar">
-                        <ButtonWithTooltip
-                            variant="ghost"
-                            size="sm"
-                            iconLeft={ArrowLeft01Icon}
-                            tooltip={__('assistants.detail.back')}
-                            class="back"
-                            onclick={onBack}
-                            ><span class="btn-label">{__('assistants.detail.back')}</span></ButtonWithTooltip
-                        >
+                        {#if onBack}
+                            <ButtonWithTooltip
+                                variant="ghost"
+                                size="sm"
+                                iconLeft={ArrowLeft01Icon}
+                                tooltip={__('assistants.detail.back')}
+                                class="back"
+                                onclick={onBack}
+                                ><span class="btn-label">{__('assistants.detail.back')}</span></ButtonWithTooltip
+                            >
+                        {/if}
                         <div class="controls">
                             <FavButton
                                 id="favBtn"
@@ -813,7 +826,9 @@
 
     /* Top bar, overlaid on the cover: back on the left, the assistant's
        actions on the right. Inset like the cover's own content (name,
-       glyph). */
+       glyph). A nav-row-high, centered row puts the actions on the same
+       midline as the header bar's breadcrumb and nav trigger over cover
+       pages. */
     .topbar {
         position: absolute;
         top: var(--cover-inset);
@@ -821,7 +836,8 @@
         right: var(--cover-inset);
         z-index: 1;
         display: flex;
-        align-items: flex-start;
+        align-items: center;
+        min-height: var(--nav-row-h);
         justify-content: space-between;
         gap: var(--space-4);
     }
@@ -906,6 +922,9 @@
         align-items: center;
         gap: var(--space-2);
         flex-shrink: 0;
+        /* Without the back button this is the top bar's only child: keep it
+           on the right regardless (space-between alone would left-align it). */
+        margin-left: auto;
     }
     /* Top-bar buttons tinted in the cover's own foreground shade instead of
        white pills (same treatment as the store cards' favourite button). */
@@ -1041,15 +1060,20 @@
         margin: 0;
     }
 
-    /* Where the nav trigger floats over the page, its reserve moves into
-       the full-bleed cover (it grows by the same amount), and the top bar
-       shares the trigger's row, beside it. */
+    /* Where the nav trigger floats over the view (the modal, which has no
+       header bar above), its reserve moves into the full-bleed cover (it
+       grows by the same amount), and the top bar shares the trigger's row,
+       beside it. Under the standalone route's header bar (.under-bar) that
+       zone belongs to the bar, so the cover keeps its plain height. */
     @media (--bp-md-and-smaller) {
         .page-content {
-            --nav-reserve: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
+            --nav-reserve: 0rem;
             --cover-height: calc(18rem + var(--nav-reserve));
         }
-        .topbar {
+        .detail-shell:not(.under-bar) .page-content {
+            --nav-reserve: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
+        }
+        .detail-shell:not(.under-bar) .topbar {
             top: var(--space-2_5);
             left: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
             right: var(--cover-inset);

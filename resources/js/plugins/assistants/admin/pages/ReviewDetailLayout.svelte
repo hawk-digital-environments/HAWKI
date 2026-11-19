@@ -13,6 +13,9 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte';
     import Page from '$lib/components/ui/page/Page.svelte';
+    import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
+    import {BreadcrumbTrail, BreadcrumbItem} from '$plugins/assistants/components/breadcrumb';
+    import {adminRegistry} from '$plugins/admin/registry';
     import Alert from '$lib/components/ui/alert/Alert.svelte';
     import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
     import StatusPill from '$plugins/assistants/components/status/StatusPill.svelte';
@@ -33,6 +36,16 @@
         (target?.assistant_versions ?? []).find(version => String(version.version) === DRAFT_VERSION) ?? null
     );
 
+    // The queue's section icon stays navigable (back to the queue); the
+    // reviewed assistant ends the trail, shown as its avatar.
+    const section = $derived(adminRegistry.sections.find(s => s.id === 'assistants'));
+    const targetLabel = $derived(target?.name ?? __('assistants.admin.detail.title'));
+    const targetAvatar = $derived(
+        target?.assistant_avatar?.icon_css
+            ? {iconCss: target.assistant_avatar.icon_css, name: target.assistant_avatar.name ?? ''}
+            : undefined
+    );
+
     $effect(() => {
         const rawId = params?.assistantId;
         const id = Array.isArray(rawId) ? rawId[0] : rawId;
@@ -46,7 +59,17 @@
     });
 </script>
 
-<Page title={target?.name ?? __('assistants.admin.detail.title')}>
+<Page>
+    {#snippet header()}
+        <PageHeaderBar srHeading={targetLabel}>
+            <BreadcrumbTrail>
+                {#if section}
+                    <BreadcrumbItem label={__(section.labelKey)} icon={section.icon} route={section.route} />
+                {/if}
+                <BreadcrumbItem label={targetLabel} avatar={targetAvatar} />
+            </BreadcrumbTrail>
+        </PageHeaderBar>
+    {/snippet}
     <div class="page-content">
         {#if review.loading}
             <p role="status">{__('ui.loading')}</p>

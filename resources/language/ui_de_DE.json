@@ -26,6 +26,7 @@
             "collapse": "Seitenleiste einklappen",
             "expand": "Seitenleiste ausklappen",
             "mainLabel": "Hauptnavigation",
+            "breadcrumb": "Brotkrumen",
             "accessibilityStatement": "Barrierefreiheitserklärung"
         },
         "dialog": {

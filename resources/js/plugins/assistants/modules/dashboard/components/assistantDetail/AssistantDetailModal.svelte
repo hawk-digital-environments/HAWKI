@@ -8,8 +8,8 @@
 
   Rendered only while open (mount = open): the store→detail morph
   (morphToDetail) captures the moment it mounts or unmounts, so it carries no
-  enter/exit animation of its own. Escape and the detail's back button both
-  ask the owner to close via `onClose`.
+  enter/exit animation of its own. Escape and the header bar's section crumb
+  (which strips `?assistant=`) both close it via `onClose`.
 
   On the mobile layout the modal can also be pulled down to close: a
   downward drag that starts in the detail's scroll region (marked
@@ -23,6 +23,7 @@
     import { Dialog as DialogPrimitive } from 'bits-ui';
     import { Spring } from 'svelte/motion';
     import AssistantDetail from '$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetail.svelte';
+    import {openDetail} from '$plugins/assistants/components/breadcrumb/openDetail.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useBreakpoint } from '$lib/components/util/breakpoints/useBreakpoint.svelte';
     import { useReducedMotion } from '$lib/utils/transitions/reducedMotion.svelte';
@@ -57,6 +58,19 @@
     const offset = new Spring(0, { stiffness: 0.2, damping: 0.85 });
 
     let modal = $state<HTMLElement>();
+
+    // The breadcrumb bar shows the open detail as its leaf while the modal
+    // lives; cleared on id change and unmount, like the standalone route.
+    $effect(() => {
+        id;
+        return () => {
+            openDetail.assistant = null;
+        };
+    });
+
+    function onLoadedDetail(loaded: Assistant): void {
+        openDetail.assistant = loaded;
+    }
 
     function release(target: number): Promise<void> {
         // A later set (a catch, another release) rejects the pending one.
@@ -176,7 +190,9 @@
         }
     }
 >
-    <!-- Into the main area (positioned, clipped), so the sidebar stays beside it. -->
+    <!-- Across the whole main area, bleeding behind the header bar: the bar
+         floats transparent above it (over-cover) and its section crumb is the
+         back navigation; the sidebar stays beside it. -->
     <DialogPrimitive.Portal to="#main-content">
         <DialogPrimitive.Content
             trapFocus={false}
@@ -195,9 +211,10 @@
                     >
                     <AssistantDetail
                         {id}
-                        onBack={onClose}
                         {onDeleted}
                         {initial}
+                        underHeaderBar
+                        onLoaded={onLoadedDetail}
                     />
                 </div>
             {/snippet}
@@ -209,8 +226,10 @@
     .detail-modal {
         position: absolute;
         inset: 0;
-        /* Above the list's own layers (e.g. its header bar), below the mobile
-           navigation trigger (z-index 10), which keeps opening the sidebar. */
+        /* Above the list's own layers; the header bar floats above the modal
+           in over-cover mode (z-index 3) with its section crumb as the back
+           navigation, and the mobile navigation trigger (z-index 10) stays
+           reachable above both. */
         z-index: 2;
         background: var(--color-surface-raised);
         /* Morph layer for the modal surface: fades in over the receding list

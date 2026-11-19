@@ -5,9 +5,12 @@
 -->
 <script lang="ts">
     import Page from '$lib/components/ui/page/Page.svelte';
+    import DashboardHeader from '$plugins/assistants/components/breadcrumb/DashboardHeader.svelte';
     import AssistantDetail from '$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetail.svelte';
     import { useRouter } from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
     import type { RouteParams } from '$lib/components/ui/routing/index.js';
+    import type { Assistant } from '$plugins/assistants/types/assistant/Assistant';
+    import { resolveAssistantAvatar } from '$plugins/assistants/utils/resolveAssistantAvatar';
 
     /**
      * The kernel's route renderer hands each matched page its route params
@@ -29,13 +32,35 @@
 
     // Entered directly, there is no list to return to: back goes to the store.
     const goBack = () => void router.goToRoute('assistants.dashboard.store');
+
+    // The trail's leaf — and the bar's hidden h1: the loaded assistant.
+    let assistant = $state<Assistant | null>(null);
+
+    // A different assistant: drop the stale one while its detail loads.
+    $effect(() => {
+        id;
+        assistant = null;
+    });
 </script>
 
-<Page fade="short">
+<Page>
+    {#snippet header()}
+        <DashboardHeader
+            title={assistant?.name}
+            leaf={assistant
+                ? {
+                    label: assistant.name,
+                    avatar: resolveAssistantAvatar(assistant.avatar, assistant.name)
+                }
+                : null}
+        />
+    {/snippet}
     {#snippet body()}
         <AssistantDetail
             {id}
             onBack={goBack}
+            underHeaderBar
+            onLoaded={(loaded) => (assistant = loaded)}
         />
     {/snippet}
 </Page>

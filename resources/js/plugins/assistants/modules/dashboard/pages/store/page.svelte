@@ -9,6 +9,7 @@
     import { createAssistantListContext } from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
     import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
     import Page from '$lib/components/ui/page/Page.svelte';
+    import DashboardHeader from '$plugins/assistants/components/breadcrumb/DashboardHeader.svelte';
     import type { AssistantAvatar } from '$plugins/assistants/types/assistant/AssistantAvatar';
 
     /**
@@ -169,7 +170,10 @@
     });
 </script>
 
-<Page fade="short">
+<Page>
+    {#snippet header()}
+        <DashboardHeader title={__('assistants.store.title')} />
+    {/snippet}
     <div class="page-content">
         <AssistantBrowser
             {searchQuery}
@@ -180,11 +184,14 @@
             emptyDescription={__('assistants.store.empty_description')}
         >
             {#snippet hero()}
-                <h1
+                <!-- Decorative: the bar's h1 (the short sidebar label) carries the
+                     page outline; this hero repeats the full title as art. -->
+                <p
                     class="store-title"
                     class:open={titleOpen && titleAvatars.length > 0}
                     class:closing={titleClosing}
                     style:--count={titleAvatars.length}
+                    aria-hidden="true"
                     onpointerenter={handleTitleEnter}
                     onpointerleave={handleTitleLeave}
                 >
@@ -210,7 +217,7 @@
                         {/each}
                     </span>
                     <span>{titleEnd}</span>
-                </h1>
+                </p>
             {/snippet}
         </AssistantBrowser>
     </div>

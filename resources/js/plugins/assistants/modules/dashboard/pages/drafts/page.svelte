@@ -8,6 +8,7 @@
     import { createAssistantListContext } from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
     import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
     import Page from '$lib/components/ui/page/Page.svelte';
+    import DashboardHeader from '$plugins/assistants/components/breadcrumb/DashboardHeader.svelte';
 
     /**
      * The kernel's route renderer instantiates page components without passing
@@ -56,10 +57,12 @@
     applyFilter();
 </script>
 
-<Page fade="short">
+<Page>
+    {#snippet header()}
+        <DashboardHeader title={__('assistants.drafts.title')} />
+    {/snippet}
     <div class="page-content">
         <AssistantBrowser
-            title={__('assistants.drafts.title')}
             {searchQuery}
             {activeFilters}
             onSearchChange={handleSearchChange}

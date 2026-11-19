@@ -8,6 +8,9 @@
     import type {RouteProps} from '$lib/components/ui/routing/index.js';
     const {}: RouteProps = $props();
     import Page from '$lib/components/ui/page/Page.svelte';
+    import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
+    import {BreadcrumbTrail, BreadcrumbItem} from '$plugins/assistants/components/breadcrumb';
+    import {adminRegistry} from '$plugins/admin/registry';
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import Alert from '$lib/components/ui/alert/Alert.svelte';
@@ -27,6 +30,10 @@
     const {__} = useTranslator();
 
     const STATUS_KEYS = ['pending', 'needs_revision', 'denied', 'approved'] as const satisfies readonly ReviewStatus[];
+
+    // The queue is the admin section's index, so the trail is just the
+    // section's own icon — the same row the admin sidebar shows.
+    const section = $derived(adminRegistry.sections.find(s => s.id === 'assistants'));
 
     /** The "All" pseudo-status: no status filter, every accessible review. */
     type QueueFilter = ReviewStatus | 'all';
@@ -110,7 +117,17 @@
     }
 </script>
 
-<Page title={__('assistants.admin.queue.title')}>
+<Page>
+    {#snippet header()}
+        <PageHeaderBar srHeading={__('assistants.admin.queue.title')}>
+            <BreadcrumbTrail>
+                <BreadcrumbItem
+                    label={section ? __(section.labelKey) : __('assistants.admin.queue.title')}
+                    icon={section?.icon}
+                />
+            </BreadcrumbTrail>
+        </PageHeaderBar>
+    {/snippet}
     <div class="page-content">
         <p class="page-description">{__('assistants.admin.queue.description')}</p>
 

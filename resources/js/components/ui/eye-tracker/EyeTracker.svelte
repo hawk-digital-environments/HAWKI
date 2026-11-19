@@ -257,7 +257,7 @@ React component named `Watcher`; the maths and the comments are kept as-is.
         if (mine !== turn) return;
         talking = false;
     };
-    const eyeEls: (SVGGElement | undefined)[] = [];
+    let eyeEls = $state<(SVGGElement | undefined)[]>([]);
     const base = $derived(STYLES[look] ?? STYLES.Slant);
     const eye = $derived({
         w: base.w * eyeScale * eyeWidth,
