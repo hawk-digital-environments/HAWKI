@@ -5,6 +5,15 @@ on:
     branches:
       - 'hawk/prod'
 
+# Overlapping runs race on the mutable prod-latest tag: without this, a
+# slower build of an older commit can finish last and overwrite the newer
+# image. A new run cancels the superseded one instead. The group is not
+# ref-based on purpose: every run deploys hawk/prod, no matter which ref
+# the workflow was dispatched from.
+concurrency:
+  group: deploy-hawk-prod
+  cancel-in-progress: true
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
