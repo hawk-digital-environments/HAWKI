@@ -14,6 +14,15 @@ on:
       - 'hawk/test-2'
       - 'hawk/test-3'
 
+# Only runs for the SAME testing instance race on that instance's mutable
+# test-N-latest tag, so the group is per instance while the instances stay
+# parallel. The instance number is resolved the same way as in the setup
+# job below: from the pushed branch on a push, from the instance input on
+# a manual dispatch.
+concurrency:
+  group: deploy-hawk-testing-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.instance || endsWith(github.ref_name, '1') && '1' || endsWith(github.ref_name, '2') && '2' || '3' }}
+  cancel-in-progress: true
+
 jobs:
   setup:
     runs-on: ubuntu-latest
