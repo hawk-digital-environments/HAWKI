@@ -125,7 +125,9 @@
             <SpaceTabs />
         </div>
         <div class="module-sidebar">
-            {#if ModuleSidebar}
+            <!-- An active panel owns the module-sidebar area (see sidebarHooks.ts);
+                 the module's own sidebar stands down so it cannot stack on top. -->
+            {#if ModuleSidebar && panels.length === 0}
                 <ModuleSidebar />
             {/if}
             {#each panels as panel (panel.id)}
