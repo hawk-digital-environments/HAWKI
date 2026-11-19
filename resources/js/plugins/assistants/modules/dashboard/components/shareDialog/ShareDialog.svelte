@@ -19,6 +19,8 @@
     import Copy01Icon from '$lib/components/ui/icons/iconset/Copy01Icon.svelte';
     import Link01Icon from '$lib/components/ui/icons/iconset/Link01Icon.svelte';
     import TrashIcon from '$lib/components/ui/icons/iconset/TrashIcon.svelte';
+    import EditIcon from '$lib/components/ui/icons/iconset/EditIcon.svelte';
+    import EditOffIcon from '$lib/components/ui/icons/iconset/EditOffIcon.svelte';
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
     import { ApiError } from '$plugins/assistants/api/errors';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
@@ -387,10 +389,25 @@
                                 {/snippet}
                             </Tooltip>
                         </div>
-                        <label class="person-edit">
-                            <span class="u-label">{__('assistants.detail.share_can_edit')}</span>
-                            <Switch bind:checked={linkCanEdit} />
-                        </label>
+                        <Tooltip tooltip={__('assistants.detail.share_can_edit')} side="bottom" sideOffset={4}>
+                            {#snippet children({props})}
+                                <button
+                                    {...props}
+                                    type="button"
+                                    class="share-link-edit"
+                                    role="switch"
+                                    aria-checked={linkCanEdit}
+                                    aria-label={__('assistants.detail.share_can_edit')}
+                                    onclick={() => (linkCanEdit = !linkCanEdit)}
+                                >
+                                    {#if linkCanEdit}
+                                        <EditIcon size="1em" />
+                                    {:else}
+                                        <EditOffIcon size="1em" />
+                                    {/if}
+                                </button>
+                            {/snippet}
+                        </Tooltip>
                         <Tooltip tooltip={__('assistants.detail.share_link_invalidate')} side="bottom" sideOffset={4}>
                             {#snippet children({props})}
                                 <button
@@ -589,8 +606,35 @@
         border-radius: var(--corner-sm);
     }
 
-    .share-link-row .person-edit {
-        margin-inline-end: 0;
+    .share-link-edit {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+    }
+
+    /* The granted state is the affirmative one: it carries the accent. */
+    .share-link-edit[aria-checked='true'] {
+        color: var(--color-accent-500);
+    }
+
+    .share-link-edit:hover {
+        color: var(--color-text);
+    }
+
+    .share-link-edit[aria-checked='true']:hover {
+        color: var(--color-accent-400);
+    }
+
+    .share-link-edit:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+        border-radius: var(--corner-sm);
     }
 
     .search {
