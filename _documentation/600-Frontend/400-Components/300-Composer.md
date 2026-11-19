@@ -374,15 +374,11 @@ send
 
 ### The pick surface
 
-While the regen mode is active, `ModelPicker` swaps its regular sections (favourites + providers) for the result of the `chatRegenerateGroups` hook — core contributes the provider sections as regenerate groups, plugins may prepend participant groups (rendered via `AssistantRow`). Picking a participant row stores it on the mode state (`pickedParticipant`); the transport then hands it to the `chatSend` hook as `ctx.regenParticipant`, where a plugin handler can claim the run. The handle travels on the wire as `payload.hawkiExtensions.assistant_handle` (`AiStreamRequest.assistantHandle`). Core registers no handler — an unclaimed pick stays a plain model re-run.
+While the regen mode is active, `ModelPicker` swaps its regular sections (favourites + providers) for the result of the `chatRegenerateGroups` hook — core contributes the provider sections as regenerate groups, plugins may prepend participant groups (rendered via `AssistantRow`). Picking a participant row stores it on the mode state (`pickedParticipant`); the transport then hands it to the `chatSend` hook as `ctx.regenParticipant` (with the re-run message as `ctx.regenMessage`), where a plugin handler can claim the run. The handle travels on the wire as `payload.hawkiExtensions.assistant_handle` (`AiStreamRequest.assistantHandle`). Core registers no handler — an unclaimed pick stays a plain model re-run.
 
 ### Tool and model validation
 
 The composer's live gating (`ModelUsageSlice` → send button + conflict picker) guards the configuration while the mode is active, and the transport re-validates at send time: the active tools pass `validatedToolSnapshot()` against the picked model, aborting with the translated `TOOL_*` messages when the model cannot reproduce the run's tool selection (tool calling off, tool not assigned, tool offline) instead of silently dropping it.
-
-### Composer-independent regeneration
-
-`ChatTransport.regenerateMessage(slug, message, pick, onNotice)` is the same pipeline without a composer: it re-runs from the message's persisted snapshot (model fallback notice included), addressed to the menu `pick`'s participant. It exists as the API for surfaces that have no composer to focus.
 
 ---
 

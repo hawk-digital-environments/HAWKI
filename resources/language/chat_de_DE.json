@@ -328,9 +328,6 @@
                 "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."
             }
         },
-        "regenerate": {
-            "modelNotAvailable": "Das für diese Nachricht verwendete Modell (:model) ist nicht verfügbar. Es wird das Ersatzmodell :fallback verwendet."
-        },
         "tools": {
             "accessDenied": "Sie haben keinen Zugriff mehr auf ein ausgewähltes Tool. Prüfen Sie Ihre Auswahl und versuchen Sie es erneut.",
             "unavailable": "Ein ausgewähltes Tool ist für dieses Modell derzeit nicht verfügbar. Prüfen Sie Ihre Auswahl."

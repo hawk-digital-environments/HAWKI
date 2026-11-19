@@ -13,7 +13,6 @@ import type { UrlCitation } from '$lib/components/ui/citations/types.js';
 import type { ComposerContext } from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 import { validatedToolSnapshot } from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
 import type { ChatSendDescriptor } from '$plugins/core/modules/chat/hooks/chatSendHooks.js';
-import type { ChatRegeneratePick } from '$plugins/core/modules/chat/hooks/chatRegenerateHooks.js';
 
 /** How many trailing messages of a conversation or thread are sent to the model per run
  *  (see `ChatTransport.messageHistory`); older ones are dropped from the request. */
@@ -25,8 +24,7 @@ interface ChatTransportOptions {
     onConversationPending?: (message: ChatMessage | null) => void;
 }
 
-/** Everything one assistant reply needs, independent of whether the composer or the
- *  regenerate action on a message asked for it. */
+/** Everything one assistant reply needs, for a regular send or a regenerate from the composer. */
 interface AssistantRequest {
     modelId: string;
     /** Tools in their transfer-string form (see `AiToolOrCapabilityWithState.toTransferString`). */
@@ -39,7 +37,7 @@ interface AssistantRequest {
     regenerateMessageId: string | null;
     /**
      * Assistant handle the run is bound to, resolved by the `chatSend` hook; null for a
-     * plain run (see {@link ChatTransport.regenerateMessage}).
+     * plain run.
      */
     assistantHandle?: string | null;
     /** Display author for the streamed assistant message; falls back to the default HAWKI author. */
@@ -201,88 +199,6 @@ export class ChatTransport implements MessageSenderTransportInterface {
         });
     }
 
-    /**
-     * Re-runs the assistant reply `message` and replaces it in place, addressed to the
-     * participant of the menu `pick` (see `ChatRegeneratePick`): a `chatSend` handler
-     * that claims the pick re-runs the reply with that participant's logic, exactly
-     * as a composer send addressed to it would. An unclaimed pick (HAWKI, `null`)
-     * stays a plain model rerun from the message's snapshot: the model of the pick
-     * (or the one that produced the message), the message's persisted tools and
-     * sampling parameters. Tools the resolved model cannot run abort the
-     * regeneration with a translated error instead of being silently dropped.
-     * `onNotice` reports model fallback. Rejects with the error message on failure.
-     */
-    public async regenerateMessage(
-        conversationSlug: string,
-        message: ChatMessage,
-        pick: ChatRegeneratePick | null,
-        onNotice?: (notice: string) => void
-    ): Promise<void> {
-        const translator = this.app.translator;
-        const requestedModelId = pick?.model ?? message.model;
-        const model = this.app.stores.get('ai-models').getModelByIdOrFallback(requestedModelId);
-        if (!model) throw new Error(translator.__('chat.tools.unavailable'));
-
-        // The message's snapshot is the base; a claiming handler may replace any of it.
-        const storedTools = message.metadata?.tools;
-        const tools: string[] = Array.isArray(storedTools) ? storedTools : [];
-        const storedParams = message.metadata?.params;
-        const params: Record<string, number> = {};
-        if (typeof storedParams?.temperature === 'number') params.temperature = storedParams.temperature;
-        if (typeof storedParams?.top_p === 'number') params.top_p = storedParams.top_p;
-
-        const send = this.resolveRegenerateDescriptor(message, conversationSlug, pick, {
-            model: model.model_id,
-            tools,
-            params: Object.keys(params).length ? params : null
-        });
-
-        const resolvedModel = this.app.stores.get('ai-models').getOneById(send.model);
-        if (!resolvedModel) throw new Error(translator.__('chat.tools.unavailable'));
-        // The fallback notice concerns the plain path only — a claimed run's model comes from the participant.
-        if (!send.assistantHandle && requestedModelId && resolvedModel.model_id !== requestedModelId) {
-            onNotice?.(
-                translator.__('chat.regenerate.modelNotAvailable', {
-                    model: requestedModelId,
-                    fallback: resolvedModel.label
-                })
-            );
-        }
-        let resolvedTools: string[];
-        try {
-            resolvedTools = validatedToolSnapshot(send.tools, this.app.stores.get('ai-tools'), resolvedModel);
-        } catch (error) {
-            throw new Error(this.errorMessage(error));
-        }
-
-        const request: AssistantRequest = {
-            modelId: resolvedModel.model_id,
-            tools: resolvedTools,
-            params: send.params,
-            systemPrompt:
-                (this.store.active?.slug === conversationSlug ? this.store.active.system_prompt : null) ??
-                this.app.stores.get('system-prompts').getPromptByType('default').prompt,
-            threadId: this.threadIdForMessage(message.message_id),
-            regenerateMessageId: message.message_id,
-            assistantHandle: send.assistantHandle,
-            author: send.author,
-            assistant: send.assistant ?? undefined
-        };
-
-        this.store.beginGeneration(conversationSlug);
-        try {
-            const response = new SendMessageResponse();
-            const finished = new Promise<void>((resolve, reject) => {
-                response.onReceived(() => resolve());
-                response.onError((error) => reject(new Error(error)));
-            });
-            await this.streamAssistant(conversationSlug, request, response);
-            await finished;
-        } finally {
-            this.store.finishGeneration(conversationSlug);
-        }
-    }
-
     /** Snapshot of the composer state that shapes the assistant reply for a regular send
      *  or a regenerate (the composer pre-fills its configuration from the message's
      *  snapshot — see `ChatRegenMode`). */
@@ -333,41 +249,16 @@ export class ChatTransport implements MessageSenderTransportInterface {
             {
                 composer: context,
                 conversation: this.store.active,
-                regenMessage: null,
+                // The assistant message the regen mode re-runs, so a handler can inspect it.
+                regenMessage: context.mode.isRegen && this.store.active
+                    ? this.store.findMessage(this.store.active.slug, context.mode.getState('regen').messageId)
+                    : null,
                 // A participant picked in the model picker's regenerate groups
                 // (see `ChatRegenModeState.pickedParticipant`); unclaimed stays
                 // a plain model run.
                 regenParticipant: context.mode.isRegen
                     ? context.mode.getState('regen').pickedParticipant ?? null
                     : null
-            }
-        );
-    }
-
-    /**
-     * Resolves the run description for one regenerate: the message's snapshot as the
-     * base, addressed to the picked participant. Mirrors {@link resolveSendDescriptor}
-     * minus the composer; the result passes through the same validation.
-     */
-    private resolveRegenerateDescriptor(
-        message: ChatMessage,
-        conversationSlug: string,
-        pick: ChatRegeneratePick | null,
-        base: Pick<ChatSendDescriptor, 'model' | 'tools' | 'params'>
-    ): ChatSendDescriptor {
-        return this.app.hooks.apply(
-            'chatSend',
-            {
-                assistantHandle: null,
-                assistant: null,
-                author: null,
-                ...base
-            },
-            {
-                composer: null,
-                conversation: this.store.active?.slug === conversationSlug ? this.store.active : null,
-                regenMessage: message,
-                regenParticipant: pick?.participant ?? null
             }
         );
     }
@@ -525,8 +416,12 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 { signal: controller.signal }
             )) {
                 responseWriter.triggerBodyChunk(JSON.stringify(packet));
-                if (packet.type === 'error')
-                    throw new Error(String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
+                if (packet.type === 'error') {
+                    // A tool code is translated by `errorMessage`; any other error keeps the server text.
+                    const toolCode =
+                        packet.code === 'TOOL_UNAVAILABLE' || packet.code === 'TOOL_ACCESS_DENIED' ? packet.code : null;
+                    throw new Error(toolCode ?? String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
+                }
                 if (
                     packet.type === 'reasoning_start' ||
                     packet.type === 'reasoning_delta' ||

@@ -7,6 +7,7 @@ namespace Tests\Feature\Services\Ai\Agents;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiTool;
 use App\Models\Ai\McpServer;
+use App\Http\Controllers\StreamController;
 use App\Models\User;
 use App\Services\Ai\Agents\Exceptions\InvalidToolTransferStringException;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
@@ -16,6 +17,8 @@ use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\Providers\Repositories\AiProviderRepository;
+use App\Services\Ai\Models\Settings\AiModelSettingRegistry;
 use App\Services\Ai\Models\Settings\Values\AiModelSettings;
 use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
@@ -29,6 +32,7 @@ use App\Services\Storage\Values\FileType;
 use App\Services\Storage\Values\StoredFile;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\Request;
 use Laravel\Ai\Gateway\OpenAi\OpenAiGateway;
 use Laravel\Ai\Messages\UserMessage;
 use Laravel\Ai\Providers\OpenAiProvider;
@@ -56,6 +60,7 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
 {
     use DatabaseTransactions;
 
+    private const string PROVIDER_ID = 'fake-openai';
     private const string MODEL_ID = 'regen-target-model';
 
     private CapturingTextGateway $gateway;
@@ -104,6 +109,35 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
             static::assertSame('TOOL_UNAVAILABLE', $response->getData(true)['code']);
             static::assertStringContainsString('No tool found with name "test_tool"', $exception->getMessage());
         }
+    }
+
+    public function testAStreamedRunWithAnUnavailableToolEndsWithACodedErrorPacket(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->mockProviderInfrastructure(attachedTools: []);
+
+        $request = Request::create('/req/streamAI', 'POST', $this->regenPayload(
+            modelId: self::MODEL_ID,
+            tools: ['test_tool'],
+        ));
+        $response = $this->app->make(StreamController::class)->handleAiConnectionRequest($request);
+
+        // The stream has already started with a 200, so the code rides on the last packet.
+        // The streamed response flushes each chunk, so the buffer callback collects them.
+        $output = '';
+        ob_start(static function (string $chunk) use (&$output): string {
+            $output .= $chunk;
+            return '';
+        });
+        $response->sendContent();
+        ob_end_clean();
+        $lines = array_values(array_filter(explode("\n", $output)));
+        $last = json_decode(end($lines), true, flags: JSON_THROW_ON_ERROR);
+
+        static::assertSame(200, $response->getStatusCode());
+        static::assertSame('error', $last['type']);
+        static::assertSame('TOOL_UNAVAILABLE', $last['code']);
+        static::assertTrue($last['isDone']);
     }
 
     public function testAModelWithoutToolCallingRejectsAnyRequestedTool(): void
@@ -309,7 +343,8 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
             'messageId' => '2.001',
             'slug' => '',
             'payload' => [
-                'model' => $modelId,
+                // Inside HAWKI the frontend references models by their qualified id.
+                'model' => self::PROVIDER_ID . '/' . $modelId,
                 'broadcast' => false,
                 'stream' => true,
                 'messages' => $messages ?? [
@@ -364,8 +399,12 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
             $mock->shouldReceive('resolveForModel')->andReturn($proxy);
         });
 
-        $this->mock(AiModelRepository::class, fn ($mock) => $mock->shouldReceive('findOneOrFail')
-            ->andReturnUsing(fn (string $modelId): AiModel => $this->makeModel($modelId)));
+        // The real ModelFinder resolves the qualified payload id through both repositories.
+        $this->mock(AiProviderRepository::class, fn ($mock) => $mock->shouldReceive('findOneByProviderId')
+            ->with(self::PROVIDER_ID, null)
+            ->andReturn($this->createMock(\App\Models\Ai\AiProvider::class)));
+        $this->mock(AiModelRepository::class, fn ($mock) => $mock->shouldReceive('findOneByProvider')
+            ->andReturnUsing(fn ($provider, string $modelId): AiModel => $this->makeModel($modelId)));
 
         // LoggingMiddleware resolves logger/auth through its service locator, whose
         // container fallback is auto-disabled under PHPUnit — re-enable it so the
@@ -385,10 +424,12 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
         $input = $this->nextModel['input'];
         // Missing keys read as false (`AiModelSettings::canUseTools`/`canHandleFiles`
         // default to false), so false values may be omitted or passed explicitly.
-        $settings = [
+        // Registry injected explicitly: the settings' service locator has no container fallback under PHPUnit.
+        $settings = AiModelSettings::fromArray([
             'tool_calling' => $this->nextModel['toolCalling'],
             'file_upload' => $this->nextModel['fileUpload'],
-        ];
+        ]);
+        $settings->setService(AiModelSettingRegistry::class, $this->app->make(AiModelSettingRegistry::class));
 
         $model = $this->createMock(AiModel::class);
         // AiModel exposes cast properties via Eloquent's magic __get → getAttribute.
@@ -396,7 +437,7 @@ class ChatAgentToolAndFilePayloadTest extends TestCase
             static fn (string $key): mixed => match ($key) {
                 'flags' => $flags,
                 'model_id' => $modelId,
-                'settings' => AiModelSettings::fromArray($settings),
+                'settings' => $settings,
                 'parameters' => \App\Services\Ai\Models\Parameters\Values\AiModelParameters::fromArray([]),
                 'input' => AiModelIoMethods::fromArray($input),
                 'native_capabilities' => NativeAiModelCapabilities::fromArray([]),

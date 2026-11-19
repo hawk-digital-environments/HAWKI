@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;
+use App\Services\Ai\Agents\Exceptions\InvalidToolTransferStringException;
 use App\Services\Ai\AiService;
 use App\Services\Ai\Exceptions\AmbiguousModelIdException;
 use App\Services\Ai\Models\Identifiers\ModelFinder;
+use App\Services\Ai\Tools\Exceptions\ToolNotFoundException;
 use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
@@ -225,10 +227,11 @@ class StreamController extends Controller
         $hawki = $this->userRepository->findHawki();
         $avatar_url = $this->avatarStorage->retrieveAvatar($hawki)?->getUrl();
 
-        $formatError = static fn(string $errorMessage) => json_encode([
+        $formatError = static fn(string $errorMessage, ?string $code = null) => json_encode([
                 'content' => $errorMessage,
                 'type' => 'error',
-                'isDone' => true
+                'isDone' => true,
+                ...($code === null ? [] : ['code' => $code]),
             ], JSON_THROW_ON_ERROR) . "\n";
 
         $formatData = function (
@@ -343,6 +346,12 @@ class StreamController extends Controller
                 'response' => $e->response->body()
             ]);
             yield $formatError('There was an error while sending your request to the AI agent. Please try again later.');
+            return;
+        } catch (ToolNotFoundException|InvalidToolTransferStringException $e) {
+            // The stream has already started, so the exception's 422 cannot be sent; its code travels in the error packet.
+            $this->logger->warning('Requested tool is unavailable for the streamed run', ['exception' => $e]);
+            $error = $e->render()->getData(true);
+            yield $formatError($error['message'], $error['code']);
             return;
         } catch (\Throwable $e) {
             $this->logger->error('Something went wrong in the stream', ['exception' => $e]);

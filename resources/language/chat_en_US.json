@@ -328,9 +328,6 @@
                 "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
             }
         },
-        "regenerate": {
-            "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback."
-        },
         "tools": {
             "accessDenied": "You no longer have access to a selected tool. Review your selection and try again.",
             "unavailable": "A selected tool is currently unavailable for this model. Review your selection."
