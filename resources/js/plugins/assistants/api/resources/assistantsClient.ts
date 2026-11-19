@@ -488,6 +488,70 @@ export async function syncAssistantShares(
     }
 }
 
+/** A freshly minted share link; the plain token is only ever answered once. */
+export interface AssistantShareLink {
+    token: string;
+    canEdit: boolean;
+    expiresAt: string;
+}
+
+const ShareLinkResponseSchema = z.object({
+    data: z.object({
+        token: z.string(),
+        can_edit: z.boolean(),
+        expires_at: z.string()
+    })
+}).transform((wire): AssistantShareLink => ({
+    token: wire.data.token,
+    canEdit: wire.data.can_edit,
+    expiresAt: wire.data.expires_at
+}));
+
+/**
+ * Mints a new multi-use, expiring share link — creator-only. Whoever redeems
+ * it joins the share list with the link's `canEdit` grant.
+ */
+export async function createAssistantShareLink(id: string, canEdit: boolean): Promise<AssistantShareLink> {
+    try {
+        return await useApp().restApi.postToResourceAction(
+            ASSISTANTS,
+            `${id}/actions/share-link`,
+            { data: { can_edit: canEdit } },
+            { schema: ShareLinkResponseSchema }
+        );
+    } catch (err) {
+        throw logApiError('createAssistantShareLink', err, { id });
+    }
+}
+
+/**
+ * Redeems a share link token: the signed-in user joins the link's assistant's
+ * share list. Resolves with the assistant's id.
+ */
+export async function redeemAssistantShareLink(token: string): Promise<string> {
+    try {
+        const response = await useApp().restApi.postToResourceAction(
+            ASSISTANTS,
+            'actions/redeem-share-link',
+            { data: { token } },
+            { schema: z.object({ data: z.object({ id: z.string() }) }) }
+        );
+        return response.data.id;
+    } catch (err) {
+        throw logApiError('redeemAssistantShareLink', err, {});
+    }
+}
+
+/** Revokes every outstanding share link of the assistant, creator-only. */
+export async function invalidateAssistantShareLink(id: string): Promise<void> {
+    if (!id) return;
+    try {
+        await useApp().restApi.deleteFromResourceAction(ASSISTANTS, `${id}/actions/share-link`);
+    } catch (err) {
+        throw logApiError('invalidateAssistantShareLink', err, { id });
+    }
+}
+
 /**
  * The handle-namespace probe (`GET /assistants/actions/handles`): which of
  * the given candidate handles already exist — globally, regardless of

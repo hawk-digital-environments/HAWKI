@@ -17,11 +17,17 @@
     import Button from '$lib/components/ui/button/Button.svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import Copy01Icon from '$lib/components/ui/icons/iconset/Copy01Icon.svelte';
+    import Link01Icon from '$lib/components/ui/icons/iconset/Link01Icon.svelte';
+    import TrashIcon from '$lib/components/ui/icons/iconset/TrashIcon.svelte';
+    import EditIcon from '$lib/components/ui/icons/iconset/EditIcon.svelte';
+    import EditOffIcon from '$lib/components/ui/icons/iconset/EditOffIcon.svelte';
     import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
     import { ApiError } from '$plugins/assistants/api/errors';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import AssistantAvatarIcon from '$plugins/assistants/components/avatarBuilder/AssistantAvatarIcon.svelte';
     import {
+        createAssistantShareLink,
+        invalidateAssistantShareLink,
         listAssistantShares,
         syncAssistantShares
     } from '$plugins/assistants/api/resources/assistantsClient';
@@ -40,6 +46,8 @@
         type SharePerson
     } from '$plugins/assistants/modules/dashboard/components/shareDialog/shareSelection.svelte.js';
     import { debounce } from '$lib/utils/debounce';
+    import { untrack } from 'svelte';
+    import { formatDateTime } from '$lib/utils/date';
 
     interface Props {
         /** Whether the dialog is open. Supports bind:open. */
@@ -70,6 +78,20 @@
     let searchError = $state(false);
     let searchInput = $state<HTMLInputElement | null>(null);
 
+    // Share link section: opening it via the avatar mints a link.
+    let linkOpen = $state(false);
+    let linkCanEdit = $state(false);
+    let linkUrl = $state<string | null>(null);
+    let linkExpiresAt = $state<string | null>(null);
+
+    // The grant a link was minted with; flipping the switch or reopening the
+    // section (via reset below) drifts from it and mints a fresh link.
+    let mintedGrant: boolean | null = null;
+
+    $effect(() => {
+        if (linkOpen && mintedGrant !== linkCanEdit) untrack(() => void mintLink());
+    });
+
     // Every open starts fresh: reload the share list, drop stale picks and
     // search state from the previous session.
     $effect(() => {
@@ -77,6 +99,9 @@
             query = '';
             results = [];
             searchError = false;
+            linkOpen = false;
+            linkCanEdit = false;
+            resetLink();
             void loadShares(assistant.id);
         }
     });
@@ -183,13 +208,63 @@
         }
     }
 
-    async function copyLink(): Promise<void> {
-        const url = `${location.origin}${router.getPath('assistants.dashboard.store', {assistant: String(assistant.id)})}`;
+    function resetLink(): void {
+        linkUrl = null;
+        linkExpiresAt = null;
+        mintedGrant = null;
+    }
+
+    /** Opens the link section for good; the mint effect takes it from here. */
+    function openLink(): void {
+        linkOpen = true;
+    }
+
+    /** Guards against a slow earlier mint overwriting a newer one. */
+    let mintSeq = 0;
+    let minting = false;
+
+    async function mintLink(): Promise<void> {
+        if (!assistant.id) return;
+        const seq = ++mintSeq;
+        resetLink();
+        mintedGrant = linkCanEdit;
+        minting = true;
         try {
-            await navigator.clipboard.writeText(url);
+            const link = await createAssistantShareLink(assistant.id, linkCanEdit);
+            if (seq !== mintSeq) return;
+            linkUrl = `${location.origin}${router.getPath('assistants.dashboard.shared', {
+                assistant: String(assistant.id),
+                invite: link.token
+            })}`;
+            linkExpiresAt = link.expiresAt;
+        } catch (err) {
+            if (seq !== mintSeq) return;
+            toast.error(`${__('assistants.detail.share_link_create_failed')} ${ApiError.from(err).userMessage}`);
+        } finally {
+            if (seq === mintSeq) minting = false;
+        }
+    }
+
+    async function copyLink(): Promise<void> {
+        if (!linkUrl) return;
+        try {
+            await navigator.clipboard.writeText(linkUrl);
             toast.success(__('assistants.detail.share_link_copied'));
         } catch {
             toast.error(__('assistants.detail.share_copy_failed'));
+        }
+    }
+
+    /** Revokes every outstanding link; the section folds, the avatar mints anew. */
+    async function invalidateLink(): Promise<void> {
+        if (!assistant.id || !linkUrl) return;
+        try {
+            await invalidateAssistantShareLink(assistant.id);
+            linkOpen = false;
+            resetLink();
+            toast.success(__('assistants.detail.share_link_invalidated'));
+        } catch (err) {
+            toast.error(`${__('assistants.detail.share_link_invalidate_failed')} ${ApiError.from(err).userMessage}`);
         }
     }
 </script>
@@ -205,11 +280,12 @@
                 type="button"
                 class="avatar-wrap"
                 aria-label={__('assistants.detail.share_copy_link')}
-                onclick={copyLink}
+                aria-expanded={linkOpen}
+                onclick={openLink}
             >
                 <AssistantAvatarIcon assistantAvatar={avatar} size="small" />
                 <span class="copy-hint" aria-hidden="true">
-                    <Copy01Icon size="1em" />
+                    <Link01Icon size="1em" />
                 </span>
             </button>
         {/snippet}
@@ -285,6 +361,71 @@
                         <p class="sheet-header-description">{__('assistants.detail.share_description')}</p>
                     </div>
                     {@render avatarWithBadge()}
+                </div>
+            {/if}
+
+            {#if linkOpen}
+                <div class="share-link">
+                    <div class="share-link-row">
+                        <div class="share-link-field">
+                            <Input
+                                value={linkUrl ?? ''}
+                                readonly
+                                placeholder={__('assistants.detail.share_link_placeholder')}
+                                ariaLabel={__('assistants.detail.share_link_label')}
+                            />
+                            <Tooltip tooltip={__('assistants.detail.share_link_copy')} side="bottom" sideOffset={4}>
+                                {#snippet children({props})}
+                                    <button
+                                        {...props}
+                                        type="button"
+                                        class="share-link-copy"
+                                        aria-label={__('assistants.detail.share_link_copy')}
+                                        disabled={!linkUrl}
+                                        onclick={copyLink}
+                                    >
+                                        <Copy01Icon size="1em" />
+                                    </button>
+                                {/snippet}
+                            </Tooltip>
+                        </div>
+                        <Tooltip tooltip={__(linkCanEdit ? 'assistants.detail.share_link_can_edit' : 'assistants.detail.share_link_view_only')} side="bottom" sideOffset={4}>
+                            {#snippet children({props})}
+                                <button
+                                    {...props}
+                                    type="button"
+                                    class="share-link-edit"
+                                    role="switch"
+                                    aria-checked={linkCanEdit}
+                                    aria-label={__(linkCanEdit ? 'assistants.detail.share_link_can_edit' : 'assistants.detail.share_link_view_only')}
+                                    onclick={() => (linkCanEdit = !linkCanEdit)}
+                                >
+                                    {#if linkCanEdit}
+                                        <EditIcon size="1em" />
+                                    {:else}
+                                        <EditOffIcon size="1em" />
+                                    {/if}
+                                </button>
+                            {/snippet}
+                        </Tooltip>
+                        <Tooltip tooltip={__('assistants.detail.share_link_invalidate')} side="bottom" sideOffset={4}>
+                            {#snippet children({props})}
+                                <button
+                                    {...props}
+                                    type="button"
+                                    class="share-link-revoke"
+                                    aria-label={__('assistants.detail.share_link_invalidate')}
+                                    disabled={!linkUrl}
+                                    onclick={invalidateLink}
+                                >
+                                    <TrashIcon size="1em" />
+                                </button>
+                            {/snippet}
+                        </Tooltip>
+                    </div>
+                    {#if linkExpiresAt}
+                        <p class="share-link-hint">{__('assistants.detail.share_link_expires', {date: formatDateTime(linkExpiresAt)})}</p>
+                    {/if}
                 </div>
             {/if}
 
@@ -378,6 +519,119 @@
         margin: 0;
         font-size: var(--font-size-sm);
         color: var(--color-text-muted);
+    }
+
+    .share-link {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    /* The URL field takes the row; on narrow widths switch and copy wrap below it. */
+    .share-link-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    /* The copy button sits inside the field's right edge; the input pads for it. */
+    .share-link-field {
+        position: relative;
+        display: flex;
+        flex: 1 1 14rem;
+        min-width: 0;
+    }
+
+    .share-link-field :global(input) {
+        flex: 1;
+        min-width: 0;
+        padding-inline-end: calc(var(--space-2) * 2 + 1em);
+        text-overflow: ellipsis;
+    }
+
+    .share-link-copy {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-end: var(--space-2);
+        display: inline-flex;
+        align-items: center;
+        margin-block: auto;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+    }
+
+    .share-link-copy:hover:not(:disabled) {
+        color: var(--color-text);
+    }
+
+    .share-link-copy:disabled {
+        cursor: default;
+        opacity: 0.5;
+    }
+
+    .share-link-copy:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+        border-radius: var(--corner-sm);
+    }
+
+    .share-link-revoke {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+    }
+
+    .share-link-revoke:hover:not(:disabled) {
+        color: var(--color-text);
+    }
+
+    .share-link-revoke:disabled {
+        cursor: default;
+        opacity: 0.5;
+    }
+
+    .share-link-revoke:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+        border-radius: var(--corner-sm);
+    }
+
+    .share-link-edit {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+    }
+
+    /* The granted state reads at full strength, like the dropdown checkbox
+       items' muted-vs-full opacity convention. */
+    .share-link-edit[aria-checked='true'] {
+        color: var(--color-text);
+    }
+
+    .share-link-edit:hover {
+        color: var(--color-text);
+    }
+
+    .share-link-edit:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
+        border-radius: var(--corner-sm);
     }
 
     .search {
@@ -571,7 +825,9 @@
         font-weight: var(--font-weight-medium, 500);
     }
 
-    .sheet-header-description {
+    /* Matches the Dialog's .dialog-description. */
+    .sheet-header-description,
+    .share-link-hint {
         margin: 0;
         font-size: var(--font-size-xs);
         line-height: var(--line-height-normal);

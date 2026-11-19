@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Assistants\AssistantShareLink;
 use Illuminate\Support\Facades\Schedule;
 
 // Automatic backups are disabled when running in a Docker container
@@ -16,3 +17,4 @@ Schedule::command('ai:models:check-status')->everyFifteenMinutes();
 Schedule::command('ai:tools:check-status ')->everyFifteenMinutes();
 Schedule::command('filestorage:cleanup')->daily();
 Schedule::command('passkey-backups:cleanup-archive')->daily();
+Schedule::command('model:prune', ['--model' => [AssistantShareLink::class]])->daily();

@@ -6,9 +6,11 @@ namespace App\Services\Assistant;
 
 use App\Models\Assistants\Assistant;
 use App\Models\User;
+use App\Services\Assistant\Config\AssistantConfig;
 use App\Services\Assistant\Events\AssistantAttachmentStoredEvent;
 use App\Services\Assistant\Events\AssistantCreatedEvent;
 use App\Services\Assistant\Events\AssistantReleaseStageChangedEvent;
+use App\Services\Assistant\Exceptions\InvalidShareLinkException;
 use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
 use App\Services\Assistant\Repositories\AssistantOrganizationRepository;
 use App\Services\Assistant\Repositories\AssistantRepository;
@@ -17,9 +19,11 @@ use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\AssistantReviewStatus;
 use App\Services\Assistant\Values\AssistantShare;
 use App\Services\Assistant\Values\AssistantShareGrant;
+use App\Services\Assistant\Values\AssistantShareLinkToken;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\FileReference;
 use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\System\Time\CarbonClockInterface;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use Illuminate\Database\DatabaseManager;
@@ -36,6 +40,8 @@ readonly class AssistantService
         private EventDispatcher $events,
         private FileStorageService $fileStorage,
         private AssistantAttachmentRepository $assistantAttachmentRepository,
+        private AssistantConfig $config,
+        private CarbonClockInterface $clock,
     ) {
     }
 
@@ -94,6 +100,43 @@ readonly class AssistantService
     public function syncShares(Assistant $assistant, array $shares): array
     {
         return $this->repository->syncShares($assistant, $shares);
+    }
+
+    /**
+     * Mints a new multi-use share link that expires after the configured TTL.
+     */
+    public function createShareLink(Assistant $assistant, User $creator, bool $canEdit): AssistantShareLinkToken
+    {
+        $expiresAt = $this->clock->now()->addHours($this->config->shareLinkTtlHours);
+        $token = $this->repository->createShareLink($assistant, $creator, $canEdit, $expiresAt);
+
+        return AssistantShareLinkToken::mint($token, $canEdit, $expiresAt);
+    }
+
+    /**
+     * Adds the user to the share list of the link's assistant with the link's grant.
+     *
+     * @throws InvalidShareLinkException when the token is unknown or expired
+     */
+    public function redeemShareLink(User $user, string $token): Assistant
+    {
+        $link = $this->repository->findRedeemableShareLink($token);
+        if (null === $link || null === $link->assistant) {
+            throw InvalidShareLinkException::make();
+        }
+
+        $this->repository->grantShare($link->assistant, $user->id, $link->can_edit);
+
+        return $link->assistant;
+    }
+
+    /**
+     * Revokes every outstanding share link of the assistant; minting stays
+     * untouched and may issue a fresh link afterwards.
+     */
+    public function invalidateShareLink(Assistant $assistant): void
+    {
+        $this->repository->invalidateShareLinks($assistant);
     }
 
     public function release(Assistant $assistant, AssistantReleaseStage $target, ?string $note = null): Assistant
