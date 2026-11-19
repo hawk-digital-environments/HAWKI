@@ -77,7 +77,7 @@ class AssistantBuilderGuideService
         $categories = AssistantCategory::query()->orderBy('text')->pluck('text', 'id')->all();
         $models = $this->modelRepository->findAll()
             ->filter(static fn (AiModel $model): bool => $model->active)
-            ->mapWithKeys(static fn (AiModel $model): array => [$model->model_id => $model->label])
+            ->mapWithKeys(static fn (AiModel $model): array => [$model->getIdentifier() => $model->label])
             ->all();
         $settingOptions = $this->loadSettingOptions();
 
@@ -172,7 +172,7 @@ class AssistantBuilderGuideService
     /**
      * @param array<string, mixed>        $draft
      * @param array<int|string, string>   $categories        category text by id
-     * @param array<string, string>       $models            model label by model_id
+     * @param array<string, string>       $models            model label by qualified identifier (`provider/model_id`)
      * @param array<string, list<string>> $settingOptions    option values per settings field
      * @param list<string>                $avatarBackgrounds
      */

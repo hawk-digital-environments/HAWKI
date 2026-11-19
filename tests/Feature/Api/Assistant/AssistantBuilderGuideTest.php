@@ -54,7 +54,7 @@ class AssistantBuilderGuideTest extends TestCase
                 'name' => 'Statistics Tutor',
                 'handle' => 'Statistics Tutor!',
                 'categoryId' => (string) $category->id,
-                'model' => 'guide-model',
+                'model' => 'test-provider/guide-model',
                 'description' => null,
                 'detailDescription' => '   ',
                 'systemPrompt' => 'You are a patient statistics tutor.',
@@ -78,7 +78,7 @@ class AssistantBuilderGuideTest extends TestCase
         self::assertSame([
             'handle' => 'statistics-tutor-2',
             'categoryId' => (string) $category->id,
-            'model' => 'guide-model',
+            'model' => 'test-provider/guide-model',
             'name' => 'Statistics Tutor',
             'systemPrompt' => 'You are a patient statistics tutor.',
             'starterPrompts' => ['What is a p-value?', 'Explain variance'],
@@ -88,7 +88,7 @@ class AssistantBuilderGuideTest extends TestCase
         $step = $gateway->capturedSteps[0];
         self::assertStringContainsString('"name": "Draft name"', $step['instructions']);
         self::assertStringContainsString("- {$category->id}: Teaching", $step['instructions']);
-        self::assertStringContainsString('- guide-model: Guide Model', $step['instructions']);
+        self::assertStringContainsString('- test-provider/guide-model: Guide Model', $step['instructions']);
         self::assertStringContainsString('Still empty: handle, description, categoryId, systemPrompt, model.', $step['instructions']);
         self::assertCount(3, $step['messages']);
         self::assertSame('Tutor first-year students in statistics.', $step['messages'][2]->content);
@@ -292,7 +292,7 @@ class AssistantBuilderGuideTest extends TestCase
         $data = [
             'creator_id' => $creator->id,
             'release_stage' => 'draft',
-            'model' => 'guide-model',
+            'model' => 'test-provider/guide-model',
         ];
 
         // Omitted (not null!) so the factory's generated handle applies —
@@ -374,6 +374,9 @@ class AssistantBuilderGuideTest extends TestCase
         $flags->method('hasFeatureSamplingParameters')->willReturn(false);
 
         $model = $this->createMock(AiModel::class);
+        // Qualified like the real getIdentifier() would build it from the
+        // provider relation (also what the frontend's ai-models store keys on).
+        $model->method('getIdentifier')->willReturn('test-provider/guide-model');
         $model->method('__get')->willReturnCallback(static fn (string $key): mixed => match ($key) {
             'flags' => $flags,
             'model_id' => 'guide-model',
