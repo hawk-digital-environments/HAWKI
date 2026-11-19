@@ -33,7 +33,7 @@ return [
 
     'timeout' => (int) env('HAWKI_RAG_API_TIMEOUT', 60),
 
-    'dataset_prefix' => 'assistant_',
+    'dataset_prefix' => env('HAWKI_RAG_DATASET_PREFIX', 'assistant_'),
 
     // What is sent to the RAG server for assistant attachments:
     // "text" — HAWKI uses extractions from the file converter (ExtractTextCollector)
