@@ -47,6 +47,7 @@
 - `ConnectionHandle` now treats 401/403 on the connection fetch as "guest" instead of retrying, drops the old identity immediately, and fires `connectionChanged` when the authenticated *user* changes even if the connection type doesn't; the connection resource carries a new `keychain_state` (`setup_required`/`inconsistent`/…) derived by `KeychainStateResolver`.
 - Route **meta guards run composed into the matched leaf's action** instead of as path-less middleware ancestors — `universal-router` executes an ancestor action while merely probing a subtree, which made guards fire for non-matching sibling routes. If you build custom routers, read the comment in `RouteRegistrar.buildRouteFromOptions`.
 - Passkey backups gained a `passkey_backup_archives` table: the new unique index on `passkey_backups.username` archives duplicates instead of failing, with a daily `passkey-backups:cleanup-archive` schedule.
+- `ASSET_URL` is now honored by the application: `config/app.php` gained the `asset_url` key missing from the framework's default config. In the Docker images, `ASSET_URL` is now derived from `APP_URL` when not set explicitly (`docker/app/env/dev.env.sh` / `prod.env.sh`), so generated asset URLs always match the externally visible application URL even if the container is internally reachable under a different host; an explicit `ASSET_URL` (e.g. a CDN) still wins. `config/app.php` was also aligned with the current framework defaults (`(string)` cast for `APP_PREVIOUS_KEYS`, `"array"` maintenance driver).
 
 ### Deprecation
 
