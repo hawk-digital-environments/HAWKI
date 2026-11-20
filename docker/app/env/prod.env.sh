@@ -64,4 +64,8 @@ fi
 
 # Define dynamic environment variables
 export APP_URL="${APP_PROTOCOL}://${APP_HOST}"
+# Derive the ASSET_URL from the APP_URL if it is not set explicitly.
+# This makes sure generated asset URLs point to the externally visible URL of the app,
+# even if the container is internally reachable under a different host.
+export ASSET_URL="${ASSET_URL:-$APP_URL}"
 export REVERB_HOST="${REVERB_HOST:-reverb}"
