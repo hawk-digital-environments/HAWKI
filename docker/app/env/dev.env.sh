@@ -11,3 +11,11 @@ export XDEBUG_LOG_LEVEL=${XDEBUG_LOG_LEVEL:-7}
 if [ -n "$DOCKER_PROJECT_PROTOCOL" ] && [ -n "$DOCKER_PROJECT_HOST" ]; then
     export APP_URL="${DOCKER_PROJECT_PROTOCOL}://${DOCKER_PROJECT_HOST}"
 fi
+
+# Derive the ASSET_URL from the APP_URL if it is not set explicitly.
+# This makes sure generated asset URLs point to the externally visible URL of the app,
+# even if the container is internally reachable under a different host.
+# Note: an exported ASSET_URL always wins over a value defined in the .env file.
+if [ -n "$APP_URL" ]; then
+    export ASSET_URL="${ASSET_URL:-$APP_URL}"
+fi
