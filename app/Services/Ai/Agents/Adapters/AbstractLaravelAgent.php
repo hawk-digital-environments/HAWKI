@@ -11,6 +11,8 @@ use App\Services\Ai\Agents\Events\AgentSendingEvent;
 use App\Services\Ai\Agents\Events\AgentStreamCompletedEvent;
 use App\Services\Ai\Agents\Events\AgentStreamInitiatedEvent;
 use App\Services\Ai\Agents\Exceptions\AgentStateException;
+use App\Services\Ai\Agents\Responses\RagCitationAwareStreamableResponse;
+use App\Services\Rag\Citations\RagCitationCollector;
 use App\Services\Ai\Agents\Values\AgentTimeouts;
 use App\Services\Ai\LaravelAi\Values\ProviderDriverPortal;
 use App\Services\Ai\Values\TokenUsage;
@@ -92,6 +94,9 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
      *
      * Dispatches {@see AgentSendingEvent} before and {@see AgentResponseReceivedEvent} after
      * the provider call. Token usage is stored and becomes accessible via {@see getUsage()}.
+     *
+     * RAG document citations collected while tools executed are merged into the
+     * response meta, so consumers read them like provider citations.
      */
     public function send(): AgentResponse
     {
@@ -104,6 +109,10 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
             model: $this->getContext()->model->model_id,
             timeout: $this->getTimeouts()->forRequest()
         );
+
+        foreach ($this->ragCitations()->drain() as $citation) {
+            $response->meta->citations->push($citation);
+        }
 
         $this->usage = $response->usage;
 
@@ -119,6 +128,9 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
      * {@see AgentStreamInitiatedEvent} immediately after the stream object is created.
      * {@see AgentStreamCompletedEvent} is dispatched once the stream closes and token usage
      * is available.
+     *
+     * The returned stream surfaces RAG document citations as {@see \Laravel\Ai\Streaming\Events\Citation}
+     * chunks before the final StreamEnd, so consumers receive them like provider citations.
      */
     public function sendStreaming(): StreamableAgentResponse
     {
@@ -132,6 +144,11 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
             timeout: $this->getTimeouts()->forStream()
         );
 
+        $response = new RagCitationAwareStreamableResponse(
+            inner: $response,
+            drainCitations: fn () => $this->ragCitations()->drain(),
+        );
+
         $response->then(function (AgentResponse $response) {
             $this->usage = $response->usage;
 
@@ -141,5 +158,14 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
         AgentStreamInitiatedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response);
 
         return $response;
+    }
+
+    /**
+     * The request-scoped citation collector shared with the MCP tool-call
+     * listener. Resolved lazily to keep this adapter constructor-free.
+     */
+    private function ragCitations(): RagCitationCollector
+    {
+        return app(RagCitationCollector::class);
     }
 }

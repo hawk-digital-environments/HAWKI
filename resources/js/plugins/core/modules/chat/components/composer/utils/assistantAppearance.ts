@@ -6,8 +6,7 @@ import type {BeamColors} from '$lib/components/ui/border-beam/types.js';
  */
 export interface AssistantAppearance {
     /** The glyph shown wherever the assistant is listed or tagged — an emoji from
-     *  the assistant's name, that name's first letter, or a curated glyph
-     *  (see {@link HAWKI_ASSISTANT_APPEARANCE}). */
+     *  the assistant's name, or that name's first letter. */
     icon: string;
     /**
      * The two stops the assistant's `BorderBeam` is painted from, and the pair its text and

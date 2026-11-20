@@ -84,13 +84,14 @@ const ChatAiModelSchema = BaseAiModelSchema.extend({
         max_output_tokens: z.number().nullable()
     }).nullable(),
     /**
-     * Either a flat `{is_free}` shape for models with no usage-based cost, or tiered pricing with
-     * `ranges` (standard) and `priority_ranges` (e.g. low-latency/priority tier) broken down by
-     * token-count bracket via {@link ChatAiModelPaidPricingRangeSchema}.
+     * Either a flat `{free: true}` shape for models with no usage-based cost (matching the
+     * backend serializer in `AiModelSchema.php`), or tiered pricing with `ranges` (standard)
+     * and `priority_ranges` (e.g. low-latency/priority tier) broken down by token-count
+     * bracket via {@link ChatAiModelPaidPricingRangeSchema}. `null` when the cost is unknown.
      */
     pricing: z.union([
         z.object({
-            is_free: z.boolean()
+            free: z.boolean()
         }),
         z.object({
             ranges: z.array(ChatAiModelPaidPricingRangeSchema).nullable(),

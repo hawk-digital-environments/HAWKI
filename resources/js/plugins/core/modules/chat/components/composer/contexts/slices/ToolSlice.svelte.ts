@@ -1,6 +1,7 @@
+import {untrack} from 'svelte';
 import type {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
 import type {CheckpointingInterface} from '$plugins/core/modules/chat/components/composer/contexts/utils/CheckpointingInterface.js';
-import {type AiToolOrCapabilityWithState, createToolOrCapabilityWithState, createToolOrCapabilityWithStateFromTransferString} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
+import {type AiToolOrCapabilityWithState, createToolOrCapabilityWithState, createToolOrCapabilityWithStateFromTransferString, validatedToolSnapshot} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
 import {AiToolStore} from '$lib/plugins/core/stores/AiToolStore.svelte';
 import {AiToolOrCapability} from '$lib/plugins/core/stores/aiToolStoreData';
 
@@ -14,7 +15,7 @@ export interface ToolSliceCheckpoint {
  * for the next message.
  *
  * Maintains two registries: `_active` (tools the user turned on, included in the
- * request) and `_disabled` (tools temporarily turned off by a mode — e.g. regen
+ * request) and `_disabled` (tools temporarily turned off by a mode — e.g. edit
  * mode disabling attachments — that should return to active when the mode exits).
  * `disable()`/`enable()` move tools between the two without losing their
  * selection/settings; `set()`/`remove()` add or drop a tool outright. Tools are
@@ -26,10 +27,32 @@ export interface ToolSliceCheckpoint {
  * re-resolve them through the {@link AiToolStore} on restore.
  */
 export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
+    private sessionGeneration: number;
     constructor(
         private model: ModelSlice,
-        private toolStore: AiToolStore
+        private toolStore: AiToolStore,
+        private onAccessChanged: () => void = () => undefined
     ) {
+        this.sessionGeneration = toolStore.sessionGeneration;
+        $effect(() => {
+            this.toolStore.tools;
+            const state = this.toolStore.authorizationState;
+            const model = this.model.current;
+            const sessionGeneration = this.toolStore.sessionGeneration;
+            untrack(() => {
+                if (sessionGeneration !== this.sessionGeneration) {
+                    this.sessionGeneration = sessionGeneration;
+                    this.clear();
+                } else if (state === 'ready') {
+                    this.reconcile(model);
+                }
+            });
+        });
+    }
+
+    public get authorizationPending(): boolean {
+        return Object.keys(this._active).length > 0 &&
+            (this.toolStore.authorizationState !== 'ready' || this.toolStore.authorizationRefreshing);
     }
 
     /**
@@ -76,14 +99,11 @@ export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
         toolSelection?: AiToolOrCapabilityWithState['toolSelection'],
         toolSettings?: AiToolOrCapabilityWithState['toolSettings']
     ): void {
-        const current = createToolOrCapabilityWithState(tool, toolSelection, toolSettings);
-        if (this._active[current.name]) {
-            this._active[current.name] = current;
-        } else {
-            // Rebuild rather than assign: the $state proxy keeps a deleted key's original slot,
-            // so a re-enabled tool would jump back there instead of sorting by activation order.
-            this._active = {...this._active, [current.name]: current};
-        }
+        if (this.toolStore.authorizationState !== 'ready') return;
+        const requested = createToolOrCapabilityWithState(tool, toolSelection, toolSettings);
+        const current = createToolOrCapabilityWithStateFromTransferString(requested.toTransferString(), this.toolStore);
+        if (!current || !current.isAvailableFor(this.model.current, true)) return;
+        this._active[current.name] = current;
         delete this._disabled[tool.name];
     }
 
@@ -108,11 +128,19 @@ export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
     public enable(tool: AiToolOrCapability): void {
         const currentState = this._disabled[tool.name];
         if (currentState) {
-            this._active[tool.name] = currentState;
-            delete this._disabled[tool.name];
+            this.reconcile();
+            if (this._disabled[tool.name]) this.set(currentState, currentState.toolSelection, currentState.toolSettings);
         } else {
             this.set(tool);
         }
+    }
+
+    /** Shared submission gate for the current and legacy transports. */
+    public validatedActive(): AiToolOrCapabilityWithState[] {
+        const requested = this.active.map(tool => tool.toTransferString());
+        if (this.reconcile(this.model.current, false)) throw new Error('TOOL_ACCESS_DENIED');
+        return validatedToolSnapshot(requested, this.toolStore, this.model.current)
+            .map(value => createToolOrCapabilityWithStateFromTransferString(value, this.toolStore)!);
     }
 
     public clear(): void {
@@ -131,19 +159,43 @@ export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
         const newActive: Record<string, AiToolOrCapabilityWithState> = {};
         for (const name of checkpoint.active) {
             const tool = createToolOrCapabilityWithStateFromTransferString(name, this.toolStore);
-            if (tool) {
+            if (tool && (!tool.is_capability || tool.toolSelection !== 'native' || tool.hasNativeCapabilityFor(this.model.current))) {
                 newActive[tool.name] = tool;
             }
         }
         const newDisabled: Record<string, AiToolOrCapabilityWithState> = {};
         for (const name of checkpoint.disabled) {
             const tool = createToolOrCapabilityWithStateFromTransferString(name, this.toolStore);
-            if (tool) {
+            if (tool && (!tool.is_capability || tool.toolSelection !== 'native' || tool.hasNativeCapabilityFor(this.model.current))) {
                 newDisabled[tool.name] = tool;
             }
         }
 
         this._active = newActive;
+        const removed = Object.keys(newActive).length + Object.keys(newDisabled).length < checkpoint.active.length + checkpoint.disabled.length;
         this._disabled = newDisabled;
+        if (removed) this.onAccessChanged();
+    }
+
+    /** Rebuild wrappers, including disabled selections, without changing the draft or settings. */
+    public reconcile(model = this.model.current, notify = true): boolean {
+        if (this.toolStore.authorizationState !== 'ready') return false;
+        let removed = false;
+        let activeRemoved = false;
+        for (const registry of [this._active, this._disabled]) {
+            for (const [name, previous] of Object.entries(registry)) {
+                const current = createToolOrCapabilityWithStateFromTransferString(previous.toTransferString(), this.toolStore);
+                if (!current || (current.is_capability && current.toolSelection === 'native' &&
+                    (!model || !current.hasNativeCapabilityFor(model)))) {
+                    delete registry[name];
+                    removed = true;
+                    if (registry === this._active) activeRemoved = true;
+                } else {
+                    registry[name] = current;
+                }
+            }
+        }
+        if (removed && (notify || !activeRemoved)) this.onAccessChanged();
+        return activeRemoved;
     }
 }

@@ -43,6 +43,11 @@ declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
         core: CorePlugin;
     }
+
+    interface HawkiSyncEvents {
+        /** Opens the models dialog owned by `AppSidebar`. */
+        modelsRequested: void;
+    }
 }
 
 export default class CorePlugin implements HawkiCorePlugin {

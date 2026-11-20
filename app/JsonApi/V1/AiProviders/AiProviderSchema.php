@@ -35,6 +35,8 @@ class AiProviderSchema extends Schema
             ID::make(),
             Str::make('provider_id'),
             Str::make('name'),
+            Str::make('icon_url')->readOnly(),
+            Str::make('icon_url_dark')->readOnly(),
             Boolean::make('active')
                 ->hidden(UserCondition::isNonAdmin(...)),
             Str::make('api_key')

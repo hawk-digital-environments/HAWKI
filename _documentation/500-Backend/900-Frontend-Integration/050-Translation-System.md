@@ -19,7 +19,7 @@ Labels are **not** embedded in the connection bootstrap payload. The flow is:
 2. The frontend reads this identifier from the connection.
 3. At startup the frontend makes a separate call:
    `GET /api/hawki/v1/translation-labels/{locale}` — for example,
-   `GET /api/hawki/v1/translation-labels/de`.
+   `GET /api/hawki/v1/translation-labels/de_DE`.
 4. HAWKI returns a flat JSON:API document containing all known translation strings for that
    locale, served by the virtual `TranslationLabels` resource.
 
@@ -71,25 +71,28 @@ endpoint; there are no `index`, `create`, `update`, or `delete` operations.
 
 The response is a flat JSON:API document where each attribute is a translation key and its value
 is the translated string. Both Laravel's own framework messages and HAWKI's custom overrides
-from `resources/lang/*.json` are merged and returned together — custom keys win over Laravel's
-defaults.
+from `resources/language/*_{locale}.json` are merged and returned together — custom keys win
+over Laravel's defaults.
 
 ---
 
 ## Adding a New Translation Key
 
-1. Drop a `.json` file (or add a key to an existing one) under `resources/lang/{locale}/`.
-   The filename groups related keys by feature; no single monolithic file is required.
+1. Drop a `.json` file (or add a key to an existing one) under `resources/language/`. The
+   filename follows the `{feature}_{locale}.json` pattern; no single monolithic file is
+   required.
 
    ```
-   resources/lang/
-   ├── de/
-   │   ├── chat.json       ← existing file for chat strings
-   │   └── my_feature.json ← new file
-   └── en/
-       ├── chat.json
-       └── my_feature.json
+   resources/language/
+   ├── chat_de_DE.json       ← existing file for chat strings (German)
+   ├── chat_en_US.json       ← existing file for chat strings (English)
+   ├── my_feature_de_DE.json ← new file
+   └── my_feature_en_US.json ← new file
    ```
+
+   All files for a locale live flat in the same directory; the loader picks them up by the
+   locale suffix in the filename. The plain `{locale}.json` files (`de_DE.json`, `en_US.json`)
+   act as the locale's defaults and are merged before any feature file.
 
 2. Add matching keys to every supported locale file. Missing keys fall through to Laravel's
    built-in messages; if those also don't exist, the key string itself is returned.
@@ -98,8 +101,8 @@ defaults.
    clear (`php artisan config:clear`) may be required if you are serving from a cached config.
 
 4. Use `__('my_feature.some_key')` or `trans('my_feature.some_key')` in server-side Blade.
-   On the frontend, the `__()` helper from `resources/js/utils/translator.ts` reads from the
-   fetched label map.
+   On the frontend, the `__()` helper from `resources/js/kernel/localization/translator.ts`
+   reads from the fetched label map.
 
 ---
 
@@ -110,7 +113,7 @@ container, replacing Laravel's default `Translator`. The swap is transparent: al
 helper functions and facade calls continue to work unchanged.
 
 `App\Services\Translation\LaravelTranslationLoaderAdapter` handles the file-loading layer. It
-reads HAWKI's `resources/lang/` files and merges them on top of Laravel's own message files
+reads HAWKI's `resources/language/` files and merges them on top of Laravel's own message files
 using the same key-wins-last strategy. You do not interact with either class directly — they
 are framework wiring.
 
@@ -118,7 +121,7 @@ are framework wiring.
 
 ## Frontend Consumer
 
-On the frontend, `resources/js/utils/translator.ts` exposes the `__()` helper that the Svelte
+On the frontend, `resources/js/kernel/localization/translator.ts` exposes the `__()` helper that the Svelte
 components call for all localised strings. It reads from the label map fetched via
 `GET /api/hawki/v1/translation-labels/{locale}` at boot time. For Svelte component usage
 conventions, see the frontend **Translation** page in the Frontend documentation section.

@@ -56,10 +56,28 @@ export interface HawkiModule {
      * The component will be rendered when the module is active (i.e. when the user navigates to a route that belongs to the module).
      */
     sidebar?(locale: Locale): Component;
+
+    /**
+     * Whether the module currently has a visible presence (sidebar panel,
+     * module selector entry). Invisible modules keep their routes registered.
+     * When absent, the module is considered visible.
+     */
+    visible?(app: import('$lib/kernel/HawkiApp.js').HawkiApp): boolean;
+}
+
+/** A module of a core plugin that keeps its plugin name in route prefixes
+ *  (see {@link getModuleRoutePrefix}). */
+export interface HawkiCoreModule extends HawkiModule {
+    readonly pluginNameInRoutes?: boolean;
 }
 
 /** A {@link HawkiModule} paired with the {@link HawkiPlugin} that registered it,
  *  as stored by the {@link ModuleExtension}. */
 export interface HawkiModuleWithPlugin extends HawkiModule {
+    readonly plugin: HawkiPluginWithMetadata;
+}
+
+/** A {@link HawkiCoreModule} paired with the {@link HawkiPlugin} that registered it. */
+export interface HawkiCoreModuleWithPlugin extends HawkiCoreModule {
     readonly plugin: HawkiPluginWithMetadata;
 }

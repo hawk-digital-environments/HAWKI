@@ -6,7 +6,6 @@ use App\Models\Ai\McpServer;
 use App\Services\Ai\Agents\AgentRegistry;
 use App\Services\Ai\Agents\Contracts\AgentFactoryInterface;
 use App\Services\Ai\Agents\Implementations\AbstractAgentFactory;
-use App\Services\Ai\Agents\Implementations\Chat\ChatAgentForAssistantFactory;
 use App\Services\Ai\Agents\Implementations\Chat\ChatAgentFromLegacyRequestFactory;
 use App\Services\Ai\Config\AiConfig;
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
@@ -89,7 +88,8 @@ class AiServiceProvider extends ServiceProvider
         $this->app->extend(
             PublicConfigRegistry::class,
             function (PublicConfigRegistry $registry) {
-                return $registry->declare(AiConfig::class);
+                return $registry
+                    ->declare(AiConfig::class);
             }
         );
 
@@ -128,12 +128,6 @@ class AiServiceProvider extends ServiceProvider
                     titleTranslationLabel: 'chat.composer.toolMenu.tools.webFetch',
                     descriptionTranslationLabel: 'chat.composer.toolMenu.tools.webFetchDescription',
                     iconPath: resource_path('icons/tools/web-fetch.svg')
-                )
-                ->declare(
-                    key: WellKnownCapabilities::KNOWLEDGE_BASE,
-                    titleTranslationLabel: 'chat.composer.toolMenu.tools.knowledgeBase',
-                    descriptionTranslationLabel: 'chat.composer.toolMenu.tools.knowledgeBaseDescription',
-                    iconPath: resource_path('icons/tools/knowledge-base.svg')
                 )
         );
 
@@ -193,6 +187,7 @@ class AiServiceProvider extends ServiceProvider
             fn(ProviderAdapterRegistry $registry) => $registry
                 ->declare(WellKnownAdapterKeys::ANTHROPIC, AnthropicAdapter::class)
                 ->declare(WellKnownAdapterKeys::OPENAI, OpenAiAdapter::class)
+                ->declare(WellKnownAdapterKeys::OPENAI_LIKE, OpenAiLikeAdapter::class)
                 ->declare(WellKnownAdapterKeys::OPENAI_AZURE, AzureOpenAiAdapter::class)
                 ->declare(WellKnownAdapterKeys::OLLAMA, OllamaAdapter::class)
                 ->declare(WellKnownAdapterKeys::GEMINI, GeminiAdapter::class)
@@ -262,13 +257,7 @@ class AiServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             self::MCP_CLIENT_LIST,
-            /**
-             * @return LazySingletonList<McpServer, HawkiMcpClient>
-             */
-            fn() => new LazySingletonList(
-                fn(McpServer $server) => 'mcp_client_' . $server->id,
-                fn(McpServer $server) => $this->app->get(McpClientFactory::class)->createForServer($server)
-            )
+            fn() => new \App\Services\Ai\Tools\Mcp\McpClientRegistry($this->app->get(McpClientFactory::class))
         );
 
         $this->app->singleton(

@@ -16,7 +16,11 @@
                     "strengthMath": "Mathematik",
                     "strengthMathTooltip": "Dieses Modell ist besonders gut in mathematischen Aufgaben, z.B. für Berechnungen, Gleichungen oder mathematische Analysen",
                     "strengthReasoning": "Logisches Denken",
-                    "strengthReasoningTooltip": "Dieses Modell ist besonders gut im logischen Denken, z.B. für Problemlösungen, Schlussfolgerungen oder analytische Aufgaben"
+                    "strengthReasoningTooltip": "Dieses Modell ist besonders gut im logischen Denken, z.B. für Problemlösungen, Schlussfolgerungen oder analytische Aufgaben",
+                    "multiModal": "Multimodal",
+                    "multiModalTooltip": "Dieses Modell kann mehrere Eingabearten verarbeiten, z.B. Text und Bilder",
+                    "strengthRolePlaying": "Rollenspiel",
+                    "strengthRolePlayingTooltip": "Dieses Modell ist besonders gut in Rollenspielen und bleibt zuverlässig in seiner Rolle, z.B. für simulierte Gespräche oder Trainingsszenarien"
                 }
             },
             "card": {
@@ -38,6 +42,10 @@
                     "fileUpload": "Datei-Upload",
                     "reasoning": "Erweitertes Denken"
                 }
+            },
+            "page": {
+                "title": "Modelle",
+                "empty": "Derzeit sind keine Modelle verfügbar."
             }
         },
         "error": {

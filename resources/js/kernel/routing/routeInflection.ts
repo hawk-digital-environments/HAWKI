@@ -25,11 +25,14 @@ import {valueToSlug} from '$lib/utils/strings.js';
  * getPluginRoutePrefix('core', true);        // ''
  * getPluginRoutePrefix('My Plugin', false);  // '/plugins/my-plugin'
  */
-export function getPluginRoutePrefix(pluginName: string, isCorePlugin: boolean): string {
+export function getPluginRoutePrefix(pluginName: string, isCorePlugin: boolean, pluginNameInRoutes?: boolean): string {
+    const slug = valueToSlug(pluginName);
     if (isCorePlugin) {
+        if(pluginNameInRoutes){
+            return `/${slug}`
+        }
         return '';
     }
-    const slug = valueToSlug(pluginName);
     return `/plugins/${slug}`;
 }
 
@@ -41,8 +44,8 @@ export function getPluginRoutePrefix(pluginName: string, isCorePlugin: boolean):
  * getModuleRoutePrefix('core', 'chat', true);         // '/chat'
  * getModuleRoutePrefix('My Plugin', 'Chat', false);   // '/plugins/my-plugin/chat'
  */
-export function getModuleRoutePrefix(pluginName: string, moduleName: string, isCorePlugin: boolean): string {
-    const pluginPrefix = getPluginRoutePrefix(pluginName, isCorePlugin);
+export function getModuleRoutePrefix(pluginName: string, moduleName: string, isCorePlugin: boolean, pluginNameInRoutes?: boolean): string {
+    const pluginPrefix = getPluginRoutePrefix(pluginName, isCorePlugin, pluginNameInRoutes);
     const moduleSlug = valueToSlug(moduleName);
     return `${pluginPrefix}/${moduleSlug}`;
 }

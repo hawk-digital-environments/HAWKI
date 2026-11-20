@@ -76,10 +76,28 @@ export class PluginExtension implements HawkiAppExtension {
         return Array.from(this.plugins.values()).find(plugin => plugin.name === name)!;
     }
 
-    /** Discovers every `$lib/plugins/**\/*.plugin.ts` file and registers its default-exported class as a core plugin. */
+    /**
+     * Discovers every `$lib/plugins/**\/*.plugin.ts` file and registers its
+     * default-exported class as a core plugin.
+     *
+     * `import.meta.glob` returns its entries alphabetically by path, which
+     * would register `plugins/assistants` before `plugins/core` — and with it
+     * put "Assistants" ahead of "Chat" everywhere modules are listed in
+     * registration order (the module selector). The core plugin leads instead,
+     * every other plugin keeps the glob's (alphabetical) order after it.
+     *
+     * @todo Replace this path-based special case with an `order` field on
+     *   `HawkiModule` (declared like `title`/`icon`, carried through the
+     *   module registrar, stable-sorted in `ModuleExtension.all`) so module
+     *   order is authored per module rather than implied by plugin discovery.
+     *   That needs deeper integration than this sort — hence the interim fix.
+     */
     private autoRegisterBuiltInPlugins() {
         const glob = import.meta.glob('$lib/plugins/**/*.plugin.ts', {eager: true});
-        for (const [path, module] of Object.entries(glob)) {
+        const entries = Object.entries(glob).sort(([a], [b]) =>
+            Number(b.includes('/core/')) - Number(a.includes('/core/'))
+        );
+        for (const [path, module] of entries) {
             const pluginClass = (module as any).default;
             if (typeof pluginClass !== 'function') {
                 console.warn(`Plugin file ${path} does not export a class as default, skipping.`);

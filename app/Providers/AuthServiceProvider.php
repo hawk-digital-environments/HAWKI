@@ -55,8 +55,4 @@ class AuthServiceProvider extends ServiceProvider
             return $instance;
         });
     }
-
-    public function boot(): void
-    {
-    }
 }

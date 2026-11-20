@@ -125,7 +125,7 @@ class ExtendedAiManagerTest extends TestCase
         $driver = $this->makeDriver();
         $proxy = $this->makeProxy('prov-cfg', $driver);
 
-        // We need a real enough SUT to intercept getInstanceConfig during instance()
+        // We need a real enough SUT to intercept getInstanceConfig during resolution
         $capturedConfig = null;
 
         $sut = new class ($capturedConfig, $driver) extends ExtendedAiManager {
@@ -134,7 +134,9 @@ class ExtendedAiManagerTest extends TestCase
                 // Deliberately skip parent constructor — DecoratorTrait usage
             }
 
-            public function instance($name = null)
+            // instanceWithConfig() resolves through resolve() (bypassing the
+            // name-keyed instance cache), so the stub intercepts there.
+            protected function resolve($name)
             {
                 // Capture what getInstanceConfig returns during the call
                 $this->captured = $this->getInstanceConfig($name);
@@ -157,7 +159,7 @@ class ExtendedAiManagerTest extends TestCase
                 // Skip parent constructor
             }
 
-            public function instance($name = null)
+            protected function resolve($name)
             {
                 return $this->driverStub;
             }

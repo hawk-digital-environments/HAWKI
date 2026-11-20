@@ -1,0 +1,21 @@
+{
+    "rag": {
+        "mode_active": "Dateien werden in die RAG-Wissensdatenbank hochgeladen, um Fragen zu beantworten.",
+        "ingesting": "Wird in die Wissensdatenbank aufgenommen…",
+        "ingestion_failed": ":name konnte nicht zur Wissensdatenbank hinzugefügt werden: :reason",
+        "status": "RAG-Status",
+        "status_pending": "Ausstehend",
+        "status_success": "Erfolgreich",
+        "status_failed": "Fehlgeschlagen",
+        "delete_failed_files": "Fehlgeschlagene Dateien löschen",
+        "delete_failed_confirm_title": "Fehlgeschlagene Dateien löschen?",
+        "delete_failed_confirm_description": "Alle Dateien, deren Aufnahme in die Wissensdatenbank fehlgeschlagen ist, werden vom Assistenten entfernt.",
+        "ingestion": {
+            "dataset_error": "Dataset-Erstellung fehlgeschlagen. Bitte wenden Sie sich an Ihre Systemadministration.",
+            "file_error": "Die Datei konnte nicht in der Wissensdatenbank gespeichert werden.",
+            "timeout_error": "Das Speichern der Datei in der Wissensdatenbank hat zu lange gedauert. Bitte versuchen Sie es erneut oder wenden Sie sich an Ihre Systemadministration.",
+            "stored_file_missing_error": "Die gespeicherte Datei ist nicht mehr verfügbar. Bitte laden Sie sie erneut hoch.",
+            "no_extractable_text_error": "Die Datei enthält keinen auslesbaren Text und kann nicht zur Wissensdatenbank hinzugefügt werden."
+        }
+    }
+}

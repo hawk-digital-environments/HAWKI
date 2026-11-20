@@ -1,0 +1,314 @@
+<script module lang="ts">
+    export interface MultiComboboxItemDefinition {
+        /** Identifier reported through `onValueChange`. */
+        value: string;
+        /** Text shown on the chip and in the listbox. */
+        label: string;
+    }
+</script>
+
+<!--
+  @component Multi-value picker: the selection sits as removable chips inside the
+  input, typing filters the remaining options in a listbox. Only listed items can
+  be chosen. Built on `bits-ui`'s `Combobox` in `multiple` mode, so keyboard
+  navigation, `aria-activedescendant` and the listbox semantics come from the
+  primitive. Backspace in the empty input removes the last chip.
+
+  @example
+  ```svelte
+  <MultiCombobox
+      value={roleIds}
+      items={[{value: '1', label: 'Administrator'}]}
+      onValueChange={(next) => (roleIds = next)}
+      emptyText="No matches"
+      toggleLabel="Show roles"
+      removeLabel={(label) => `Remove ${label}`}
+  />
+  ```
+-->
+<script lang="ts">
+    import { tick } from 'svelte';
+    import { Combobox as ComboboxPrimitive, mergeProps } from 'bits-ui';
+    import type { HTMLInputAttributes } from 'svelte/elements';
+    import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
+    import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import CheckIcon from '$lib/components/ui/icons/iconset/CheckIcon.svelte';
+    import ComboboxList from './ComboboxList.svelte';
+
+    let {
+        value = [],
+        items = [],
+        onValueChange,
+        disabled = false,
+        emptyText,
+        toggleLabel,
+        removeLabel,
+        inputProps = {}
+    }: {
+        /** Selected item values; the component is controlled and reports every change through `onValueChange`. */
+        value?: string[];
+        items?: MultiComboboxItemDefinition[];
+        onValueChange: (value: string[]) => void;
+        disabled?: boolean;
+        emptyText: string;
+        toggleLabel: string;
+        /** Accessible name of a chip's remove button, given the chip label. */
+        removeLabel: (label: string) => string;
+        /** Attributes for the text input, e.g. `id`, `aria-describedby`, `aria-invalid`, `onblur`. */
+        inputProps?: HTMLInputAttributes;
+    } = $props();
+
+    let open = $state(false);
+    let search = $state('');
+    let container = $state<HTMLElement>();
+    let chips = $state<HTMLElement>();
+    let input = $state<HTMLInputElement>();
+    const needle = $derived(search.trim().toLowerCase());
+    const shown = $derived(needle ? items.filter((item) => item.label.toLowerCase().includes(needle)) : items);
+    /** Values missing from `items` still show as chips so they can be removed. */
+    const selected = $derived(
+        value.map((entry) => items.find((item) => item.value === entry) ?? { value: entry, label: entry })
+    );
+    const invalid = $derived(inputProps['aria-invalid'] === true || inputProps['aria-invalid'] === 'true');
+
+    function change(next: string[]) {
+        onValueChange(next);
+        search = '';
+    }
+    async function remove(index: number) {
+        change(value.filter((_, position) => position !== index));
+        await tick();
+        // Focus the chip that moved into this slot, else the previous one, else the input.
+        const buttons = chips?.querySelectorAll<HTMLButtonElement>('button') ?? [];
+        (buttons[index] ?? buttons[index - 1] ?? input)?.focus();
+    }
+    function onkeydown(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+        if (event.key !== 'Backspace' || event.currentTarget.value !== '' || !value.length) return;
+        event.preventDefault();
+        change(value.slice(0, -1));
+    }
+</script>
+
+<ComboboxPrimitive.Root
+    type="multiple"
+    bind:open
+    {value}
+    onValueChange={change}
+    {disabled}
+>
+    <div
+        class="multi-combobox"
+        bind:this={container}
+        data-disabled={disabled || undefined}
+        data-invalid={invalid || undefined}
+    >
+        {#if selected.length}
+            <ul
+                class="multi-combobox-chips"
+                bind:this={chips}
+            >
+                {#each selected as item, index (item.value)}
+                    <li class="multi-combobox-chip">
+                        <span>{item.label}</span>
+                        <button
+                            type="button"
+                            class="multi-combobox-remove"
+                            aria-label={removeLabel(item.label)}
+                            {disabled}
+                            onclick={() => remove(index)}
+                        >
+                            <Cancel01Icon size={14} />
+                        </button>
+                    </li>
+                {/each}
+            </ul>
+        {/if}
+        <ComboboxPrimitive.Input>
+            {#snippet child({ props })}
+                <!-- The visible text is owned by `search`; bits-ui writes the picked label into
+                     its own input value after a selection, which a chip picker must not show. -->
+                <input
+                    bind:this={input}
+                    {...mergeProps(
+                        props,
+                        {
+                            class: 'multi-combobox-input',
+                            autocomplete: 'off',
+                            oninput: (event: Event & { currentTarget: HTMLInputElement }) =>
+                                (search = event.currentTarget.value),
+                            onkeydown,
+                            onclick: () => {
+                                if (!disabled) open = true;
+                            }
+                        },
+                        inputProps as Record<string, unknown>
+                    ) as HTMLInputAttributes}
+                    value={search}
+                />
+            {/snippet}
+        </ComboboxPrimitive.Input>
+        <ComboboxPrimitive.Trigger
+            class="multi-combobox-toggle"
+            aria-label={toggleLabel}
+            {disabled}
+        >
+            <ChevronDownIcon size={18} />
+        </ComboboxPrimitive.Trigger>
+    </div>
+    <ComboboxList
+        items={shown}
+        itemLabel={(item) => item.label}
+        {emptyText}
+        customAnchor={container ?? null}
+    >
+        {#snippet item(entry, { selected })}
+            <span class="multi-combobox-option">
+                <span
+                    class="multi-combobox-indicator"
+                    aria-hidden="true"
+                >
+                    {#if selected}<CheckIcon size={16} />{/if}
+                </span>
+                <span>{entry.label}</span>
+            </span>
+        {/snippet}
+    </ComboboxList>
+</ComboboxPrimitive.Root>
+
+<style>
+    .multi-combobox {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+        min-height: 2.75rem;
+        min-width: 0;
+        box-sizing: border-box;
+        border: var(--border);
+        border-radius: var(--corner-md);
+        background: var(--color-surface-raised);
+        color: var(--color-text);
+        padding: var(--space-1) 3rem var(--space-1) var(--space-2);
+
+        &[data-invalid] {
+            border-color: var(--color-error);
+        }
+        &:has(:global(.multi-combobox-input:focus-visible)) {
+            outline: 2px solid var(--color-focus-ring);
+            outline-offset: 2px;
+        }
+        &[data-disabled] {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    }
+    .multi-combobox-chips {
+        display: contents;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .multi-combobox-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        max-width: 100%;
+        padding-block: var(--space-1);
+        padding-inline: var(--space-2) var(--space-1);
+        border-radius: var(--corner-sm);
+        background: var(--color-surface);
+        font-size: var(--font-size-sm);
+        line-height: var(--line-height-tight);
+
+        & > span {
+            overflow-wrap: anywhere;
+        }
+    }
+    .multi-combobox-remove {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 0;
+        border-radius: var(--corner-xs);
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--color-hover);
+            color: var(--color-text);
+        }
+        &:focus-visible {
+            outline: 2px solid var(--color-focus-ring);
+            outline-offset: 1px;
+        }
+        &:disabled {
+            cursor: not-allowed;
+        }
+    }
+    /* Classes set through spread props need `:global`, as in `Combobox.svelte`. */
+    :global(.multi-combobox-input) {
+        flex: 1 1 8rem;
+        min-width: 8rem;
+        min-height: 2rem;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        padding: 0 var(--space-1);
+        font: inherit;
+        /* The focus ring is drawn on the surrounding box, see `.multi-combobox:has(...)`. */
+        outline: none;
+
+        &:disabled {
+            cursor: not-allowed;
+        }
+    }
+    :global(.multi-combobox-toggle) {
+        position: absolute;
+        inset-inline-end: var(--space-2);
+        top: 50%;
+        translate: 0 -50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border: 0;
+        border-radius: var(--corner-sm);
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--color-hover);
+        }
+        &:focus-visible {
+            outline: 2px solid var(--color-focus-ring);
+            outline-offset: 2px;
+        }
+        &:disabled {
+            cursor: not-allowed;
+        }
+        &[data-state='open'] :global(svg) {
+            transform: rotate(-180deg);
+        }
+    }
+    .multi-combobox-option {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        min-width: 0;
+
+        & > span:last-child {
+            overflow-wrap: anywhere;
+        }
+    }
+    .multi-combobox-indicator {
+        display: inline-flex;
+        width: 1rem;
+        flex-shrink: 0;
+    }
+</style>

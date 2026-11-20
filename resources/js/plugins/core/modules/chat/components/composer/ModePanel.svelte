@@ -87,8 +87,25 @@
         }
         return text.slice(0, maxLength) + '...';
     }
+
+    // The banner itself is a plain div, so mode changes are mirrored into a
+    // permanent polite status region for assistive tech — entering a mode
+    // announces its title (+ preview), leaving it announces the return.
+    let announcement = $state('');
+    let wasDefault = true;
+    $effect(() => {
+        const isDefault = composerContext.mode.isDefault;
+        if (!isDefault) {
+            const preview = cutText(panelContent, 100);
+            announcement = preview ? `${panelTitel}: ${preview}` : panelTitel;
+        } else if (!wasDefault) {
+            announcement = __('chat.composer.modePanel.modeExited');
+        }
+        wasDefault = isDefault;
+    });
 </script>
 {#if !composerContext.mode.isDefault}
+    <div class="u-sr-only" role="status" aria-live="polite">{announcement}</div>
     <div class="panel" transition:growTransition>
         <div class="iconContent">
             <PanelIcon size={20}/>

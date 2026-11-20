@@ -98,7 +98,8 @@ abstract class AbstractAgentFactory implements AgentFactoryInterface
             provider: $providerProxy,
             model: $model,
             modelParameters: $parameters,
-            usageType: $usageType
+            usageType: $usageType,
+            actorId: auth()->id()
         );
     }
 }

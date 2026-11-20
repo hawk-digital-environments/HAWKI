@@ -29,7 +29,7 @@ test('session rejection drops the old identity immediately', async () => {
     await handle.refreshConnection();
     reject = true;
     assert.equal((await handle.refreshConnection()).isAuthenticated, false);
-    assert.deepEqual(events, ['connected', 'connectionChanged']);
+    assert.deepEqual(events, ['connected', 'connectionRefreshStarted', 'connectionChanged']);
     assert.equal('userinfo' in handle.connection, false);
 });
 
@@ -42,7 +42,7 @@ test('another authenticated user triggers an identity change despite an unchange
     await handle.refreshConnection();
     username = 'bob';
     await handle.refreshConnection();
-    assert.deepEqual(events, ['connected', 'connectionChanged']);
+    assert.deepEqual(events, ['connected', 'connectionRefreshStarted', 'connectionChanged']);
 });
 
 test('public-key hash changes do not change account identity', async () => {
@@ -54,5 +54,6 @@ test('public-key hash changes do not change account identity', async () => {
     await handle.refreshConnection();
     hash = 'rotated-public-key';
     await handle.refreshConnection();
-    assert.deepEqual(events, ['connected']);
+    // A same-identity refresh emits the refresh lifecycle events but never `connectionChanged`.
+    assert.deepEqual(events, ['connected', 'connectionRefreshStarted', 'connectionRefreshed']);
 });

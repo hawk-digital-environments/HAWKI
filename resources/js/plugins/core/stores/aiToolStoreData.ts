@@ -3,7 +3,7 @@ import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js'
 import type {AiToolCapability} from '$plugins/core/schemas/resources/ai-tools-capabilities.schema.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 
-type ExtendedAiTool = AiTool & {
+export type ExtendedAiTool = AiTool & {
     isAvailableFor(model: AiModel, withOffline?: boolean): boolean;
     readonly displayName: string;
 }
@@ -41,6 +41,35 @@ export function toolAvailabilityFor(tool: AiToolOrCapability, model: AiModel | n
     if (!model) return 'model-incompatible';
     if (tool.isAvailableFor(model)) return 'available';
     return tool.isAvailableFor(model, true) ? 'offline' : 'model-incompatible';
+}
+
+/**
+ * Capability key of knowledge-database tools (mirrors the backend's
+ * `WellKnownCapabilities::KNOWLEDGE_BASE`). The builder manages these on its
+ * Knowledge page — not in the general tool list on the model page.
+ */
+export const KNOWLEDGE_BASE_CAPABILITY = 'knowledge_base';
+
+/**
+ * All knowledge-database tools in a combined store list. The store folds
+ * tools whose `capability_key` matches a registered capability into that
+ * capability's wrapper, so knowledge tools live in two places: as standalone
+ * entries (capability not registered, incl. MCP-backed tools) and inside the
+ * knowledge capability wrapper's `getTools()`.
+ */
+export function knowledgeToolsOf(tools: AiToolOrCapability[]): ExtendedAiTool[] {
+    const standalone: ExtendedAiTool[] = [];
+    let fromCapability: ExtendedAiTool[] = [];
+    for (const tool of tools) {
+        if (tool.is_capability) {
+            if (tool.id === KNOWLEDGE_BASE_CAPABILITY) {
+                fromCapability = tool.getTools();
+            }
+        } else if (tool.capability_key === KNOWLEDGE_BASE_CAPABILITY) {
+            standalone.push(tool);
+        }
+    }
+    return [...standalone, ...fromCapability];
 }
 
 /**
@@ -87,6 +116,26 @@ function modelHasTool(model: AiModel, tool: AiTool): boolean {
     return model.tool_ids.includes(parseInt(tool.id));
 }
 
+/**
+ * Whether `model` can actually use `tool` — offline tools are unusable unless
+ * `withOffline` is passed, a model with tool-calling switched off can't use
+ * any tool, and otherwise the model must have the tool in its `tool_ids`.
+ *
+ * This is what {@link AiToolWrapper.isAvailableFor} delegates to; exported
+ * standalone so callers that only have a plain {@link AiTool} (not the
+ * `AiToolOrCapability` wrapper — e.g. after a round-trip through
+ * `JSON.stringify`, which drops methods) can run the same check. See the
+ * assistant builder's `model.svelte` / `ModelToolConflictPanel.svelte` for
+ * such a caller: `Assistant.aiTools` is persisted to `sessionStorage`, so it
+ * can't be relied on to still carry the wrapper's methods.
+ */
+export function isAiToolAvailableFor(tool: AiTool, model: AiModel, withOffline?: boolean): boolean {
+    if ((withOffline !== true && tool.status === 'offline') || model.settings?.tool_calling === false) {
+        return false;
+    }
+    return modelHasTool(model, tool);
+}
+
 function createToolCapabilityWrapper(
     translator: Translator,
     capability: AiToolCapability,
@@ -105,7 +154,7 @@ function createToolCapabilityWrapper(
     }
 
     function hasNativeCapabilityFor(model: AiModel): boolean {
-        if (model.settings?.native_capabilities === false) {
+        if (!capability.native_model_ids?.includes(model.id) || model.settings?.native_capabilities === false) {
             return false;
         }
         return model.native_capabilities?.includes(capability.id) ?? false;
@@ -154,10 +203,7 @@ function createToolCapabilityWrapper(
 
 function createToolWrapper(tool: AiTool): AiToolWrapper {
     function isAvailableFor(model: AiModel, withOffline?: boolean): boolean {
-        if ((withOffline !== true && tool.status === 'offline') || model.settings?.tool_calling === false) {
-            return false;
-        }
-        return modelHasTool(model, tool);
+        return isAiToolAvailableFor(tool, model, withOffline);
     }
 
     return {

@@ -1,0 +1,62 @@
+<script lang="ts">
+    import CategoryButton from './CategoryButton.svelte';
+    import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte.js';
+    import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
+
+    const { __ } = useTranslator();
+
+    let categories = $derived(assistantOptionsStore.categories);
+    let { activeFilters = new Set<string>(), onFilterChange } = $props<{
+        activeFilters?: Set<string>;
+        /** Receives the next filter set whenever a category is toggled or reset. */
+        onFilterChange: (filters: Set<string>) => void;
+    }>();
+
+    function toggleFilter(category: string) {
+        const next = new Set(activeFilters);
+        next.has(category) ? next.delete(category) : next.add(category);
+        onFilterChange(next);
+    }
+
+    function resetFilters() {
+        onFilterChange(new Set());
+    }
+</script>
+
+<div class="categories">
+    <div class="categories-list">
+        <CategoryButton
+            label={__('assistants.categories.all')}
+            isActive={activeFilters.size === 0}
+            onchange={resetFilters}
+        />
+        {#each categories as category}
+            <CategoryButton
+                label={__(category.text)}
+                isActive={activeFilters.has(category.text)}
+                onchange={() => toggleFilter(category.text)}
+            />
+        {/each}
+    </div>
+</div>
+
+<style>
+    .categories {
+        display: grid;
+        align-items: center;
+    }
+    .categories-list {
+        display: flex;
+        flex-direction: row;
+        /* Hosts (the store hero) can centre and wrap the chips. */
+        flex-wrap: var(--categories-wrap, nowrap);
+        justify-content: var(--categories-justify, flex-start);
+        gap: var(--space-2);
+        overflow-x: auto;
+        padding: var(--space-1);
+        scrollbar-width: none;
+    }
+    .categories-list::-webkit-scrollbar {
+        display: none;
+    }
+</style>

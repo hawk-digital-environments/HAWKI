@@ -44,6 +44,35 @@ export interface AiAssistant {
     /** Server-side favourite toggle for this row.
      *  Absent = the row is favourited through the local `composer-pins` store. */
     onToggleFavorite?: (favorite: boolean) => void;
+    /** Alias of {@see favorite} kept for contributors that pin rows server-side
+     *  (e.g. the assistants plugin); the menu treats both alike. */
+    pinned?: boolean;
+    /** Alias of {@see onToggleFavorite} for server-side pin contributors. */
+    onTogglePin?: (pinned: boolean) => void;
+    /** What the participant allows the user to configure when addressed.
+     *  Absent capabilities are unrestricted (the HAWKI default). */
+    capabilities?: {
+        /** `false` when the participant fixes the model — the model picker
+         *  and sampling settings lock while it is addressed. */
+        modelSelect: boolean;
+        /** `false` when the participant fixes the toolset — the tool menu
+         *  locks while it is addressed. */
+        toolSelect: boolean;
+    };
+    /** Assistant handle (without leading `@`) the exchange binds to when
+     *  this participant is addressed — sent as
+     *  `payload.hawkiExtensions.assistant_handle` so the backend assembles
+     *  the assistant run. Absent for participants that are not
+     *  assistant-backed (HAWKI). */
+    chatBinding?: string;
+    /** Why the participant cannot run right now; absent when it can.
+     *  - `deactivated`: it runs on a model that is no longer offered. Pickers
+     *    hide it, but its handle stays recognized so a typed or bound
+     *    `@handle` is blocked with an explanation instead of silently
+     *    going to HAWKI.
+     *  - `offline`: its model is offered but currently unreachable. Pickers
+     *    show it grayed out and not selectable. */
+    unavailable?: 'deactivated' | 'offline';
 }
 
 /** Context for the `aiAssistants` hook: handlers may resolve labels in the user's language. */
@@ -158,6 +187,20 @@ export class AiHandleStore implements DataStore {
         for (const match of this.getHandleMatchesIn(message)) {
             yield match.handle;
         }
+    }
+
+    /**
+     * Whether another known handle strictly extends `handle` — e.g. `@test` while
+     * `@test2` is also taggable. A token that sits at the very end of the text and
+     * passes this check may still be growing into that longer handle, so the
+     * composer keeps it as plain text until it is terminated by the character
+     * that follows (see `ComposerTextarea`): typing `@test2` must not be cut
+     * short at `@test`.
+     */
+    public handleCanGrow(handle: string): boolean {
+        return this.assistants.some(assistant =>
+            assistant.handle.length > handle.length && assistant.handle.startsWith(handle)
+        );
     }
 
     public async loadData(app: HawkiApp): Promise<void> {

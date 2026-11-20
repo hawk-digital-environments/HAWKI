@@ -1,0 +1,90 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Factories\Assistants;
+
+use App\Models\Ai\AiModel;
+use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantCategory;
+use App\Models\Organization;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<Assistant>
+ */
+class AssistantFactory extends Factory
+{
+    protected $model = Assistant::class;
+
+    public function definition(): array
+    {
+        return [
+            'name' => fake()->name(),
+            'handle' => fake()->unique()->slug(3),
+            'system_prompt' => fake()->sentence(),
+            'greeting' => fake()->sentence(),
+            'description' => fake()->sentence(),
+            'detail_description' => fake()->paragraph(),
+            'allow_remix' => fake()->boolean(),
+            'allow_model_select' => fake()->boolean(),
+            'category_id' => AssistantCategory::factory(),
+            'release_stage' => 'private',
+            'requested_release_stage' => null,
+            // A model that is actually offered, referenced by its provider-qualified
+            // identifier (the form the API exposes, the builder stores and the
+            // frontend resolves). Prefer the configured default, then any active
+            // model of an active provider.
+            'model' => AiModel::query()
+                ->where('model_id', config('model_providers.default_models.default_model'))
+                ->where('active', true)
+                ->whereHas('provider', static fn ($provider) => $provider->where('active', true))
+                ->get()
+                ->map(static fn (AiModel $model) => $model->getIdentifier())
+                ->first()
+                ?? AiModel::query()
+                    ->where('active', true)
+                    ->whereHas('provider', static fn ($provider) => $provider->where('active', true))
+                    ->inRandomOrder()
+                    ->get()
+                    ->map(static fn (AiModel $model) => $model->getIdentifier())
+                    ->first()
+                ?? 'openAi/gpt-6.1-terra',
+            'max_tokens' => fake()->numberBetween(100, 4096),
+            'temp' => fake()->randomFloat(2, 0, 1),
+            'top_p' => fake()->randomFloat(2, 0, 1),
+            'creator_id' => User::factory(),
+            'remixed_creator_id' => null,
+            'remixed_assistant_id' => null,
+            'organization_id' => static fn () => Organization::first()?->id,
+        ];
+    }
+
+    /**
+     * Sensitive fields (creator_id, organization_id, release_stage, ...) are
+     * intentionally not mass-assignable on the model. The factory builds
+     * representative instances with those fields populated, so it constructs
+     * the model under Eloquent's unguarded mode.
+     */
+    public function newModel(array $attributes = []): Assistant
+    {
+        return Assistant::unguarded(static fn () => new Assistant($attributes));
+    }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(static function (Assistant $assistant): void {
+            if (!$assistant->assistantVersions()->exists()) {
+                // The baseline row is the mutable working draft at version
+                // 0.0; the first approval promotes it to 1.0.
+                // `text` is reserved for the creator's release note; the
+                // factory baseline version is created without one.
+                $assistant->assistantVersions()->save((new \App\Models\Assistants\AssistantVersion())->forceFill([
+                    'text' => '',
+                    'version' => \App\Models\Assistants\AssistantVersion::DRAFT_VERSION,
+                ]), );
+            }
+        });
+    }
+}

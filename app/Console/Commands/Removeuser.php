@@ -57,13 +57,13 @@ class Removeuser extends Command
                 $this->error('User not found!');
                 return;
             }
-            if($user->isRemoved === false){
+            if($user->isRemoved){
                 $this->error('User is already removed!');
                 return;
             }
 
             $profileService->deleteUserData($user);
-            $this->info('Profile Reset Successfull!');
+            $this->info('Profile Reset Successful!');
 
         } else {
             $this->info('Command operation cancelled.');

@@ -41,6 +41,24 @@ class AiModelSettingsTest extends TestCase
     // Construction
     // =========================================================================
 
+    public function testMaxToolCallingRoundsResolveThroughTheRegistryDefault(): void
+    {
+        $registry = new AiModelSettingRegistry();
+        $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS, 5);
+
+        $settings = AiModelSettings::fromArray([]);
+        $settings->setService(AiModelSettingRegistry::class, $registry);
+
+        static::assertSame(5, $settings->getMaxToolCallingRounds());
+
+        $overridden = AiModelSettings::fromArray([
+            WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => 8,
+        ]);
+        $overridden->setService(AiModelSettingRegistry::class, $registry);
+
+        static::assertSame(8, $overridden->getMaxToolCallingRounds());
+    }
+
     public function testItConstructs(): void
     {
         $sut = $this->makeSettings();

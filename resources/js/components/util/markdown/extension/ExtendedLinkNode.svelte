@@ -92,7 +92,7 @@
 {/snippet}
 
 {#if kind === 'citation'}
-    <CitationReference citation={citationIdFromAnchorId(href) ?? ''} title={title}>
+    <CitationReference citation={citationIdFromAnchorId(href) ?? ''} title={title} number={text}>
         {@render linkContent()}
     </CitationReference>
 {:else if kind === 'external'}

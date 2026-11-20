@@ -22,9 +22,10 @@ class UserSchema extends Schema
     {
         return [
             ID::make(),
-            // Identity/admin-only fields remain read-only so profile PATCHes
-            // cannot alter them.
-            Str::make('name')->extractUsing(function (User $user) {
+            // Expose the writable API field as display_name while persisting it
+            // to the model's existing name column. Identity/admin-only fields
+            // remain read-only so profile PATCHes cannot alter them.
+            Str::make('display_name', 'name')->extractUsing(function (User $user) {
                 $displayName = $user->name ?: $user->username;
 
                 // For some reason the HAWKI user has their name and username reversed.
@@ -49,7 +50,9 @@ class UserSchema extends Schema
 
     public function filters(): array
     {
-        return [];
+        return [
+            UserSearchFilter::make(),
+        ];
     }
 
     public function pagination(): ?PagePagination

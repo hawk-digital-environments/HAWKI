@@ -1,6 +1,6 @@
 import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
-const disableableFeatures = ['models', 'settings', 'attachments', 'tools', 'input', 'suggestions'] as const;
+const disableableFeatures = ['models', 'settings', 'attachments', 'tools', 'assistants', 'input', 'suggestions'] as const;
 export type DisabledChatFeature = typeof disableableFeatures[number];
 
 /**
@@ -22,41 +22,61 @@ export class GuardSlice {
     ) {
     }
 
-    /** Whether the send button should be enabled. Requires: not forced-active, has write
-     *  access, no active send in progress, non-empty message (handles excluded), no model
-     *  compatibility issues, and the current mode's own `canSend` check passes. */
-    public readonly canSend = $derived.by(() => {
+    /** Translation key explaining why sending is currently blocked, or `null` when it is allowed. */
+    public readonly cannotSendReason = $derived.by((): string | null => {
         const context = this.contextResolver();
         if (context.forcedActive) {
-            return false;
+            return 'chat.composer.actions.actionInProgressTooltip';
         }
 
         if (!context.hasWriteAccess) {
-            return false;
+            return 'chat.composer.actions.noWriteAccessTooltip';
         }
 
         if (context.sendStatus?.active) {
-            return false;
+            return 'chat.composer.actions.sendingInProgressTooltip';
         }
 
         if (context.messageWithoutHandles.trim().length <= 0) {
-            return false;
+            return 'chat.composer.actions.noMessageTooltip';
+        }
+
+        // An addressed assistant that cannot run right now (see `AiAssistant.unavailable`).
+        const unavailable = context.addressedAssistants.find(assistant => assistant.unavailable)?.unavailable;
+        if (unavailable === 'deactivated') {
+            return 'chat.composer.actions.assistantDeactivatedTooltip';
+        }
+        if (unavailable === 'offline') {
+            return 'chat.composer.actions.assistantOfflineTooltip';
+        }
+
+        if (context.tools.authorizationPending) {
+            return 'chat.tools.authorizationRefreshing';
         }
 
         // Ignore model usage issues when the user does not see any AI-related UI elements.
         if (context.modelUsage.issues.length > 0) {
-            return false;
+            if (context.modelUsage.issues.every(issue => issue.type === 'offline_tools')) return 'chat.tools.offline';
+            return 'chat.composer.actions.invalidModelTooltip';
         }
 
-        return context.mode.instance.canSend(
+        if (context.mode.instance.canSend(
             context,
             context.mode.state
-        );
+        )) {
+            return null;
+        }
+
+        // @todo Let modes provide a more specific reason when their contract supports it.
+        return 'chat.composer.actions.modeCannotSendTooltip';
     });
 
+    /** Whether the send button should be enabled. */
+    public readonly canSend = $derived(this.cannotSendReason === null);
+
     /** Whether AI-related UI (model picker, tool menu, etc.) should be visible.
-     *  Always `true` in `aiConv` mode; in `room` mode, only when regen is active
-     *  or the message contains an `@ai-handle`. */
+     *  Always `true` in `aiConv` mode; in `room` mode, only when the message
+     *  contains an `@ai-handle`. */
     public readonly showsAiUiElements = $derived.by(() => {
         const context = this.contextResolver();
 
@@ -81,8 +101,11 @@ export class GuardSlice {
     /**
      * Whether a specific UI feature should be disabled right now.
      *
-     * Two independent checks are combined: an optional activity lock (enabled while
-     * a message is sending) and the current mode's own `disablesUiFeature()` decision.
+     * Three independent checks are combined: an optional activity lock (enabled while
+     * a message is sending), a restriction by the addressed assistant (a participant
+     * that fixes its model locks the model picker and sampling settings; one that
+     * fixes its toolset locks the tool menu), and the current mode's own
+     * `disablesUiFeature()` decision.
      *
      * @param disableWhileActive Pass `false` to skip the activity lock and check only the
      *   mode's decision. Useful for features that should stay interactive during a send.
@@ -90,6 +113,14 @@ export class GuardSlice {
     public disablesFeature(feature: DisabledChatFeature, disableWhileActive: boolean = true): boolean {
         const context = this.contextResolver();
         if (disableWhileActive && (context.sendStatus?.sending || context.forcedActive)) {
+            return true;
+        }
+
+        if ((feature === 'models' || feature === 'settings') && context.restrictsModelSelection) {
+            return true;
+        }
+
+        if (feature === 'tools' && context.restrictsToolSelection) {
             return true;
         }
 

@@ -138,6 +138,9 @@
     let query = $state('');
 
     const allEntries = $derived.by(() => {
+        // Tool authorization (access rights) is resolved asynchronously; until it is,
+        // the per-user tool list is unknown, so nothing can be offered yet.
+        if (aiToolStore.authorizationState !== 'ready') return [];
         const models = aiModelStore.models;
 
         return aiToolStore.tools

@@ -47,9 +47,24 @@ class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
 
     /**
      * Appends an assistant turn to the history.
+     *
+     * When an assistant handle is given, the content is prefixed with an
+     * {@see MessageMetaBlocks} ANSWER_SOURCE block so the model can tell apart
+     * answers from different assistants (and unattributed default-chat answers)
+     * in conversations that switched assistants mid-way.
      */
-    public function registerAiMessage(string $content): self
+    public function registerAiMessage(string $content, string|null $assistantHandle = null): self
     {
+        if ($assistantHandle !== null && $assistantHandle !== '') {
+            $content = MessageMetaBlocks::createBlock(
+                'answer_source',
+                sprintf(
+                    'This earlier answer was written by the assistant "@%s". Earlier turns in this conversation may come from different assistants or the default chat, each with their own instructions.',
+                    $assistantHandle
+                )
+            ) . "\n\n" . $content;
+        }
+
         $this->messages[] = new Message(
             role: MessageRole::Assistant,
             content: $content

@@ -6,6 +6,7 @@ namespace App\JsonApi\V1;
 
 use App\JsonApi\V1\AiConvMessages\AiConvMessageSchema;
 use App\JsonApi\V1\AiConvs\AiConvSchema;
+use App\JsonApi\V1\Organizations\OrganizationSchema;
 use App\JsonApi\V1\AiModelDescriptions\AiModelDescriptionSchema;
 use App\JsonApi\V1\AiModelFlags\AiModelFlagSchema;
 use App\JsonApi\V1\AiModels\AiModelSchema;
@@ -13,6 +14,17 @@ use App\JsonApi\V1\AiProviders\AiProviderSchema;
 use App\JsonApi\V1\AiToolCapabilities\AiToolCapabilitySchema;
 use App\JsonApi\V1\AiTools\AiToolSchema;
 use App\JsonApi\V1\Announcements\AnnouncementSchema;
+use App\JsonApi\V1\AssistantAvatars\AssistantAvatarSchema;
+use App\JsonApi\V1\AssistantAttachments\AssistantAttachmentSchema;
+use App\JsonApi\V1\Assistants\AssistantSchema;
+use App\JsonApi\V1\AssistantSettings\AssistantSettingSchema;
+use App\JsonApi\V1\AssistantSettingValues\AssistantSettingValueSchema;
+use App\JsonApi\V1\AssistantCategories\AssistantCategorySchema;
+use App\JsonApi\V1\AssistantFeedback\AssistantFeedbackSchema;
+use App\JsonApi\V1\AssistantReviews\AssistantReviewSchema;
+use App\JsonApi\V1\AssistantTags\AssistantTagSchema;
+use App\JsonApi\V1\AssistantUserPrompts\AssistantUserPromptSchema;
+use App\JsonApi\V1\AssistantVersions\AssistantVersionSchema;
 use App\JsonApi\V1\Attachments\AttachmentSchema;
 use App\JsonApi\V1\Auths\AuthSchema;
 use App\JsonApi\V1\Configs\ConfigSchema;
@@ -62,6 +74,18 @@ class Server extends BaseServer
             AiToolCapabilitySchema::class,
             AiToolSchema::class,
             AnnouncementSchema::class,
+            AssistantSchema::class,
+            AssistantAttachmentSchema::class,
+            AssistantAvatarSchema::class,
+            AssistantSettingSchema::class,
+            AssistantSettingValueSchema::class,
+            AssistantCategorySchema::class,
+            AssistantFeedbackSchema::class,
+            AssistantReviewSchema::class,
+            AssistantTagSchema::class,
+            AssistantUserPromptSchema::class,
+            AssistantVersionSchema::class,
+            OrganizationSchema::class,
             AttachmentSchema::class,
             AuthSchema::class,
             ConfigSchema::class,

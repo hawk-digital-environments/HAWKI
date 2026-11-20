@@ -23,7 +23,10 @@
  * pluggable {@link RoutingStrategy} (`'path'` | `'hash'` | `'transient'`, see
  * `strategy/`), so the same resolution/state logic works whether the app
  * owns the browser URL, uses a hash fragment, or runs fully in-memory.
- * `Router.bind()` wires the strategy's changes into `runResolve()`.
+ * `Router.bind()` wires the strategy's changes into `runResolve()` — for the
+ * *path* only. The query string and the fragment stay on the strategy's
+ * location and are exposed through `RouterHandle.query`/`setQuery` (and
+ * `useQueryState()`), so changing them never re-resolves the route.
  *
  * ## Resolution & state
  *
@@ -71,7 +74,7 @@ import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js
 import {createTransientRoutingStrategy} from '$lib/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
 import {createPathRoutingStrategy} from '$lib/components/ui/routing/strategy/pathRoutingStrategy.svelte.js';
 import {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/hashRoutingStrategy.svelte.js';
-import {mergePaths, normalizeBasePath, normalizePath} from '$lib/components/ui/routing/logistics/normalizePath.js';
+import {joinLocation, mergePaths, normalizeBasePath, normalizePath, splitLocation} from '$lib/components/ui/routing/logistics/normalizePath.js';
 import {isPathActive, type IsPathActiveOptions, isRouteActive} from '$lib/components/ui/routing/logistics/isActive.js';
 import generateUrls, {type UrlParams} from 'universal-router/generateUrls';
 import {createNodeTree} from '$lib/components/ui/routing/logistics/nodeTree.js';
@@ -82,6 +85,57 @@ export interface IsActiveOptions extends Omit<IsPathActiveOptions, 'rootPath'> {
     /** Params for a named route target — same meaning as in {@link RouterHandle.getPath}. */
     params?: UrlParams;
 }
+
+/** Context handed to a {@link NavigationGuard}: where the navigation goes and where it came from. */
+export interface NavigationGuardContext {
+    /** The path being navigated to (normalized, `basePath` included). */
+    to: string;
+    /**
+     * The last path the router published — the page the user is on right
+     * now. Never null: guards only run on navigations away from a published
+     * page, never on the router's first resolution.
+     */
+    from: string;
+}
+
+/**
+ * A guard's answer to a navigation. `true` allows it unchanged; `false`
+ * vetoes it (see {@link NavigationGuard}); a target object redirects it: the
+ * router resolves `to` (a route name or literal path, resolved through
+ * {@link RouterHandle.getPath} like everywhere else) *instead of* the
+ * intercepted path — the guard's own approval, so the follow-through is not
+ * re-consulted (same rule as every redirect the router follows).
+ *
+ * `replace` selects the history treatment of the redirected entry — see
+ * {@link RouterHandle.goTo}. A guard intercepting an in-app navigation whose
+ * history entry never rendered anything typically wants `replace: true` so
+ * back skips over it.
+ */
+export type NavigationVerdict = boolean | {to: string; params?: UrlParams; replace?: boolean};
+
+/**
+ * Veto-able navigation hook — a "beforeNavigate" guard. Called before the
+ * router resolves a real navigation (a link click/`goTo()`, or browser
+ * back/forward via the strategy), while the current page is still mounted and
+ * rendered. Return (or resolve) a {@link NavigationVerdict}: `true` to allow,
+ * `false` to veto — the navigation is dropped and the strategy is pulled back
+ * onto the current path, keeping page and URL as they were — or a redirect
+ * target to be taken there instead (performed by the router, so a guard never
+ * has to veto-then-navigate itself).
+ *
+ * Guards run in registration order and the first non-`true` verdict wins;
+ * later guards are not consulted for that navigation. Guards may await — a
+ * confirmation dialog, for instance — for arbitrarily long; the router stands
+ * by until the verdict settles. A guard that throws is treated as "allow" so
+ * a broken guard can never brick navigation.
+ *
+ * Not consulted for:
+ * - the router's first resolution (nothing to leave yet),
+ * - re-resolving the current path (`reload()`, clicking the already-active link),
+ * - redirects the router follows as part of an already-approved navigation
+ *   (including another guard's redirect verdict).
+ */
+export type NavigationGuard = (ctx: NavigationGuardContext) => NavigationVerdict | Promise<NavigationVerdict>;
 
 export interface RouterHandle {
     /**
@@ -110,6 +164,34 @@ export interface RouterHandle {
     /** Resolves `routeName`/`params` via {@link getPath} and navigates to the result. */
     goToRoute: (routeName: string, params?: UrlParams, options?: { replace?: boolean }) => Promise<void>;
     /**
+     * The path of the page currently published — the path alone, without query
+     * or fragment (those live on {@link query}). Reactive: a read inside a
+     * `$derived`, an `$effect` or a template re-runs when a navigation
+     * publishes. While a resolution is still in flight this is the previous
+     * page's path.
+     */
+    readonly path: string;
+    /**
+     * The query string of the current location, parsed. Reactive: a read
+     * inside a `$derived`, an `$effect` or a template re-runs when the
+     * location changes. Every read returns a fresh instance, so mutating it
+     * changes nothing — write through {@link setQuery}.
+     */
+    readonly query: URLSearchParams;
+    /**
+     * Merges `changes` into the current query string and publishes the
+     * resulting location through the routing strategy, keeping the path and
+     * the fragment as they are. A `null` or `undefined` value removes the
+     * parameter.
+     *
+     * Only the path takes part in route matching, so this never re-resolves
+     * the route or re-runs loaders: the page stays mounted and observes the
+     * new values through {@link query} — or, for one parameter at a time,
+     * through `useQueryState()`. Updates the current history entry by
+     * default; pass `{replace: false}` to add one.
+     */
+    setQuery: (changes: Record<string, string | null | undefined>, options?: { replace?: boolean }) => void;
+    /**
      * Whether `path` is one the active {@link RoutingStrategy} would route
      * through itself (see {@link RoutingStrategy.canHandlePath}). Use this to
      * decide whether an anchor click should be intercepted or left to the
@@ -133,6 +215,13 @@ export interface RouterHandle {
      * whole section with it.
      */
     isRouteActive: (routeName: string) => boolean;
+    /**
+     * Registers a {@link NavigationGuard} consulted before every real
+     * navigation. Returns its unregister function — a component owning a
+     * guard must call it when it unmounts, or a vetoing guard would keep
+     * blocking navigations on behalf of a page that no longer exists.
+     */
+    registerNavigationGuard: (guard: NavigationGuard) => () => void;
     /**
      * Resolves the current path again from scratch. Backs the retry button of
      * an error page, and is the way to re-run middlewares after something they
@@ -363,11 +452,53 @@ export function createRouterFromRegistrar(
     );
 
     const innerUrlGenerator = (() => {
-        const generator = generateUrls(state.innerRouter);
+        const generator = generateUrls(state.innerRouter, {stringifyQueryParams: params => new URLSearchParams(params as Record<string, string>).toString()});
         return (routeName: string, params?: UrlParams) => {
             return normalizePath(generator(routeName, params));
         };
     })();
+
+    /** Registered {@link NavigationGuard}s — see {@link handle.registerNavigationGuard}. */
+    const navigationGuards = new Set<NavigationGuard>();
+
+    function registerNavigationGuard(guard: NavigationGuard): () => void {
+        navigationGuards.add(guard);
+        return () => navigationGuards.delete(guard);
+    }
+
+    /**
+     * Consults every registered guard in registration order until one
+     * returns a non-`true` verdict — a veto, or a redirect target, either of
+     * which ends the consultation for this navigation.
+     */
+    async function runNavigationGuards(to: string, from: string): Promise<NavigationVerdict> {
+        for (const guard of navigationGuards) {
+            try {
+                const verdict = await guard({to, from});
+                if (verdict !== true) {
+                    return verdict;
+                }
+            } catch (err) {
+                // A broken guard must never brick navigation.
+                console.error('Navigation guard threw; allowing navigation.', err);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Monotonic counter bumped by every navigation entry point — `goTo()`,
+     * `reload()`, and the bind-effect's strategy-driven resolve (which covers
+     * browser back/forward). Its one job is supersede-detection for navigation
+     * guards: a guard may await arbitrarily long (a user staring at a
+     * confirmation dialog), and while it is parked another navigation may be
+     * issued — possibly to the very same path, which a path comparison cannot
+     * tell apart from "still the same navigation". A `runResolve()` that finds
+     * its captured epoch superseded stands down entirely — it must neither
+     * resolve nor veto-with-pull-back on its outdated verdict, because a newer
+     * navigation owns the router now.
+     */
+    let navigationEpoch = 0;
 
     function hasBasePrefix(path: string): boolean {
         if (!basePath) {
@@ -401,12 +532,56 @@ export function createRouterFromRegistrar(
      * that started later.
      *
      * `redirectChain` carries every path visited so far *because* of a
-     * `RouteRedirect` on the way to this call — empty for a "real" navigation
+     * `RouteRedirect` or a guard's redirect verdict on the way to this
+     * call — empty for a "real" navigation
      * (from `bind()`'s `$effect`, `goTo()`, or `reload()`), populated only
      * when this call is itself the result of following a redirect. It exists
-     * purely for the loop-detection check below; nothing else reads it.
+     * purely for the loop-detection checks down the line (the resolver's, and
+     * the guard block's re-consultation skip); nothing else reads it.
      */
     async function runResolve(path: string, redirectChain: string[] = []): Promise<void> {
+        // Navigation guards — real navigations only. A non-empty
+        // `redirectChain` is the router following through on an
+        // already-approved navigation; a null `currentPath` is the first
+        // resolution (nothing to leave); an unchanged path is a re-resolve,
+        // not a leave.
+        if (redirectChain.length === 0 && state.currentPath !== null && path !== state.currentPath) {
+            const from = state.currentPath;
+            const epoch = navigationEpoch;
+            const verdict = await runNavigationGuards(path, from);
+            // Guards may take arbitrarily long (a user decision): a newer
+            // navigation may have been issued meanwhile — to another path or
+            // to this very one, which comparing paths cannot distinguish. The
+            // epoch is the only reliable supersede signal; a stale run must
+            // not act on its outdated verdict in either direction.
+            if (epoch !== navigationEpoch) {
+                return;
+            }
+            if (verdict === false) {
+                // Vetoed: pull the strategy (URL + history) back onto the page
+                // still rendered. `replace` — not push — so a vetoed
+                // browser-back doesn't leave a duplicate history entry that
+                // immediately re-triggers the guard on the next back press.
+                state.strategy.set(from, {replace: true});
+                return;
+            }
+            if (typeof verdict === 'object') {
+                // Redirect verdict: the router performs it, using the same
+                // mechanics as a loader's `ctx.redirect()` (see
+                // `handleRedirect` in routeResolver.ts) — move the strategy,
+                // then resolve the target with `path` carried in the redirect
+                // chain. The chain marks the follow-through as
+                // already-approved (guards are not re-consulted — the verdict
+                // *is* the approval) and feeds its loop detection. Calling
+                // `runResolve` immediately after the `set()` — nothing
+                // awaited in between — keeps the bind effect's duplicate-
+                // resolution guard satisfied, exactly as there.
+                const target = getPath(verdict.to, verdict.params);
+                state.strategy.set(target, {replace: verdict.replace});
+                await runResolve(target, [path]);
+                return;
+            }
+        }
         await resolveRoute(
             state,
             path,
@@ -421,7 +596,10 @@ export function createRouterFromRegistrar(
      * resolution targets the path that failed, not the last one that worked.
      */
     async function reload(): Promise<void> {
-        await runResolve(state.resolvePath ?? normalizePath(state.strategy.get()));
+        // A reload is a navigation entry point too: it supersedes whatever is
+        // parked in a guard, exactly like a goTo.
+        navigationEpoch++;
+        await runResolve(state.resolvePath ?? splitLocation(state.strategy.get()).path);
     }
 
     /**
@@ -440,27 +618,36 @@ export function createRouterFromRegistrar(
     async function goTo(path: string, options?: { replace?: boolean }): Promise<void> {
         const cancelledRunInFlight = cancelInFlightResolve();
 
-        // Normalized before the strategy stores it so that its "did this
-        // change?" answer below is about the same string `bind()`'s `$effect`
-        // compares against `resolvePath` — the effect normalizes what it reads
-        // back, so `/foo/` and `/foo` are one path to it but would otherwise
-        // be two different history entries to the strategy.
-        const target = normalizePath(path);
+        // The path part is normalized before the strategy stores it so that
+        // its "did this change?" answer below is about the same string
+        // `bind()`'s `$effect` compares against `resolvePath` — the effect
+        // normalizes what it reads back, so `/foo/` and `/foo` are one path to
+        // it but would otherwise be two different history entries to the
+        // strategy. The query and the fragment pass through untouched.
+        const parts = splitLocation(path);
+        const target = joinLocation(parts);
+
+        // Every goTo is a navigation entry point: it supersedes a resolution
+        // parked in a navigation guard even when the strategy below reports
+        // no change — as happens when the parked navigation already moved the
+        // strategy onto this very target.
+        navigationEpoch++;
 
         // Normally this is the whole navigation: `set()` marks `bind()`'s
         // resolve `$effect` dirty and that effect runs the resolution. But the
-        // effect only fires when the strategy's stored path actually changed,
-        // so `goTo()` to the path already on screen resolves nothing — which
-        // is correct while the router is idle, and a hang if the line above
-        // just cancelled a resolution of that same path (the user clicking the
-        // link again because the page is taking too long). Only then does this
-        // have to resolve the route itself.
+        // effect only resolves when the *path* changed, so `goTo()` to the
+        // path already on screen — with or without a different query —
+        // resolves nothing. That is correct while the router is idle, and a
+        // hang if the line above just cancelled a resolution of that same path
+        // (the user clicking the link again because the page is taking too
+        // long). Only then does this have to resolve the route itself.
         //
         // It cannot double-resolve either way: `resolveRoute()` assigns
         // `resolvePath` synchronously, so an effect that does fire finds its
         // own `newPath === resolvePath` guard already satisfied.
-        if (!state.strategy.set(target, options) && cancelledRunInFlight) {
-            void runResolve(target);
+        const changed = state.strategy.set(target, options);
+        if (cancelledRunInFlight && (!changed || parts.path === state.resolvePath)) {
+            void runResolve(parts.path);
         }
     }
 
@@ -503,6 +690,34 @@ export function createRouterFromRegistrar(
         return state.dataCache.removeWhere((entry) => entry.path === targetPath);
     }
 
+    /**
+     * Reads the strategy's location rather than `currentPath`: the latter is
+     * the path alone and only moves once a resolution publishes, while the
+     * query has to be readable — and writable — the moment it changes.
+     */
+    function getQuery(): URLSearchParams {
+        return new URLSearchParams(splitLocation(state.strategy.get()).query);
+    }
+
+    /**
+     * Goes straight to the strategy instead of through `goTo()`: the path is
+     * unchanged by construction, so there is no resolution to cancel — and
+     * cancelling one that happens to be in flight would only force `goTo()`
+     * to restart it.
+     */
+    function setQuery(changes: Record<string, string | null | undefined>, options?: { replace?: boolean }): void {
+        const parts = splitLocation(state.strategy.get());
+        const query = new URLSearchParams(parts.query);
+        for (const [key, value] of Object.entries(changes)) {
+            if (value === null || value === undefined) {
+                query.delete(key);
+            } else {
+                query.set(key, value);
+            }
+        }
+        state.strategy.set(joinLocation({...parts, query: query.toString()}), {replace: options?.replace ?? true});
+    }
+
     async function debug(): Promise<void> {
         const dbg = await (import('./debugger.js'));
         dbg.dumpRouterToConsole(state);
@@ -517,6 +732,14 @@ export function createRouterFromRegistrar(
         p: getPath,
         goTo,
         goToRoute,
+        registerNavigationGuard,
+        get path() {
+            return state.currentPath ?? '';
+        },
+        get query() {
+            return getQuery();
+        },
+        setQuery,
         canHandlePath: (path: string) => state.strategy.canHandlePath?.(path) ?? path.startsWith('/'),
         isActive,
         isRouteActive: (routeName: string) => isRouteActive(state.currentContext, routeName)
@@ -559,7 +782,13 @@ export function createRouterFromRegistrar(
         get nodeParams() {
             return state.currentNodeParams;
         },
-        bind: () => state.bind((path) => void runResolve(path))
+        bind: () => state.bind((path) => {
+            // The strategy moved — a `goTo()`/redirect `set()`, or browser
+            // back/forward — making this a new navigation that supersedes
+            // whatever is still parked in a guard.
+            navigationEpoch++;
+            void runResolve(path);
+        })
     };
 }
 

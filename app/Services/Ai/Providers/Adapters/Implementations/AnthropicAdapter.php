@@ -52,9 +52,9 @@ class AnthropicAdapter extends AbstractProviderAdapter
     }
 
     /**
-     * Enables Anthropic extended thinking for reasoning-capable text models.
+     * Enables adaptive thinking on newer Claude models and manual thinking on older ones.
      *
-     * Budget and sampling decisions are made by {@see AnthropicThinkingConfig}; every
+     * Manual budget and sampling decisions are made by {@see AnthropicThinkingConfig}; every
      * deviation from the user-configured parameters is logged as a warning.
      *
      * @see https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
@@ -63,6 +63,26 @@ class AnthropicAdapter extends AbstractProviderAdapter
     {
         if (!$agent instanceof AbstractTextGeneratingAgent || !$context->model->flags->hasStrengthReasoning()) {
             return [];
+        }
+
+        if ($this->supportsAdaptiveThinking((string)$context->model->model_id)) {
+            $options = [
+                'thinking' => ['type' => 'adaptive'],
+                'output_config' => ['effort' => 'medium'],
+            ];
+
+            // Adaptive thinking has no token budget. Keep sampling at the defaults
+            // accepted by Claude even if the model was marked as supporting sampling.
+            foreach (['temperature' => $agent->temperature(), 'top_p' => $agent->topP()] as $key => $value) {
+                if ($value !== null) {
+                    $options[$key] = 1.0;
+                    if ($value !== 1.0) {
+                        $this->logger->warning(sprintf('Sampling %s neutralised to 1.0 for Claude adaptive thinking.', $key));
+                    }
+                }
+            }
+
+            return $options;
         }
 
         $config = AnthropicThinkingConfig::from(
@@ -79,6 +99,20 @@ class AnthropicAdapter extends AbstractProviderAdapter
         }
 
         return ['thinking' => $config->thinking] + $config->samplingOverrides;
+    }
+
+    /**
+     * Effort support alone is insufficient: Opus 4.5 still requires a manual budget.
+     * Accept dated IDs as well as aliases for the documented adaptive-thinking models.
+     *
+     * @see https://platform.claude.com/docs/en/build-with-claude/thinking
+     */
+    private function supportsAdaptiveThinking(string $modelId): bool
+    {
+        return preg_match(
+            '/^claude-(?:opus-4-[678]|sonnet-4-6|(?:opus|sonnet|fable|mythos)-5|mythos-preview)(?:-|$)/',
+            $modelId,
+        ) === 1;
     }
 
     private function logWarnings(AnthropicThinkingConfig $config): void

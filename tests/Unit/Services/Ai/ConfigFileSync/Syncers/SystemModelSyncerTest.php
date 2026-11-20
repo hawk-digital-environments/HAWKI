@@ -9,6 +9,7 @@ use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\ConfigFileSync\Syncers\SystemModelSyncer;
 use App\Services\Ai\Models\Identifiers\ModelFinder;
+use App\Services\Ai\SystemModels\SystemModelRegistry;
 use App\Services\Ai\Models\Repositories\AiModelRepository;
 use App\Services\Ai\Providers\Repositories\AiProviderRepository;
 use App\Services\Ai\SystemModels\SystemModelRepository;
@@ -50,6 +51,7 @@ class SystemModelSyncerTest extends TestCase
         return new SystemModelSyncer(
             systemModels: $systemModels,
             extAppSystemModels: [],
+            registry: new SystemModelRegistry(),
             configRepository: new Repository([]),
             systemModelRepository: $this->systemModelRepository,
             modelRepository: $this->modelRepository,

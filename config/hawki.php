@@ -26,6 +26,16 @@ return [
 
     'aiHandle' => '@'. env('AI_MENTION_HANDLE', 'hawki'),
 
+    'organization' => [
+        // Existing organization every newly registered user is joined to as a member; empty = off.
+        'default' => env('DEFAULT_ORGANIZATION', 'HAWKI'),
+    ],
+
+    'accessibility' => [
+        // Public URL of the accessibility statement (Barrierefreiheitserklärung). Empty = no link in the UI.
+        'statement_url' => env('ACCESSIBILITY_STATEMENT_URL'),
+    ],
+
     'security' => [
         'passkey' => [
             'auto_generate' => filter_var(env('APP_SECURITY_PASSKEY_AUTO_GENERATE', false), FILTER_VALIDATE_BOOLEAN),

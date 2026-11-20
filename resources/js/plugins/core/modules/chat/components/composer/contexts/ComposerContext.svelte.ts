@@ -77,6 +77,7 @@
  */
 import {onDestroy} from 'svelte';
 import {createStableContext} from '$lib/utils/stableContext.js';
+import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
 import {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
 import {AttachmentSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
@@ -195,11 +196,17 @@ export class ComposerContext {
         /** Improves a draft through the configured AI transport. */
         public readonly improveMessage: (message: string, systemPrompt: string) => Promise<string>,
         /**
-         * Extracts agent handles from a text. Backed by the `ai-handle` store; injected
-         * so the context stays independent from the store layer.
-         * @example getHandlesInText('@hawki hi there') yields '@hawki'
+         * Locates agent handles in a text, yielding each with its `[start, end)` span
+         * into the text. Backed by the `ai-handle` store; injected so the context
+         * stays independent from the store layer.
+         * @example getHandleMatchesInText('@hawki hi there') yields {handle: '@hawki', start: 0, end: 6}
          */
-        private readonly getHandlesInText: (text: string) => Generator<string>,
+        private readonly getHandleMatchesInText: (text: string) => Generator<{handle: string; start: number; end: number}>,
+        /**
+         * Reads the taggable assistant entries (also backed by the `ai-handle`
+         * store) so the participant-aware derivations below stay store-free.
+         */
+        private readonly getAssistants: () => AiAssistant[],
         private readonly events: HawkiApp['events']
     ) {
         this._systemPrompt = $state(initialSystemPrompt);
@@ -255,11 +262,16 @@ export class ComposerContext {
     /** The message text with all `@handle` tokens stripped and whitespace normalised.
      *  Used by `GuardSlice.canSend` to check whether there is actual content to send. */
     public readonly messageWithoutHandles = $derived.by(() => {
-        let text = this.message;
-        for (const handle of this.handlesInMessage) {
-            text = text.replace(handle, '').trim();
+        let text = '';
+        let cursor = 0;
+        for (const match of this.getHandleMatchesInText(this.message)) {
+            text += this.message.slice(cursor, match.start);
+            cursor = match.end;
+            if (this.message[cursor] === ' ') {
+                cursor += 1;
+            }
         }
-        return text.trim();
+        return (text + this.message.slice(cursor)).trim();
     });
 
     /** All agent `@handle` tokens found in the current message (e.g. `['@hawki']`).
@@ -267,10 +279,49 @@ export class ComposerContext {
      *  Only one assistant can be addressed at a time (see {@link addHandleToMessage}), so
      *  this normally holds at most one entry — it stays a list because a hand-typed message
      *  can still contain several. */
-    public readonly handlesInMessage = $derived.by(() => [...this.getHandlesInText(this.message)]);
+    public readonly handlesInMessage = $derived.by(() => {
+        const handles = new Set<string>();
+        for (const match of this.getHandleMatchesInText(this.message)) {
+            handles.add(match.handle);
+        }
+        return [...handles];
+    });
 
     /** `true` when at least one `@hawki` is present in the message. */
     public readonly containsAiHandle = $derived.by(() => this.handlesInMessage.length > 0);
+
+    /** The assistant entries currently addressed in the message. A message
+     *  can address several; the transport resolves the binding (see
+     *  {@link addressedAssistantHandle}). */
+    public readonly addressedAssistants = $derived.by(() => {
+        const handles = new Set(this.handlesInMessage);
+        return this.getAssistants().filter(assistant => handles.has(assistant.handle));
+    });
+
+    /** `true` while an addressed participant fixes the model: the model
+     *  picker and sampling settings lock for the run (see `GuardSlice`). */
+    public readonly restrictsModelSelection = $derived.by(() =>
+        this.addressedAssistants.some(assistant => assistant.capabilities?.modelSelect === false)
+    );
+
+    /** `true` while an addressed participant fixes the toolset: the tool
+     *  menu locks for the run (see `GuardSlice`). */
+    public readonly restrictsToolSelection = $derived.by(() =>
+        this.addressedAssistants.some(assistant => assistant.capabilities?.toolSelect === false)
+    );
+
+    /** Assistant handle (without `@`) the addressed participant binds the
+     *  exchange to, or null when no assistant-backed participant is
+     *  addressed. Travels as `payload.hawkiExtensions.assistant_handle`. */
+    public readonly addressedAssistantHandle = $derived.by(() => {
+        for (const assistant of this.addressedAssistants) {
+            if (assistant.chatBinding) {
+                return assistant.chatBinding;
+            }
+        }
+
+        return null;
+    });
 
     /** The active send operation, or `null` when the composer is idle. */
     public readonly sendStatus = $derived.by(() => this._sendStatus);
@@ -578,7 +629,7 @@ export function createComposerContext(
         }
     };
 
-    const sender = new MessageSender(options.transport ?? new OldUiBridgeTransport(oldUiBridge), app.localization.translator);
+    const sender = new MessageSender(options.transport ?? new OldUiBridgeTransport(oldUiBridge, app), app.localization.translator);
 
     const context = new ComposerContext(
         type,
@@ -594,7 +645,8 @@ export function createComposerContext(
         initialSystemPrompt,
         onSetSystemPrompt,
         options.onImproveMessage ?? ((message, systemPrompt) => oldUiBridge.triggerImproveMessage(message, systemPrompt)),
-        (message) => aiHandleStore.getHandlesIn(message),
+        (message) => aiHandleStore.getHandleMatchesIn(message),
+        () => aiHandleStore.assistants,
         app.events
     );
 

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\Config\Registries\PublicConfigRegistry;
+use App\Services\Frontend\Config\AccessibilityConfig;
 use App\Services\Frontend\Config\SecurityConfig;
 use App\Services\Frontend\Config\TransferConfig;
 use App\Services\Frontend\View\CssLayers;
@@ -21,7 +22,8 @@ class FrontendServiceProvider extends ServiceProvider
             function (PublicConfigRegistry $registry) {
                 return $registry
                     ->declare(TransferConfig::class)
-                    ->declare(SecurityConfig::class);
+                    ->declare(SecurityConfig::class)
+                    ->declare(AccessibilityConfig::class);
             }
         );
     }

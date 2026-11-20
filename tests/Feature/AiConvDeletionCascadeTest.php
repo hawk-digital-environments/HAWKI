@@ -9,7 +9,7 @@ use App\Models\AiConvMsg;
 use App\Models\Attachment;
 use App\Models\Message;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -18,7 +18,7 @@ use Tests\TestCase;
 #[CoversNothing()]
 class AiConvDeletionCascadeTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     public function testItCascadesMessagesAndAttachmentsWhenTheConversationRowIsDeleted(): void
     {

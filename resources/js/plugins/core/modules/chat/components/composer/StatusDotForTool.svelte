@@ -25,6 +25,7 @@
   ```
 -->
 <script lang="ts">
+    import {toolAvailabilityFor} from '$plugins/core/stores/aiToolStoreData.js';
     import StatusDot from '$lib/components/ui/status-dot/StatusDot.svelte';
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -45,11 +46,18 @@
         showLabel?: boolean;
         /** An optional suffix to add to all tooltip texts, e.g. to indicate the context for the status */
         tooltipSuffix?: string;
+        /** Set to false when the dot sits inside another focusable control, so it does not add a tab stop. */
+        focusable?: boolean;
     }
 
-    const {tool, size, supported, tooltipSuffix, showLabel = false}: Props = $props();
+    const {tool, size, supported, tooltipSuffix, showLabel = false, focusable = true}: Props = $props();
 
     const status = $derived.by(() => {
+        if ('isAvailableFor' in tool) {
+            const availability = toolAvailabilityFor(tool, composerContext.model.current);
+            if (availability === 'offline') return 'offline';
+            return availability === 'available' && supported !== false ? 'online' : 'unknown';
+        }
         if (supported === false && tool.status !== 'offline') {
             return 'unknown';
         }
@@ -58,14 +66,14 @@
 
     const unknownLabel = $derived.by(() => {
         if (supported === false) {
-            return __('chat.composer.statusDot.tool.notSupportedLabel', {model: composerContext.model?.current.label ?? ''});
+            return __('chat.composer.statusDot.tool.notSupportedLabel', {model: composerContext.model?.current?.label ?? ''});
         }
         return showLabel ? __('chat.composer.statusDot.unknownAvailability') : undefined;
     });
 
     const unknownTooltip = $derived.by(() => {
         if (supported === false) {
-            return __('chat.composer.statusDot.tool.notSupportedTooltip', {model: composerContext.model?.current.label ?? ''});
+            return __('chat.composer.statusDot.tool.notSupportedTooltip', {model: composerContext.model?.current?.label ?? ''});
         }
         return __('chat.composer.statusDot.unknownTooltip');
     });
@@ -76,6 +84,7 @@
 <StatusDot
     status={status}
     size={size}
+    {focusable}
     labelOnline={showLabel ? __('chat.composer.statusDot.onlineLabel') : undefined}
     tooltipOnline={__('chat.composer.statusDot.onlineTooltip') + wrappedTooltipSuffix}
     labelUnknown={showLabel ? unknownLabel : undefined}

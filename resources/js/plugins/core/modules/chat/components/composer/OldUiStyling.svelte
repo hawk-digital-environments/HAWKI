@@ -3,9 +3,9 @@
   and the legacy chat log DOM (see `$lib/legacy/OldUiBridge`). The message
   log itself (the scrolling list of `.message` elements) still belongs to the
   old UI and hasn't been ported to Svelte yet; when the composer enters
-  `edit`/`regen`/`thread` mode, this component reaches into that legacy DOM
+  `edit`/`thread` mode, this component reaches into that legacy DOM
   via `document.querySelector`/`getElementById` to highlight the message
-  being edited/regenerated (or the thread being replied in), dim its
+  being edited (or the thread being replied in), dim its
   controls, hide unrelated siblings, and scroll it into view — then reverts
   all of that when the mode exits.
 

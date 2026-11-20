@@ -61,6 +61,10 @@
          * The tooltip still opens on hover and on focus of the surrounding control.
          */
         focusable?: boolean;
+        /** CSS max-width for the tooltip content, e.g. to keep long text inside the viewport. */
+        maxWidth?: string;
+        /** CSS max-height for the tooltip content. */
+        maxHeight?: string;
         /**
          * Screen-reader text used when the tooltip trigger is not independently focusable.
          * Falls back to the `tooltip` prop when that is a plain string.
@@ -84,6 +88,8 @@
         disabled,
         focusable = true,
         hiddenLabel,
+        maxWidth,
+        maxHeight,
         ...restProps
     }: Props = $props();
 
@@ -179,7 +185,7 @@
                 behind every tooltip-wrapped inline element (e.g. links in chat markdown).
             --><TooltipPrimitive.Portal>
                 <TooltipPrimitive.Content
-                    {...mergeProps({class: 'tooltip-content', side, sideOffset}, restProps) as TooltipContentProps}
+                    {...mergeProps({class: 'tooltip-content', side, sideOffset, style: [maxWidth ? `max-width: ${maxWidth};` : '', maxHeight ? `max-height: ${maxHeight};` : ''].join(' ') || undefined}, restProps) as TooltipContentProps}
                 >
                     <SnippetOrString value={tooltip}/>
                 </TooltipPrimitive.Content>

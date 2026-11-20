@@ -33,7 +33,7 @@ class UpdateEnumTypeOnUsageRecordsTable extends Migration
                 );
             }
         }
-        else{
+        elseif(env('DB_CONNECTION') === 'mysql'){
             // This updates the 'type' column to include 'api'.
             DB::statement("
                 ALTER TABLE `usage_records`

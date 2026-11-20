@@ -2,10 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
@@ -20,12 +22,8 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'username' => fake()->unique()->userName(),
-            'employeetype' => fake()->randomElement(['full-time', 'part-time', 'contractor']),
-            'publicKey' => '',
-            'avatar_id' => null,
-            'bio' => fake()->text(),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'publicKey' => Str::random(64),
+            'employeetype' => 'staff',
             'isRemoved' => false,
         ];
     }

@@ -41,6 +41,8 @@
         popoverContentProps?: PopoverProps['contentProps'];
         /** Accessible name for the info trigger button. */
         ariaLabel?: string;
+        /** Name of the described item; the trigger is then named "Info: {label}". */
+        label?: string;
         /** Extra props merged onto the trigger button. */
         triggerProps?: Record<string, unknown>;
         /** Bindable reference to the rendered trigger button. */
@@ -56,6 +58,7 @@
         popoverAlign = 'center',
         popoverContentProps,
         ariaLabel,
+        label,
         triggerProps,
         triggerEl = $bindable(null),
         disabled = false,
@@ -84,7 +87,7 @@
         {...mergeProps(
             a?.props ?? {},
             triggerProps ?? {},
-            ariaLabel ? {'aria-label': ariaLabel} : {}
+            (ariaLabel ?? label) ? {'aria-label': ariaLabel ?? `Info: ${label}`} : {}
         ) as Record<string, unknown>}
         class="info-button">
         <Icon size="15"/>

@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withEvents([
+        // Slices may nest domains one level deep (e.g. Rag/AssistantKnowledge)
+        // — listener discovery covers both layouts uniformly.
+        __DIR__ . '/../app/Services/*/*/Listeners',
         __DIR__ . '/../app/Services/*/Listeners'
     ])
     ->withMiddleware(function (Middleware $middleware) {
@@ -26,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(
             append: [
                 LocaleSettingMiddleware::class,
-                SystemContextBootingMiddleware::class
+                SystemContextBootingMiddleware::class,
             ]
         );
         $middleware->api(
@@ -35,6 +38,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 SystemContextBootingMiddleware::class,
             ]
         );
+        $middleware->convertEmptyStringsToNull([
+            fn (Request $request) => $request->is('api/hawki/v1/*'),
+        ]);
     })
     ->withBroadcasting(
         channels: __DIR__ . '/../routes/channels.php',

@@ -14,14 +14,16 @@
         label: string;
         /** Keyboard shortcut hint, shown at the row's end on hover or focus. */
         shortcut?: string;
+        /** `accent` (default) for the primary action, `stroke` for a neutral outlined one. */
+        variant?: 'accent' | 'stroke';
     }
 
-    const {icon: Icon, label, shortcut, class: className, ...rest}: Props = $props();
+    const {icon: Icon, label, shortcut, variant = 'accent', class: className, ...rest}: Props = $props();
 </script>
 
 <button
     type="button"
-    {...mergeProps(rest, {class: ['sidebar-button', className]})}
+    {...mergeProps(rest, {class: ['sidebar-button', {stroke: variant === 'stroke'}, className]})}
 >
     <span class="icon-wrap">
         <Icon size={18} strokeWidth={2} aria-hidden="true" />
@@ -63,6 +65,19 @@
     /* The same hover as the accent button, which the send button uses. */
     :global(html.darkMode) .sidebar-button:hover {
         background: var(--color-accent-fill-hover);
+    }
+
+    /* Neutral outlined variant, for secondary actions (e.g. the builder's back). */
+    .sidebar-button.stroke {
+        border: var(--border);
+        background: transparent;
+        color: var(--color-text);
+        transition: background-color var(--duration-fast);
+    }
+
+    .sidebar-button.stroke:hover,
+    :global(html.darkMode) .sidebar-button.stroke:hover {
+        background: var(--color-highlight);
     }
 
     .sidebar-button:focus-visible {

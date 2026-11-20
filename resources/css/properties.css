@@ -42,3 +42,12 @@
     inherits: true;
     initial-value: 0px;
 }
+
+/* Length of the bottom fade on FadeText's collapsed state
+   (ui/text/FadeText.svelte). Registered as <length> so the fade animates
+   away on expand instead of snapping off. */
+@property --fade-text-fade {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0rem;
+}

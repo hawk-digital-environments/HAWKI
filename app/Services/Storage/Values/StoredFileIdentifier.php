@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Storage\Values;
 
 
+use App\Models\Assistants\AssistantAttachment;
 use App\Models\Attachment;
 use App\Models\Room;
 use App\Models\User;
@@ -85,6 +86,26 @@ readonly class StoredFileIdentifier implements \Stringable, \JsonSerializable
         }
         return new self(
             $category,
+            $attachment->uuid,
+            pathinfo($attachment->name, PATHINFO_EXTENSION)
+        );
+    }
+
+    /**
+     * Derives an identifier from an AssistantAttachment model. The category
+     * is always the fixed ASSISTANT storage category. Throws if the
+     * attachment is missing a uuid or name.
+     */
+    public static function fromAssistantAttachment(AssistantAttachment $attachment): self
+    {
+        if (empty($attachment->uuid)) {
+            throw new CouldNotInflectStoredFieldIdentifierException("Assistant attachment with id {$attachment->id} does not have a uuid set.");
+        }
+        if (empty($attachment->name)) {
+            throw new CouldNotInflectStoredFieldIdentifierException("Assistant attachment with id {$attachment->id} does not have a name set.");
+        }
+        return new self(
+            StoredFileCategory::ASSISTANT,
             $attachment->uuid,
             pathinfo($attachment->name, PATHINFO_EXTENSION)
         );

@@ -6,8 +6,15 @@
         "dev": "npm install && vite",
         "build": "vite build",
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
-        "test": "npm run test:search",
-        "test:search": "node --conditions=browser --import ./tests/js/register.mjs --test \"tests/js/**/*.test.ts\" \"tests/js/**/*.test.svelte.ts\"",
+        "test": "npm run test:all",
+        "test:all": "node --conditions=browser --import ./tests/js/register.mjs --test \"tests/js/**/*.test.ts\" \"tests/js/**/*.test.svelte.ts\"",
+        "test:admin": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/admin/*.test.ts tests/js/admin/*.test.svelte.ts",
+        "test:assistants": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/assistants/*.test.ts tests/js/assistants/*.test.svelte.ts",
+        "test:chat": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/chat/*.test.ts tests/js/chat/*.test.svelte.ts",
+        "test:client-schema": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/client-schema/*.test.ts tests/js/client-schema/*.test.svelte.ts",
+        "test:routing": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/routing/*.test.ts tests/js/routing/*.test.svelte.ts",
+        "test:search": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/search/*.test.ts tests/js/search/*.test.svelte.ts",
+        "test:tools": "node --conditions=browser --import ./tests/js/register.mjs --test tests/js/tools/*.test.ts tests/js/tools/*.test.svelte.ts",
         "tsc": "tsc -p ./tsconfig.json",
         "check:tests": "tsc -p ./tsconfig.test.json",
         "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json && tsc -p ./tsconfig.test.json"
@@ -38,6 +45,7 @@
         "pdfjs-dist": "^6.2.108",
         "postcss-custom-media": "^12.0.1",
         "prettier": "^3.9.6",
+        "prettier-plugin-svelte": "^4.1.1",
         "pusher-js": "^8.6.0",
         "shadcn-svelte": "^1.4.2",
         "smob": "^1.6.2",
@@ -52,5 +60,10 @@
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "^4.62.3"
+    },
+    "dependencies": {
+        "@formkit/auto-animate": "^0.10.0",
+        "@tanstack/svelte-table": "^9.3.1",
+        "emoji-picker-element": "^1.29.1"
     }
 }

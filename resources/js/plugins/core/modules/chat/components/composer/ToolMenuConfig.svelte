@@ -67,7 +67,10 @@
         if (!tool.is_capability) {
             return [];
         }
-        return tool.getTools().filter(t => aiModelStore.models.some(model => t.isAvailableFor(model)));
+        return tool.getTools().filter(t => aiModelStore.models.some(model => t.isAvailableFor(model)) ||
+            // An offline variant the user picked stays listed (flagged by its status dot),
+            // so the group never points its radio at a row that is not there.
+            (typeof currentState?.toolSelection === 'object' && currentState.toolSelection.id === t.id));
     });
 
     const isCapabilityWithMultipleTools = $derived.by(() => {

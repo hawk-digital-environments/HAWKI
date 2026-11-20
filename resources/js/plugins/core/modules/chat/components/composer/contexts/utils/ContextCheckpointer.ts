@@ -43,7 +43,7 @@ interface ComposerContextCheckpointWithMeta {
  *
  * The `allowsNested` flag controls whether a second `createCheckpoint` call
  * is allowed while one is already active. `ChatInThreadMode` passes `true`
- * so that edit/regen modes can be layered on top of an active thread without
+ * so that the edit mode can be layered on top of an active thread without
  * losing the thread's checkpoint.
  */
 export class ContextCheckpointer {

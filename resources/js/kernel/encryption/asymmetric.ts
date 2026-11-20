@@ -176,7 +176,7 @@ function decryptArrayBufferAsymmetric(ciphertext: ArrayBuffer, privateKey: Crypt
 /**
  * Generates a new asymmetric key pair (RSA-OAEP 4096-bit, SHA-256, public exponent 65537).
  * Used once per user, typically on first login / keychain initialization
- * (see `keychainHandle.ts` `initializeNewKeychain`), to create the `publicKey`/`privateKey`
+ * (see `Register.svelte`), to create the `publicKey`/`privateKey`
  * pair stored in the keychain.
  * @returns The generated key pair with public and private keys
  */

@@ -34,11 +34,20 @@ export {
     createRouterFromRegistrar,
     type CreateRouterOptions,
     type IsActiveOptions,
+    type NavigationGuard,
+    type NavigationGuardContext,
+    type NavigationVerdict,
     type Router,
     type RouterHandle
 } from '$lib/components/ui/routing/logistics/router.js';
 
 export {useRouter, useRouterScope, type RouterScope} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+export {
+    createQueryState,
+    useQueryState,
+    type QueryState,
+    type QueryStateOptions
+} from '$lib/components/ui/routing/hooks/useQueryState.svelte.js';
 
 // =========================================================================
 // Route registration

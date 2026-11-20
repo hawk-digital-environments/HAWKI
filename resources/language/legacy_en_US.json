@@ -1,5 +1,10 @@
 {
     "legacy": {
+        "registration": {
+            "title": "Set up your account",
+            "preparing": "Creating your keys …",
+            "failed": "Your keys could not be saved. Please try again."
+        },
         "stream": {
             "connectionErrorMessage": "Something went wrong while we tried to connect to the AI. Please try again.",
             "connectionErrorTitle": "Something went wrong"

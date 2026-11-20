@@ -16,7 +16,11 @@
                     "strengthMath": "Mathematics",
                     "strengthMathTooltip": "This model excels at mathematical tasks, e.g. for calculations, equations, or mathematical analyses",
                     "strengthReasoning": "Logical Reasoning",
-                    "strengthReasoningTooltip": "This model excels at logical reasoning, e.g. for problem solving, drawing conclusions, or analytical tasks"
+                    "strengthReasoningTooltip": "This model excels at logical reasoning, e.g. for problem solving, drawing conclusions, or analytical tasks",
+                    "multiModal": "Multimodal",
+                    "multiModalTooltip": "This model can process multiple types of input, such as text and images",
+                    "strengthRolePlaying": "Role-Playing",
+                    "strengthRolePlayingTooltip": "This model excels at role-playing and staying in character, e.g. for simulated conversations or training scenarios"
                 }
             },
             "card": {
@@ -38,6 +42,10 @@
                     "fileUpload": "File upload",
                     "reasoning": "Extended thinking"
                 }
+            },
+            "page": {
+                "title": "Models",
+                "empty": "No models are currently available."
             }
         },
         "error": {

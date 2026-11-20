@@ -1,0 +1,143 @@
+<script lang="ts">
+
+    import CloseButton from "$plugins/assistants/components/closeBtn/CloseButton.svelte";
+    import {StatusIcon} from '$lib/components/ui/icons';
+    import type {IconComponent} from '$lib/components/ui/icons';
+    import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
+    import OverflowTooltip from '$lib/components/ui/tooltip/OverflowTooltip.svelte';
+    import LoadingBeam from '$lib/components/ui/loading-beam/LoadingBeam.svelte';
+    import type {Snippet} from 'svelte';
+
+    let {
+        label,
+        description,
+        icon,
+        highlighted = false,
+        disabled = false,
+        busy = false,
+        deleteDisabled = false,
+        onDelete,
+        trailing,
+    } = $props<{
+        label: string,
+        description?: string,
+        icon?: IconComponent,
+        highlighted?: boolean,
+        /** Visually disables the row (e.g. a file whose ingestion failed); the delete button stays usable. */
+        disabled?: boolean,
+        /** Shows the LoadingBeam ring around the text card while a background action on this row runs (e.g. its delete is being confirmed). */
+        busy?: boolean,
+        /** Disables the delete button (e.g. while an upload batch is in flight — deleting then races the batch reconcile). */
+        deleteDisabled?: boolean,
+        onDelete?: () => void,
+        /** Optional element rendered at the row's right edge, before the delete button (e.g. a status indicator). */
+        trailing?: Snippet,
+    }>();
+
+</script>
+
+<div class="item">
+    <div class="content"
+        class:highlight={highlighted}
+        class:disabled={disabled}
+        class:busy={busy}
+    >
+        {#if busy}
+            <LoadingBeam/>
+        {/if}
+        {#if icon}
+            {@const IconCmp = icon}
+            <StatusIcon icon={IconCmp}/>
+        {/if}
+        <div class="text-wrapper">
+            <p class="label"><OverflowTooltip value={label} focusable={false}/></p>
+            {#if description}
+                <p class="description">{description}</p>
+            {/if}
+        </div>
+        {#if trailing}
+            <div class="trailing">
+                {@render trailing()}
+            </div>
+        {/if}
+    </div>
+    {#if onDelete}
+        <div class="removeBtn">
+            <CloseButton
+                icon={Delete02Icon}
+                size="medium"
+                disabled={deleteDisabled}
+                onClick={() => onDelete?.()}/>
+        </div>
+    {/if}
+</div>
+
+<style>
+    .item{
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        width: 100%;
+        align-items: center;
+        transition: all var(--duration-medium);
+    }
+    .removeBtn{
+        width: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    /* Same 2rem centered slot as .icon-wrapper, so leading icon, trailing
+       element and delete button all share one centerline. */
+    .trailing{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        margin-left: auto;
+    }
+    /* min-width lets the flex item shrink below its content width, so a long
+       label is cut with an ellipsis (full text in the tooltip) instead of
+       overflowing and the row keeps a uniform height. */
+    .text-wrapper{
+        min-width: 0;
+    }
+    .content{
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 1rem;
+        text-align: left;
+        border-radius: var(--corner-md);
+        border: var(--border);
+        padding: .5rem 1rem;
+    }
+    .content.highlight{
+        animation: highlight 200ms ease-in-out;
+    }
+    .content.disabled{
+        opacity: .6;
+    }
+    /* Hosts the LoadingBeam overlay (busy state); the ring hugs the card's
+       own corner radius. */
+    .content.busy{
+        position: relative;
+        --loading-beam-radius: var(--corner-md);
+    }
+    @keyframes highlight {
+        0% { transform: translateX(0) }
+        25% { transform: translateX(5px) }
+        50% { transform: translateX(-5px) }
+        75% { transform: translateX(5px) }
+        100% { transform: translateX(0) }
+    }
+
+    .description{
+        /* Status/error text can contain long unbroken tokens; wrap them. */
+        overflow-wrap: anywhere;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+        margin: 0;
+    }
+</style>

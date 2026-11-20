@@ -3,7 +3,7 @@ import z from 'zod';
 /** Validates the public profile returned by the core `users` resource. */
 const UsersSchema = z.object({
     id: z.string(),
-    name: z.string(),
+    display_name: z.string(),
     username: z.string(),
     email: z.string().nullable().optional(),
     bio: z.string().nullable().optional(),

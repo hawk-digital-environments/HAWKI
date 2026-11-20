@@ -20,6 +20,9 @@ use App\Http\Controllers\Api\V1\RegistrationsController;
 use App\Http\Controllers\Api\V1\RoomMemberController;
 use App\Http\Controllers\Api\V1\RoomMessageController;
 use App\Http\Controllers\Api\V1\SessionsController;
+use App\Http\Controllers\Api\V1\OpenaiResponsesController;
+use App\Http\Controllers\OpenApiSpecController;
+use App\Services\Assistant\Routes\AssistantApiRoutes;
 use App\Http\Controllers\Api\V1\SystemModelController;
 use App\Http\Controllers\Api\V1\SystemPromptController;
 use App\Http\Controllers\Api\V1\TranslationLabelController;
@@ -61,6 +64,15 @@ Route::middleware([
     AppTokenForbiddenMiddleware::class,
 ])->group(static function (): void {
     Route::group(['prefix' => Server::BASE_URL_PREFIX], static function (): void {
+        Route::get('/openapi.json', OpenApiSpecController::class);
+    });
+
+    Route::prefix('openai/v1')->group(static function (): void {
+        Route::post('/responses', OpenaiResponsesController::class)
+            ->name('api.openai.responses');
+    });
+
+    Route::group(['prefix' => Server::BASE_URL_PREFIX], static function (): void {
         Route::get('/proxy/link-preview/favicon', [LinkPreviewController::class, 'getFavicon'])
             ->name('api.link-preview.favicon');
         Route::get('/proxy/link-preview/image', [LinkPreviewController::class, 'getImage'])
@@ -69,6 +81,9 @@ Route::middleware([
 
         Route::get('/proxy/storage/{identifier}', [StorageProxyController::class, 'streamRouted'])
             ->where(['identifier' => '.*']);
+
+        // The Assistant slice's client-schema endpoint for its frontend plugin.
+        AssistantApiRoutes::plainRoutes();
     });
 });
 
@@ -210,4 +225,8 @@ JsonApiRoute::server('v1')
 
         $server->resource('room-members', RoomMemberController::class)
             ->readOnly();
+
+        // The Assistant slice's JSON:API resources (routes owned by the
+        // slice — see App\Services\Assistant\Routes\AssistantApiRoutes).
+        AssistantApiRoutes::jsonApiResources($server);
     });

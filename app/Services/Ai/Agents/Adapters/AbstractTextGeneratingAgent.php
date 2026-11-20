@@ -213,12 +213,16 @@ abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implemen
      * Registers {@see LoggingMiddleware} so every outbound request is logged with model,
      * provider, agent class, and the authenticated user's ID.
      *
+     * The middleware is resolved from the container (instead of being instantiated inline)
+     * so tests can swap or reconfigure it — the SDK instantiates agent middleware directly,
+     * leaving no other injection point.
+     *
      * @inheritDoc
      */
     public function middleware(): array
     {
         return [
-            new LoggingMiddleware()
+            app(LoggingMiddleware::class)
         ];
     }
 

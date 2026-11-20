@@ -25,7 +25,7 @@ class AiConvRepository extends AbstractRepository
     /**
      * @throws AuthenticationException
      */
-    public function create(?string $name, ?string $systemPrompt): AiConv
+    public function create(?string $name, ?string $systemPrompt, ?string $assistantHandle = null): AiConv
     {
         $user = $this->userContext->getAuthenticatedUser();
 
@@ -38,15 +38,19 @@ class AiConvRepository extends AbstractRepository
             'user_id' => $user->id,
             'slug' => Str::slug(Str::random(16)),
             'system_prompt' => $systemPrompt,
+            'assistant_handle' => $assistantHandle,
         ]);
     }
 
     public function delete(AiConv $conversation): void
     {
-        // Database cascades do not dispatch AttachmentDeleting. Delete the
-        // attachments through their repository so the stored files are removed.
+        // Attachments use a polymorphic attachable relation, so the database
+        // cannot define a foreign-key cascade to multiple parent tables. Delete
+        // them through their repository so AttachmentDeleting also removes the
+        // stored files before the conversation/message rows disappear.
         foreach ($conversation->messages()->with('attachments')->get() as $message) {
             $this->attachmentRepository->deleteForMessage($message);
+            $message->delete();
         }
 
         $conversation->delete();

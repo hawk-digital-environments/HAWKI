@@ -22,7 +22,12 @@
             "spaces": "Spaces",
             "pinSpaces": "Pin spaces",
             "newChat": "New chat",
-            "label": "Navigation"
+            "label": "Navigation",
+            "collapse": "Collapse sidebar",
+            "expand": "Expand sidebar",
+            "mainLabel": "Main navigation",
+            "breadcrumb": "Breadcrumb",
+            "accessibilityStatement": "Accessibility statement"
         },
         "dialog": {
             "closeLabel": "Close",
@@ -52,7 +57,9 @@
             "darkMode": "Dark mode",
             "settings": "Settings",
             "announcements": "Announcements",
-            "logout": "Log out"
+            "logout": "Log out",
+            "menuTitle": "Account menu",
+            "models": "Models"
         },
         "announcements": {
             "confirm": "Confirm",
@@ -115,6 +122,10 @@
                     "statsForNerds": {
                         "title": "Stats for nerds",
                         "description": "Shows token counts, tokens per second and timing details below every AI response."
+                    },
+                    "modelPickerV2": {
+                        "title": "New model picker",
+                        "description": "A richer model picker with provider tabs, search, favorites and keyboard shortcuts."
                     }
                 }
             }
@@ -147,7 +158,9 @@
             "retry": "Retry",
             "retryLabel": "Search “:group” again",
             "noResults": "Nothing matches “:query”.",
-            "empty": "Nothing to search yet."
+            "empty": "Nothing to search yet.",
+            "closeHint": "Press Escape to close",
+            "closeKey": "Esc"
         },
         "auth": {
             "logoLabel": "HAWKI",
@@ -266,6 +279,43 @@
             "logoutFailed": "Your keychain is locked. Signing out of the server failed. Please try again.",
             "retryLogout": "Try signing out again",
             "loggingOut": "Signing out…"
+        },
+        "common": {
+            "remove": "Remove",
+            "selectEmoji": "Select emoji"
+        },
+        "alert": {
+            "notePrefix": "Note:",
+            "warningPrefix": "Warning:"
+        },
+        "infoPopover": {
+            "triggerLabel": "More information about :label"
+        },
+        "toast": {
+            "close": "Close notification"
+        },
+        "link": {
+            "opensInNewTab": "(opens in a new tab)",
+            "download": "(download file)"
+        },
+        "routing": {
+            "errorTitle": "Something went wrong",
+            "retry": "Try again",
+            "notFoundTitle": "Page not found",
+            "notFoundDescription": "The requested page does not exist (error 404)."
+        },
+        "pageTitles": {
+            "chat": {
+                "index": "Chat",
+                "conversation": "Chat"
+            }
+        },
+        "table": {
+            "page": "Page :page of :pages (:total entries)",
+            "page_size": "Entries per page",
+            "previous": "Previous",
+            "next": "Next",
+            "empty": "No entries."
         }
     }
 }

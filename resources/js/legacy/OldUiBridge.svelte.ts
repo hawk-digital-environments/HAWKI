@@ -50,6 +50,8 @@ export interface OldUiConversation {
     name: string;
     slug: string;
     system_prompt: string;
+    /** Legacy conversations are never bound to an assistant. */
+    assistant_handle: null;
     role?: 'admin' | 'editor' | 'viewer';
 }
 
@@ -80,7 +82,15 @@ export interface OldUiSendMessagePayload {
     contextType: ComposerContextType;
     message: string;
     containsAiHandle: boolean;
+    /** Assistant handle (without `@`) the exchange binds to; null for plain runs. */
+    assistantHandle: string | null;
     tools: AiToolOrCapabilityWithState[];
+    toolTransfers: readonly string[];
+    authorization: {
+        validate(): boolean;
+        request(url: string, data: unknown, signal: AbortSignal): Promise<Response>;
+        refresh(): void;
+    };
     attachments: File[];
     parameters: OldUiModelParams | null;
 }
@@ -362,6 +372,11 @@ export class OldUiBridge {
             return;
         }
         this.sync.trigger(EXIT_MODE_PIPELINE, mode);
+    }
+
+    /** Resolves the legacy sidebar URL for a chat or group room. */
+    public resolveChatUrl(slug: string, context: ComposerContextType): string {
+        return `/${context === 'room' ? 'groupchat' : 'chat'}/${encodeURIComponent(slug)}`;
     }
 
     public triggerOpenChat(slug: string): void {

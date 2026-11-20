@@ -3,41 +3,59 @@
   them while preserving the mounted subtree.
 -->
 <script lang="ts">
-    import type {Snippet} from 'svelte';
-    import type {HTMLAttributes} from 'svelte/elements';
-    import {mergeProps} from 'bits-ui';
+    import type { Snippet } from 'svelte';
+    import type { HTMLAttributes } from 'svelte/elements';
+    import { mergeProps } from 'bits-ui';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Whether the loading indicator is visible. */
         active: boolean;
-        /** Content shown when loading finishes or below an overlay loader. */
-        children: Snippet;
+        /** Content shown when loading finishes or below an overlay loader.
+         *  Optional for a standalone spinner without replacement content. */
+        children?: Snippet;
         /** Keep children mounted and cover them with the loading surface. */
         overlay?: boolean;
         /** Translated accessible loading text. */
         label: string;
     }
 
-    const {children, active, overlay = false, label, class: className, ...rest}: Props = $props();
+    const { children, active, overlay = false, label, class: className, ...rest }: Props = $props();
 </script>
 
 {#if overlay}
-    <div {...mergeProps(rest, {class: ['loader-host', className], 'aria-busy': active})}>
-        <div class="loader-content" inert={active}>
-            {@render children()}
-        </div>
+    <div {...mergeProps(rest, { 'class': ['loader-host', className], 'aria-busy': active })}>
+        {#if children}
+            <div
+                class="loader-content"
+                inert={active}
+            >
+                {@render children()}
+            </div>
+        {/if}
         {#if active}
-            <div class="loader loader--overlay" role="status" aria-label={label}>
-                <span class="spinner" aria-hidden="true"></span>
+            <div
+                class="loader loader--overlay"
+                role="status"
+                aria-label={label}
+            >
+                <span
+                    class="spinner"
+                    aria-hidden="true"
+                ></span>
             </div>
         {/if}
     </div>
 {:else if active}
-    <div {...mergeProps(rest, {class: ['loader', className], role: 'status', 'aria-label': label})}>
-        <span class="spinner" aria-hidden="true"></span>
+    <div {...mergeProps(rest, { 'class': ['loader', className], 'role': 'status', 'aria-label': label })}>
+        <span
+            class="spinner"
+            aria-hidden="true"
+        ></span>
     </div>
 {:else}
-    {@render children()}
+    {#if children}
+        {@render children()}
+    {/if}
 {/if}
 
 <style>

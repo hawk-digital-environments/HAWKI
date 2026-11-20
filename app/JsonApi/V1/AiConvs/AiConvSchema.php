@@ -7,6 +7,7 @@ namespace App\JsonApi\V1\AiConvs;
 use App\Models\AiConv;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use LaravelJsonApi\Eloquent\Fields\ArrayHash;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
 use LaravelJsonApi\Eloquent\Fields\Relations\HasMany;
@@ -44,6 +45,15 @@ class AiConvSchema extends Schema
             Str::make('name', 'conv_name'),
             Str::make('slug')->readOnly(),
             Str::make('system_prompt'),
+            ArrayHash::make('hawkiExtensions')
+                ->extractUsing(static fn (AiConv $model): array => [
+                    'assistant_handle' => $model->assistant_handle,
+                ])
+                ->fillUsing(
+                    static function (AiConv $model, string $column, ?array $value): void {
+                        $model->assistant_handle = $value['assistant_handle'] ?? null;
+                    },
+                ),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),
             HasMany::make('messages')->type('ai-conv-messages')->readOnly(),

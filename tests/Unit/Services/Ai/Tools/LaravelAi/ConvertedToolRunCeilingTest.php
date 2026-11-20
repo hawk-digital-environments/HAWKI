@@ -18,11 +18,12 @@ use App\Services\Ai\Tools\LaravelAi\LaravelMcpTool;
 use App\Services\Ai\Tools\LaravelAi\LaravelToolConverter;
 use App\Services\Ai\Tools\LaravelAi\LaravelToolResolver;
 use App\Services\Ai\Tools\Mcp\HawkiMcpClient;
+use App\Services\Ai\Tools\Mcp\McpClientFactory;
+use App\Services\Ai\Tools\Mcp\McpClientRegistry;
 use App\Services\Ai\Tools\Values\ToolType;
 use App\Services\Ai\Values\OnlineStatus;
 use App\Providers\AiServiceProvider;
 use App\Services\System\Container\ServiceLocator;
-use App\Utils\Lists\LazySingletonList;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Tools\Request;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -86,8 +87,10 @@ class ConvertedToolRunCeilingTest extends TestCase
         (ServiceLocator&MockObject)|null          $serviceLocator = null
     ): LaravelToolConverter
     {
-        $clientList = $this->createMock(LazySingletonList::class);
-        $clientList->method('get')->willReturn($client);
+        // The registry is final; a real one around a mocked factory serves the canned client.
+        $factory = $this->createMock(McpClientFactory::class);
+        $factory->method('createForServer')->willReturn($client);
+        $clientList = new McpClientRegistry($factory);
 
         return new LaravelToolConverter(
             logger: $this->createMock(LoggerInterface::class),

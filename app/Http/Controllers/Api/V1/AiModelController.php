@@ -11,4 +11,6 @@ class AiModelController extends Controller
 {
     use Actions\FetchMany;
     use Actions\FetchOne;
+    use Actions\FetchRelated;
+    use Actions\FetchRelationship;
 }

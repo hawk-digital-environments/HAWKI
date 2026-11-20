@@ -1,26 +1,4 @@
-import {cubicOut} from 'svelte/easing';
-
-/** `backOut` with the tension left open, so a caller can pick how much of a swing it wants. */
-function backOutWith(s: number) {
-    return (t: number) => 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
-}
-
-/**
- * Parses a CSS length into pixels, falling back to 0 when the value cannot be
- * parsed. `getComputedStyle` returns the empty string for layout properties
- * while an element is inside a `display: none` subtree, and `parseFloat('')`
- * is `NaN` — which would otherwise end up as invalid `NaNpx` keyframes.
- */
-function px(value: string): number {
-    const parsed = parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-}
-
-export interface GrowTransitionParams {
-    direction?: 'in' | 'out';
-    mode?: 'horizontal' | 'vertical';
-    overshoot?: number;
-}
+import {motionDuration} from '$lib/utils/transitions/reducedMotion.svelte.js';
 
 /**
  * Svelte CSS transition that expands or collapses an element by animating its
@@ -53,6 +31,30 @@ export interface GrowTransitionParams {
  * // Vertical grow that visibly springs into place
  * <div transition:growTransition={{overshoot: 1.3}}>…</div>
  */
+import {cubicOut} from 'svelte/easing';
+
+/** `backOut` with the tension left open, so a caller can pick how much of a swing it wants. */
+function backOutWith(s: number) {
+    return (t: number) => 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
+}
+
+/**
+ * Parses a CSS length into pixels, falling back to 0 when the value cannot be
+ * parsed. `getComputedStyle` returns the empty string for layout properties
+ * while an element is inside a `display: none` subtree, and `parseFloat('')`
+ * is `NaN` — which would otherwise end up as invalid `NaNpx` keyframes.
+ */
+function px(value: string): number {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export interface GrowTransitionParams {
+    direction?: 'in' | 'out';
+    mode?: 'horizontal' | 'vertical';
+    overshoot?: number;
+}
+
 export function growTransition(node: Element, params?: GrowTransitionParams) {
     const height = node.scrollHeight;
     const style = getComputedStyle(node);
@@ -67,7 +69,7 @@ export function growTransition(node: Element, params?: GrowTransitionParams) {
         const marginLeft = px(style.marginLeft);
         const marginRight = px(style.marginRight);
         return {
-            duration,
+            duration: motionDuration(duration),
             easing,
             css: (t: number) => `
                 overflow: hidden;
@@ -87,7 +89,7 @@ export function growTransition(node: Element, params?: GrowTransitionParams) {
     const marginTop = px(style.marginTop);
     const marginBottom = px(style.marginBottom);
     return {
-        duration,
+        duration: motionDuration(duration),
         easing,
         css: (t: number) => `
             overflow: hidden;

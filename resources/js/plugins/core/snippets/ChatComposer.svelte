@@ -116,6 +116,13 @@
         // that first before proceeding to handle the response.
         const response = await status.response;
 
+        // A committed message must not remain as a draft when generation is denied: the request was accepted, only the reply is refused.
+        if (status.accepted) {
+            chatContext.clear();
+            chatContext.focusInput();
+            return;
+        }
+
         // If the send action failed (e.g. due to validation/network errors), show the issues in toasts
         // but keep the current context as is (e.g. don't clear the input or switch modes), since the user might want to fix the issues and try sending again.
         if (status.failed) {

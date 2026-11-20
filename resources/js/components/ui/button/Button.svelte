@@ -53,6 +53,7 @@
         variants: {
             variant: {
                 fill: 'btn--fill',
+                accent: 'btn--accent',
                 surface: 'btn--surface',
                 stroke: 'btn--stroke',
                 ghost: 'btn--ghost',
@@ -252,6 +253,17 @@
 
     :global(html.darkMode) .btn--fill {
         --btn-bg-hover: var(--color-accent-fill-hover);
+    }
+
+    /* The strong primary action: the brand's interactive fill with on-interactive text. */
+    .btn--accent:not(:disabled) {
+        --btn-bg: var(--color-accent-fill);
+        --btn-color: var(--color-on-interactive);
+        --btn-bg-hover: var(--color-accent-fill-hover);
+    }
+
+    :global(html.darkMode) .btn--accent:not(:disabled) {
+        --btn-color: var(--color-active-text);
     }
 
     /* A neutral filled pill that sits a step lighter than the surface it is on, so the

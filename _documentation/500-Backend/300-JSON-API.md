@@ -74,33 +74,6 @@ The JSON:API server registers the following 20 schemas (verified from `app/JsonA
 
 ## Virtual and Non-Eloquent Resources
 
-### `configs`
-
-The `configs` resource is not a hardcoded payload. It is assembled by `PublicConfigRegistry`, a singleton that tracks which `AbstractConfig` subclasses should appear in the response. Each registered config class declares a `publicKey()` string and a `toPublicArray(Request)` method.
-
-Built-in config blocks (all under the `hawki-core` namespace):
-
-| Public key      | Class               | Content                                                         |
-|-----------------|---------------------|-----------------------------------------------------------------|
-| `locale`        | `LocaleConfig`      | Default locale, list of available locales                       |
-| `salts`         | `SaltConfig`        | Five named crypto salts (only delivered to authenticated users) |
-| `security`      | `SecurityConfig`    | Passkey UX settings                                             |
-| `transfer`      | `TransferConfig`    | App base URL and WebSocket connection details                   |
-| `ai`            | `AiConfig`          | AI handle string, AI user display name and avatar               |
-| `storage_files` | `FileStorageConfig` | Allowed MIME types, max file size                               |
-
-Extension point: `$app->extend(PublicConfigRegistry::class, ...)` in `ServiceProvider::boot()` adds custom config blocks without touching core code.
-
-### `translation-labels`
-
-Backed by `CustomTranslator`, not an Eloquent model. The resource takes a `{locale}` path segment and returns all translation labels for that locale as a flat JSON:API document. The frontend fetches this resource separately from the connection bootstrap — the connection payload carries only the current locale identifier, not the labels themselves.
-
-### `system-models`
-
-Maps usage type overlays to model records via `UsageTypeOverlayScope`. Use this resource to resolve which `AiModel` is active for a given `model_type` + `usage_type` combination (e.g. which model answers private conversations).
-
----
-
 ## HAWKI JSON:API Conventions
 
 ### Authorization: `authorizable(): false`

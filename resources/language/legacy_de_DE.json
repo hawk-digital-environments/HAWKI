@@ -1,5 +1,10 @@
 {
     "legacy": {
+        "registration": {
+            "title": "Konto einrichten",
+            "preparing": "Deine Schlüssel werden erstellt …",
+            "failed": "Die Schlüssel konnten nicht gespeichert werden. Bitte versuche es erneut."
+        },
         "stream": {
             "connectionErrorMessage": "Bei der Verbindung zum KI-Stream ist ein Fehler aufgetreten. Bitte überprüfe deine Internetverbindung und versuche es erneut.",
             "connectionErrorTitle": "Kein Anschluss unter diesem Chat"

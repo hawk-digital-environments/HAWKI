@@ -8,6 +8,13 @@ export interface AiMessageContent {
 export interface AiMessage {
     role: AiMessageRole;
     content: AiMessageContent;
+    /** HAWKI-specific transport extensions for this message. Carries the
+     *  attribution for past assistant turns: the authoring assistant's bare
+     *  handle (no `@`). The backend embeds it as an HKI_META_ANSWER_SOURCE
+     *  block so the model can tell apart answers from different assistants. */
+    hawkiExtensions?: {
+        assistant_handle?: string | null;
+    };
 }
 
 export type AiModelParameters = Record<string, unknown> | unknown[];
@@ -21,6 +28,8 @@ export interface AiStreamRequest {
     messages: AiMessage[];
     tools?: string[] | null;
     params?: AiModelParameters | null;
+    /** Assistant handle (without `@`) the exchange is bound to; omitted for plain runs. */
+    assistantHandle?: string | null;
     threadIndex?: number;
     slug?: string;
     isUpdate?: boolean;

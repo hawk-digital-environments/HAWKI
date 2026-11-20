@@ -22,7 +22,12 @@
             "spaces": "Bereiche",
             "pinSpaces": "Bereiche anheften",
             "newChat": "Neuer Chat",
-            "label": "Navigation"
+            "label": "Navigation",
+            "collapse": "Seitenleiste einklappen",
+            "expand": "Seitenleiste ausklappen",
+            "mainLabel": "Hauptnavigation",
+            "breadcrumb": "Brotkrumen",
+            "accessibilityStatement": "Barrierefreiheitserklärung"
         },
         "dialog": {
             "closeLabel": "Schließen",
@@ -52,7 +57,9 @@
             "darkMode": "Dunkler Modus",
             "settings": "Einstellungen",
             "announcements": "Ankündigungen",
-            "logout": "Abmelden"
+            "logout": "Abmelden",
+            "menuTitle": "Kontomenü",
+            "models": "Modelle"
         },
         "announcements": {
             "confirm": "Bestätigen",
@@ -115,6 +122,10 @@
                     "statsForNerds": {
                         "title": "Statistiken für Nerds",
                         "description": "Zeigt Token-Anzahl, Tokens pro Sekunde und Zeitangaben unter jeder KI-Antwort."
+                    },
+                    "modelPickerV2": {
+                        "title": "Neue Modellauswahl",
+                        "description": "Eine erweiterte Modellauswahl mit Anbieter-Tabs, Suche, Favoriten und Tastaturkürzeln."
                     }
                 }
             }
@@ -147,7 +158,9 @@
             "retry": "Erneut versuchen",
             "retryLabel": "„:group“ erneut durchsuchen",
             "noResults": "Nichts passt zu „:query“.",
-            "empty": "Noch nichts zum Durchsuchen."
+            "empty": "Noch nichts zum Durchsuchen.",
+            "closeHint": "Esc drücken zum Schließen",
+            "closeKey": "Esc"
         },
         "auth": {
             "logoLabel": "HAWKI",
@@ -266,6 +279,43 @@
             "logoutFailed": "Dein Schlüsselbund ist gesperrt. Die Abmeldung vom Server ist fehlgeschlagen. Bitte versuche es erneut.",
             "retryLogout": "Abmeldung erneut versuchen",
             "loggingOut": "Abmeldung läuft…"
+        },
+        "common": {
+            "remove": "Entfernen",
+            "selectEmoji": "Emoji auswählen"
+        },
+        "alert": {
+            "notePrefix": "Hinweis:",
+            "warningPrefix": "Warnung:"
+        },
+        "infoPopover": {
+            "triggerLabel": "Weitere Informationen zu :label"
+        },
+        "toast": {
+            "close": "Benachrichtigung schließen"
+        },
+        "link": {
+            "opensInNewTab": "(öffnet in neuem Tab)",
+            "download": "(Datei herunterladen)"
+        },
+        "routing": {
+            "errorTitle": "Etwas ist schiefgelaufen",
+            "retry": "Erneut versuchen",
+            "notFoundTitle": "Seite nicht gefunden",
+            "notFoundDescription": "Die angeforderte Seite existiert nicht (Fehler 404)."
+        },
+        "pageTitles": {
+            "chat": {
+                "index": "Chat",
+                "conversation": "Chat"
+            }
+        },
+        "table": {
+            "page": "Seite :page von :pages (:total Einträge)",
+            "page_size": "Einträge pro Seite",
+            "previous": "Zurück",
+            "next": "Weiter",
+            "empty": "Keine Einträge."
         }
     }
 }

@@ -1,0 +1,281 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Assistant;
+
+use App\Models\Assistants\Assistant;
+use App\Models\User;
+use App\Services\Assistant\Config\AssistantConfig;
+use App\Services\Assistant\Events\AssistantAttachmentStoredEvent;
+use App\Services\Assistant\Events\AssistantCreatedEvent;
+use App\Services\Assistant\Events\AssistantReleaseStageChangedEvent;
+use App\Services\Assistant\Exceptions\InvalidShareLinkException;
+use App\Services\Assistant\Repositories\AssistantAttachmentRepository;
+use App\Services\Assistant\Repositories\AssistantOrganizationRepository;
+use App\Services\Assistant\Repositories\AssistantRepository;
+use App\Services\Assistant\Repositories\AssistantReviewRepository;
+use App\Services\Assistant\Values\AssistantReleaseStage;
+use App\Services\Assistant\Values\AssistantReviewStatus;
+use App\Services\Assistant\Values\AssistantShare;
+use App\Services\Assistant\Values\AssistantShareGrant;
+use App\Services\Assistant\Values\AssistantShareLinkToken;
+use App\Services\Storage\FileStorageService;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\System\Time\CarbonClockInterface;
+use Illuminate\Container\Attributes\Singleton;
+use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
+use Illuminate\Database\DatabaseManager;
+
+#[Singleton()]
+readonly class AssistantService
+{
+    public function __construct(
+        private AssistantRepository $repository,
+        private AssistantOrganizationRepository $organizationRepository,
+        private AssistantReviewRepository $reviewRepository,
+        private AssistantVersionService $versionService,
+        private DatabaseManager $db,
+        private EventDispatcher $events,
+        private FileStorageService $fileStorage,
+        private AssistantAttachmentRepository $assistantAttachmentRepository,
+        private AssistantConfig $config,
+        private CarbonClockInterface $clock,
+    ) {
+    }
+
+    public function remix(Assistant $source, User $creator, ?int $organizationId = null): Assistant
+    {
+        return $this->db->transaction(function () use ($source, $creator, $organizationId): Assistant {
+            $source->load(['assistantUserPrompts', 'ai_tools', 'assistantTags', 'assistantVersions']);
+
+            $resolvedOrgId = null !== $organizationId
+                ? ($this->organizationRepository->getForUserById($creator, $organizationId)->id
+                    ?? throw \App\Services\Assistant\Exceptions\OrganizationNotFoundException::forUserAndId($creator, $organizationId))
+                : $this->organizationRepository->getForUser($creator)?->id;
+
+            $clone = $this->repository->clone($source, $creator->id, $resolvedOrgId);
+
+            $clone->assistantUserPrompts()->createMany($source->assistantUserPrompts->map(static fn ($prompt) => ['text' => $prompt->text])->toArray());
+
+            $clone->assistantTags()->attach($source->assistantTags->pluck('id')->toArray());
+
+            $sourceCreator = $source->creator;
+
+            if (null !== $sourceCreator && $this->organizationRepository->usersShareOrganization($creator, $sourceCreator)) {
+                $this->repository->syncTools($clone, $source->ai_tools->pluck('id')->toArray());
+            }
+
+            // A remix starts a fresh version history — the created event seeds
+            // its own working draft (a remix is a new assistant, not a lineage).
+
+            // Knowledge files are NOT remixed.
+            // Each assistant owns its own files (and later its own RAG dataset), so the
+            // clone starts with an empty knowledge base.
+            // Otherwise a remix would need to trigger a rag workflow.
+            $this->events->dispatch(new AssistantCreatedEvent($clone));
+
+            return $this->repository->loadRelations($clone, ['assistantUserPrompts', 'ai_tools', 'assistantTags', 'assistantVersions']);
+        });
+    }
+
+    public function setFavorite(Assistant $assistant, User $user, bool $isFavorite): void
+    {
+        $this->repository->setFavorite($assistant, $user, $isFavorite);
+    }
+
+    /**
+     * @return list<AssistantShare>
+     */
+    public function listShares(Assistant $assistant): array
+    {
+        return $this->repository->listShares($assistant);
+    }
+
+    /**
+     * @param list<AssistantShareGrant> $shares
+     * @return list<AssistantShare>
+     */
+    public function syncShares(Assistant $assistant, array $shares): array
+    {
+        return $this->repository->syncShares($assistant, $shares);
+    }
+
+    /**
+     * Mints a new multi-use share link that expires after the configured TTL.
+     */
+    public function createShareLink(Assistant $assistant, User $creator, bool $canEdit): AssistantShareLinkToken
+    {
+        $expiresAt = $this->clock->now()->addHours($this->config->shareLinkTtlHours);
+        $token = $this->repository->createShareLink($assistant, $creator, $canEdit, $expiresAt);
+
+        return AssistantShareLinkToken::mint($token, $canEdit, $expiresAt);
+    }
+
+    /**
+     * Adds the user to the share list of the link's assistant with the link's grant.
+     *
+     * @throws InvalidShareLinkException when the token is unknown or expired
+     */
+    public function redeemShareLink(User $user, string $token): Assistant
+    {
+        $link = $this->repository->findRedeemableShareLink($token);
+        if (null === $link || null === $link->assistant) {
+            throw InvalidShareLinkException::make();
+        }
+
+        $this->repository->grantShare($link->assistant, $user->id, $link->can_edit);
+
+        return $link->assistant;
+    }
+
+    /**
+     * Revokes every outstanding share link of the assistant; minting stays
+     * untouched and may issue a fresh link afterwards.
+     */
+    public function invalidateShareLink(Assistant $assistant): void
+    {
+        $this->repository->invalidateShareLinks($assistant);
+    }
+
+    public function release(Assistant $assistant, AssistantReleaseStage $target, ?string $note = null): Assistant
+    {
+        return $this->db->transaction(function () use ($assistant, $target, $note): Assistant {
+            // Re-load inside the transaction under a row lock so concurrent
+            // release()/approve()/deny() calls serialise on the same assistant.
+            $locked = Assistant::whereKey($assistant->id)->lockForUpdate()->first();
+
+            if (null === $locked) {
+                return $assistant;
+            }
+
+            // Refresh the in-memory state from the locked row, then run the
+            // transition logic against the freshest stage/review values.
+            $assistant->setRawAttributes($locked->getAttributes());
+            $assistant->load('assistantReview');
+
+            $oldStage = $assistant->release_stage;
+            $review = $assistant->assistantReview;
+
+            // A denied review makes the release below a no-op — and skips the
+            // freeze so a blocked release cannot overwrite the frozen draft.
+            $isDenied = null !== $review && AssistantReviewStatus::DENIED === $review->status;
+
+            // Every submit freezes the current state onto the working draft
+            // (overwrite semantics: the review judges exactly what was submitted).
+            if (!$isDenied) {
+                $this->versionService->freeze($assistant, $note);
+            }
+
+            // Draft / private are freely settable: publish immediately and drop
+            // any pending publication request.
+            if (!$target->isPublic()) {
+                return $this->applyStageChange($assistant, $target);
+            }
+
+            // A denied review blocks publication entirely; the request validator
+            // is the primary gate. It's a noop here.
+            if ($isDenied) {
+                return $assistant;
+            }
+
+            // Downward or same-level public moves (e.g. federated -> organizational)
+            // reduce exposure and need no approval.
+            $isUpward = $target->order() > $oldStage->order();
+
+            if (!$isUpward) {
+                return $this->applyStageChange($assistant, $target);
+            }
+
+            // Upward move into a broader public stage: always a fresh review,
+            // regardless of any previous approval. An approved review only
+            // represents a current state while the assistant is public — once
+            // it has fallen back to private, the record is history and never
+            // takes effect by itself.
+            //
+            // Record the desired stage and (re)open the review as pending. The
+            // assistant stays at its current stage (a draft moves to private)
+            // until an admin approves it.
+            // Reopening starts a fresh round, so a previous denial reason is
+            // cleared — a resubmission after NEEDS_REVISION is judged on its
+            // own merits.
+            $this->reviewRepository->updateOrCreateForAssistant(
+                $assistant->id,
+                ['status' => AssistantReviewStatus::PENDING->value, 'reason' => null],
+            );
+            $this->repository->setRequestedReleaseStage($assistant, $target);
+
+            // A submitted draft waits for approval as private, so its creator can already use it.
+            if (AssistantReleaseStage::DRAFT === $oldStage) {
+                $this->repository->setReleaseStage($assistant, AssistantReleaseStage::PRIVATE);
+                $this->events->dispatch(new AssistantReleaseStageChangedEvent($assistant, $oldStage, AssistantReleaseStage::PRIVATE));
+            }
+
+            return $assistant;
+        });
+    }
+
+    /**
+     * On review approval, promote the assistant to its previously requested
+     * public stage, if any. Clears the request and dispatches the release
+     * status event.
+     */
+    public function promoteRequested(Assistant $assistant): Assistant
+    {
+        $requested = $assistant->requested_release_stage;
+
+        if (!$requested instanceof AssistantReleaseStage || !\in_array($requested, AssistantReleaseStage::publiclyVisibleCases(), true)) {
+            return $assistant;
+        }
+
+        return $this->applyStageChange($assistant, $requested);
+    }
+
+    /**
+     * On review denial, push the assistant back to private and clear any
+     * pending publication request. Dispatches the release status event.
+     */
+    public function revokeRelease(Assistant $assistant): Assistant
+    {
+        return $this->applyStageChange($assistant, AssistantReleaseStage::PRIVATE);
+    }
+
+    /**
+     * Handle upload of an attachment for an assistant.
+     */
+    public function uploadAttachment(FileReference $file, Assistant $assistant, User $user): void
+    {
+        $storedFile = $this->fileStorage->store(
+            file: $file,
+            category: StoredFileCategory::ASSISTANT,
+        );
+        $assistantAttachment = $this->assistantAttachmentRepository->assignToAssistant(
+            assistant: $assistant,
+            file: $storedFile,
+            user: $user,
+        );
+
+        if (null !== $assistantAttachment) {
+            $this->events->dispatch(new AssistantAttachmentStoredEvent($assistant, $assistantAttachment, $user));
+        }
+    }
+
+    /**
+     * Applies a release stage transition: sets the stage, clears any pending
+     * request, and dispatches the release status event when the stage actually
+     * changed.
+     */
+    private function applyStageChange(Assistant $assistant, AssistantReleaseStage $target): Assistant
+    {
+        $oldStage = $assistant->release_stage;
+        $changed = $this->repository->setReleaseStage($assistant, $target);
+        $this->repository->clearRequestedReleaseStage($assistant);
+
+        if ($changed) {
+            $this->events->dispatch(new AssistantReleaseStageChangedEvent($assistant, $oldStage, $target));
+        }
+
+        return $assistant;
+    }
+}

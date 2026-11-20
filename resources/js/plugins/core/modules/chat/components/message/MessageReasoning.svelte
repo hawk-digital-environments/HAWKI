@@ -63,9 +63,11 @@
         parts: ReasoningPart[];
         /** True while the model is still thinking and has not produced an answer yet. */
         active?: boolean;
+        /** Base heading level for markdown inside the timeline; the message log nests one deeper. */
+        headingLevel?: number;
     }
 
-    const {parts, active = false}: Props = $props();
+    const {parts, active = false, headingLevel = 4}: Props = $props();
     const {__} = useTranslator();
     const app = useApp();
 
@@ -346,7 +348,7 @@
                                     </div>
                                 {/if}
                             {:else if step.body}
-                                <div class="prose"><Markdown message={step.body} /></div>
+                                <div class="prose"><Markdown message={step.body} headingBaseLevel={headingLevel} /></div>
                             {/if}
                         </div>
                     </li>

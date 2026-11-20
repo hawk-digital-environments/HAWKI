@@ -1,0 +1,282 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Policies;
+
+use App\Models\Assistants\Assistant;
+use App\Models\User;
+use App\Policies\Contracts\DefinesSensitiveIncludes;
+use App\Policies\Traits\AuthorizeCreateForUserTrait;
+use App\Policies\Traits\AuthorizeViewAnyForUserTrait;
+use App\Services\Assistant\Repositories\AssistantRepository;
+use App\Services\Organizations\OrgMembership;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class AssistantPolicy implements DefinesSensitiveIncludes
+{
+    use HandlesAuthorization;
+    use AuthorizeViewAnyForUserTrait;
+    use AuthorizeCreateForUserTrait;
+
+    public function __construct(
+        private readonly OrgMembership $orgMembership,
+        private readonly AssistantRepository $repository,
+    ) {
+    }
+
+    /**
+     * Relationship include paths (schema field names) restricted to the
+     * privileged tier (creator or org admin).
+     */
+    public const PRIVILEGED_RELATIONSHIPS = [
+        'assistant_setting_values',
+        'assistant_feedback',
+        'assistant_review',
+        'assistant_attachments',
+        'ai_tools',
+    ];
+
+    /**
+     * @return list<string>
+     */
+    public function sensitiveIncludes(): array
+    {
+        return self::PRIVILEGED_RELATIONSHIPS;
+    }
+
+    public function view(User $user, Assistant $assistant): bool
+    {
+        return $this->isVisibleTo($assistant, $user);
+    }
+
+    /**
+     * Editing an assistant sits with its creator or with users the
+     * assistant is shared with under the edit grant. Org admins stay out:
+     * their tier decides reviews and rollbacks, not content edits.
+     */
+    public function update(User $user, Assistant $assistant): bool
+    {
+        return $user->id === $assistant->creator_id
+            || $this->repository->canEditViaShare($user, $assistant);
+    }
+
+    public function delete(User $user, Assistant $assistant): bool
+    {
+        return $user->id === $assistant->creator_id;
+    }
+
+    public function remix(User $user, Assistant $assistant): bool
+    {
+        // Remixing requires both an opt-in on the source AND visibility into
+        // it: otherwise any authenticated caller could clone a draft/private
+        // assistant just by knowing its id.
+        return $assistant->allow_remix && $this->view($user, $assistant);
+    }
+
+    public function release(User $user, Assistant $assistant): bool
+    {
+        return $user->id === $assistant->creator_id;
+    }
+
+    /**
+     * Rolling back to an earlier published version is an editorial decision
+     * over the assistant's content, so it sits with the organization's admins
+     * — the same tier that approves reviews.
+     */
+    public function rollback(User $user, Assistant $assistant): bool
+    {
+        return $this->orgMembership->isAdminOf($user, $assistant->organization_id);
+    }
+
+    public function addFavorite(User $user, Assistant $assistant): bool
+    {
+        return $this->view($user, $assistant);
+    }
+
+    public function removeFavorite(User $user, Assistant $assistant): bool
+    {
+        return $this->view($user, $assistant);
+    }
+
+    /**
+     * Managing the share list is a creator-only concern: sharees use (or
+     * edit) the assistant but never re-distribute it.
+     */
+    public function listShares(User $user, Assistant $assistant): bool
+    {
+        return $user->id === $assistant->creator_id;
+    }
+
+    public function syncShares(User $user, Assistant $assistant): bool
+    {
+        return $user->id === $assistant->creator_id;
+    }
+
+    /**
+     * Share links grant the same access as the share list, so minting one
+     * sits with the same creator-only tier.
+     */
+    public function createShareLink(User $user, Assistant $assistant): bool
+    {
+        return $this->syncShares($user, $assistant);
+    }
+
+    /**
+     * Revoking sits with minting: creator-only, same tier as the share list.
+     */
+    public function invalidateShareLinks(User $user, Assistant $assistant): bool
+    {
+        return $this->syncShares($user, $assistant);
+    }
+
+    /**
+     * Knowledge-file uploads are creator-only, matching the update tier.
+     * End users of an assistant never upload — they only consume whatever
+     * the creator attached via the prompt composer.
+     */
+    public function uploadAttachment(User $user, Assistant $assistant): bool
+    {
+        return $this->update($user, $assistant);
+    }
+
+    public function deleteAttachment(User $user, Assistant $assistant): bool
+    {
+        return $this->update($user, $assistant);
+    }
+
+    /**
+     * Gates the ?include=assistant_attachments path: only the creator or org
+     * admin may inspect an assistant's knowledge files. End users never see
+     * them — they only experience the files' effect through the composed
+     * system prompt.
+     */
+    public function viewAssistantAttachments(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    // --- Relationship visibility helpers ---
+
+    public function viewAssistantSettingValues(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    public function viewAssistantFeedback(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    public function viewAssistantReview(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    public function viewAssistantTags(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function updateAssistantTags(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    public function attachAssistantTags(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    public function detachAssistantTags(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    public function viewLanguage(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewAssistantCategory(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewAssistantAvatar(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewAssistantUserPrompts(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewCreator(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewRemixCreator(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewRemixedAssistant(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewAssistantVersions(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewOrganization(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewSharedUsers(User $user, Assistant $assistant): bool
+    {
+        return $user->id === $assistant->creator_id;
+    }
+
+    public function viewAiTools(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    public function updateAiTools(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    public function attachAiTools(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    public function detachAiTools(User $user, Assistant $assistant): bool
+    {
+        return $this->isPrivileged($user, $assistant);
+    }
+
+    // --- Internal helpers ---
+
+    private function canViewAssistant(User $user, Assistant $assistant): bool
+    {
+        return $this->view($user, $assistant);
+    }
+
+    private function isVisibleTo(Assistant $assistant, User $user): bool
+    {
+        return $this->repository->isVisibleTo($assistant, $user);
+    }
+
+    private function isPrivileged(User $user, Assistant $assistant): bool
+    {
+        return $this->repository->isPrivileged($user, $assistant);
+    }
+}

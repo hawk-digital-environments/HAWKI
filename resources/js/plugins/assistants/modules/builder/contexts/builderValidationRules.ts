@@ -1,0 +1,123 @@
+import type { Assistant } from "$plugins/assistants/types/assistant/Assistant";
+import { ValidationState } from "$plugins/assistants/types/enums/ValidationState";
+
+/** The builder's steps in flow order; each maps to `assistants.builder.<step>`. */
+export const BUILDER_STEPS = ['general', 'model', 'behaviour', 'knowledge', 'publish'] as const;
+export type BuilderStep = typeof BUILDER_STEPS[number];
+
+/** Per-field error message, keyed by `Assistant` field. */
+export type FieldErrorMap = Partial<Record<keyof Assistant, string>>;
+
+/** A single line in a builder report (completenessCheckItem check or audit trigger). */
+export interface CheckItem {
+    id: string;
+    group: string;
+    label: string;
+    description?: string;
+    status: ValidationState;
+    /** Whether the check passes (required field satisfied / no trigger). */
+    ok: boolean;
+    /** Builder step that holds the checked field(s), if any. */
+    step?: BuilderStep;
+}
+
+/** Report items grouped under a section title, for rendering. */
+export interface ReportGroup {
+    group: string;
+    items: CheckItem[];
+}
+
+/** A required-field completeness rule. */
+export interface CompletenessRule {
+    id: string;
+    group: string;
+    /** Builder step (section route suffix) whose fields this rule checks. */
+    step: BuilderStep;
+    /** Fields this rule concerns (used for the remix "changed" check). */
+    keys: (keyof Assistant)[];
+    /** Whether the field(s) hold an acceptable value. */
+    isFilled: (a: Assistant) => boolean;
+    okLabel: string;
+    failLabel: string;
+    description?: string;
+    /** Status when not satisfied (default `warning`). */
+    failStatus?: ValidationState;
+}
+
+/** A field whose change during the session flags a re-check. */
+export interface TriggerRule {
+    id: string;
+    group: string;
+    keys: (keyof Assistant)[];
+    changedLabel: string;
+    unchangedLabel: string;
+    description?: string;
+}
+
+export const COMPLETENESS_RULES: CompletenessRule[] = [
+    {
+        id: 'name-handle',
+        step: 'general',
+        group: 'Allgemeine Informationen',
+        keys: ['name', 'handle'],
+        isFilled: a => !!(a.name && a.handle),
+        okLabel: 'Name und Handle festgelegt',
+        failLabel: 'Name und Handle noch nicht festgelegt',
+    },
+    {
+        id: 'description',
+        step: 'general',
+        group: 'Allgemeine Informationen',
+        keys: ['description'],
+        isFilled: a => a.description !== '',
+        okLabel: 'Beschreibung vollständig',
+        failLabel: 'Beschreibung nicht vollständig!',
+        description: 'Kernverhalten wurde angepasst',
+    },
+    {
+        id: 'category',
+        step: 'general',
+        group: 'Allgemeine Informationen',
+        keys: ['category'],
+        isFilled: a => !!a.category,
+        okLabel: 'Kategorie gewählt',
+        failLabel: 'Kategorie nicht gewählt',
+    },
+    {
+        id: 'system-prompt',
+        step: 'behaviour',
+        group: 'Verhalten',
+        keys: ['systemPrompt'],
+        isFilled: a => !!a.systemPrompt,
+        okLabel: 'System-Prompt definiert',
+        failLabel: 'System-Prompt nicht definiert',
+        failStatus: ValidationState.UNKNOWN,
+    },
+    {
+        id: 'model',
+        step: 'model',
+        group: 'Model',
+        keys: ['model'],
+        isFilled: a => !!a.model,
+        okLabel: 'Model Ausgewählt',
+        failLabel: 'Model nicht ausgewählt!',
+    },
+];
+
+export const TRIGGER_RULES: TriggerRule[] = [
+    {
+        id: 'system-prompt-changed',
+        group: 'Prüfungsauslöser',
+        keys: ['systemPrompt'],
+        changedLabel: 'System-Prompt geändert',
+        unchangedLabel: 'System-Prompt unverändert',
+        description: 'Kernverhalten wurde angepasst',
+    },
+    {
+        id: 'files-changed',
+        group: 'Prüfungsauslöser',
+        keys: ['files'],
+        changedLabel: 'Dateien geändert',
+        unchangedLabel: 'Keine Dateiänderung',
+    },
+];

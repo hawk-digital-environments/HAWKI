@@ -2,6 +2,10 @@ let abortCtrl = new AbortController();
 
 
 async function buildRequestObject(msgAttributes, onData, onError) {
+    if (msgAttributes.authorization && !msgAttributes.authorization.validate()) {
+        if (onData) onData(null, true);
+        return;
+    }
     const msgs = createMessageLogForAI(msgAttributes['regenerationElement']);
     // 'isUpdate' can be set to false to regenerate a message that was never stored.
     const isUpdate = msgAttributes['isUpdate'] ?? !!msgAttributes['regenerationElement'];
@@ -22,12 +26,15 @@ async function buildRequestObject(msgAttributes, onData, onError) {
             stream: msgAttributes['stream'] || false,
             messages: msgs,
             tools: msgAttributes['metadata']?.tools ?? null,
-            params: msgAttributes['metadata']?.params ?? null
+            params: msgAttributes['metadata']?.params ?? null,
+            hawkiExtensions: {
+                assistant_handle: msgAttributes['assistantHandle'] ?? null
+            }
         }
     };
 
     // POST request to initiate the AI stream or broadcast
-    return postData(requestObject)
+    return postData(requestObject, msgAttributes.authorization?.request)
         .then(response => {
             // Check if broadcasting is true
             if (!msgAttributes['broadcasting']) {
@@ -35,12 +42,21 @@ async function buildRequestObject(msgAttributes, onData, onError) {
                     onData('AbortError');
                 }
                 // pass stream callback (response) to processStream
-                return processStream(response.body, onData);
+                return processStream(response.body, (data, done) => {
+                    if (data?.type === 'error' && (data.code === 'TOOL_ACCESS_DENIED' || data.code === 'TOOL_UNAVAILABLE')) {
+                        if (data.code === 'TOOL_ACCESS_DENIED') msgAttributes.authorization?.refresh();
+                        data = {...data, content: window.__(data.code === 'TOOL_ACCESS_DENIED' ? 'chat.tools.accessDenied' : 'chat.tools.unavailable')};
+                    }
+                    onData(data, done);
+                });
             } else if (onData) {
                 setTimeout(() => onData(null, true), 3000); // Simulate a delay for broadcasting
             }
         })
         .catch(error => {
+            if (error?.code === 'TOOL_ACCESS_DENIED' || error?.code === 'TOOL_UNAVAILABLE') {
+                error = new Error(window.__(error.code === 'TOOL_ACCESS_DENIED' ? 'chat.tools.accessDenied' : 'chat.tools.unavailable'));
+            }
             if (onError) {
                 onError(error);
             } else {
@@ -54,13 +70,14 @@ async function buildRequestObject(msgAttributes, onData, onError) {
 }
 
 
-async function postData(data) {
+async function postData(data, request = null) {
 
     abortCtrl = new AbortController();
     const signal = abortCtrl.signal;
     window.oldUiBridge.bindAbortController(abortCtrl);
 
     const url = data.broadcast ? `/req/room/streamAI/${activeRoom.slug}` : '/req/streamAI';
+    if (request) return request(url, data, signal);
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {

@@ -76,17 +76,30 @@
     // The panel follows its content's measured height so a section switch
     // resizes the dialog (or sheet) smoothly; an `auto` height can't transition.
     let contentHeight = $state<number | null>(null);
+    // While the height animates, the panel's own scrollbar would flash.
+    let resizing = $state(false);
 
     const measureContent: Attachment<HTMLElement> = (element) => {
+        const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
         const observer = new ResizeObserver(() => {
-            contentHeight = element.offsetHeight;
+            const height = element.offsetHeight;
+            // The first measurement lands instantly (auto → px doesn't animate).
+            if (contentHeight !== null && height !== contentHeight && !reducedMotion.matches) {
+                resizing = true;
+            }
+            contentHeight = height;
         });
         observer.observe(element);
         return () => {
             observer.disconnect();
             contentHeight = null;
+            resizing = false;
         };
     };
+
+    function endResize(event: TransitionEvent): void {
+        if (event.target === event.currentTarget) resizing = false;
+    }
 
     // Point the hash router at the requested section before the RouterView
     // mounts; the strategy writes the hash, and the view resolves from it.
@@ -107,6 +120,8 @@
 {#snippet panel()}
     <div
         class="settings-panel"
+        class:resizing
+        ontransitionend={endResize}
         style:--settings-content-height={contentHeight === null ? undefined : `${contentHeight}px`}
     >
         <div {@attach measureContent}>
@@ -253,6 +268,11 @@
 
     .settings-panel::-webkit-scrollbar {
         display: none;
+    }
+
+    /* While the height animates the panel's own scrollbar would flash. */
+    .settings-panel.resizing {
+        overflow-y: hidden;
     }
 
     @media (prefers-reduced-motion: reduce) {

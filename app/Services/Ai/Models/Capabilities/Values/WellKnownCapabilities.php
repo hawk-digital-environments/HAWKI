@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\Models\Capabilities\Values;
 
-use App\Services\Ai\Models\Settings\Values\WellKnownModelSettings;
-
 /**
  * Capabilities are a "generic concept" to define features across various providers.
  * OpenAi calls them "provider functions", for Anthropic they are tools, etc.

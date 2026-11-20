@@ -108,6 +108,12 @@ export const addon: AddonEntrypoint = async (context) => ({
         // Test commands
         // =============================================================================
 
+        // Commander swallows the user's "--" separator, but composer's
+        // run-script needs it to forward flags to the underlying phpunit
+        // call — re-insert it in front of any forwarded arguments.
+        const withComposerArgumentSeparator = (args: string[]): string[] =>
+            args.length === 0 ? [] : ["--", ...args];
+
         const tests = program
             .command('test')
             .description('a list of commands to help you with testing tasks');
@@ -123,7 +129,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .allowUnknownOption(true)
             .helpOption(false)
             .action(async (options, command) => {
-                await context.composer.exec(['run', 'test:stan', ...command.args]);
+                await context.composer.exec(['run', 'test:stan', ...withComposerArgumentSeparator(command.args)]);
             });
 
         phpTests
@@ -135,7 +141,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .helpOption(false)
             .action(async (options, command) => {
                 const script = options.coverage ? 'test:unit:coverage' : 'test:unit';
-                await context.composer.exec(['run', script, ...command.args]);
+                await context.composer.exec(['run', script, ...withComposerArgumentSeparator(command.args)]);
             });
 
         phpTests
@@ -147,7 +153,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .helpOption(false)
             .action(async (options, command) => {
                 const script = options.coverage ? 'test:feature:coverage' : 'test:feature';
-                await context.composer.exec(['run', script, ...command.args]);
+                await context.composer.exec(['run', script, ...withComposerArgumentSeparator(command.args)]);
             });
 
         phpTests
@@ -186,7 +192,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .allowUnknownOption(true)
             .helpOption(false)
             .action(async (options, command) => {
-                await context.composer.exec(['run', 'php-cs-fixer', ...command.args]);
+                await context.composer.exec(['run', 'php-cs-fixer', ...withComposerArgumentSeparator(command.args)]);
             });
 
         style

@@ -33,7 +33,7 @@ class AiModelRepositoryTest extends TestCase
         );
 
         static::assertSame(['gemma-4-31b-it', 'gwdg'], $query->getBindings());
-        $sql = str_replace('`', '', $query->toSql());
+        $sql = str_replace(['`', '"'], '', $query->toSql());
         static::assertStringContainsString('model_id = ?', $sql);
         static::assertStringContainsString('provider_id = ?', $sql);
     }

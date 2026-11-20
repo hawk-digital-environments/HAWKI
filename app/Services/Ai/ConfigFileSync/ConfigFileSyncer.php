@@ -14,8 +14,8 @@ use Psr\Log\LoggerInterface;
  * Orchestrates all registered {@see ConfigSyncerInterface} implementations in a single
  * sync pass and tracks the outcome via {@see JobMetrics}.
  *
- * Called by the `ai:config:sync` Artisan command and during database migrations via
- * {@see \App\Services\Ai\ConfigFileSync\ConfigSyncMigrationTrait}. Syncers are discovered
+ * Called explicitly by the `ai:config:sync` and `ai:config:import` Artisan commands.
+ * Syncers are discovered
  * automatically through the Laravel service-container tag `ConfigSyncerInterface::class`
  * (registered in {@see \App\Providers\AiServiceProvider}).
  *

@@ -14,6 +14,7 @@
         --font-size-xxs: 0.70rem; /* --font-xxs  ≈ 11.2px */
         --font-size-xs: 0.85rem; /* --font-xs   ≈ 13.6px */
         --font-size-sm: 1rem; /* --font-sm   = 16px   */
+        --font-size-nav: 0.9rem; /* sidebar/profile rows ≈ 14.4px */
         --font-size-base: 1.10rem; /* --font-md   ≈ 17.6px */
         --font-size-lg: 1.25rem; /* --font-lg   = 20px   */
         --font-size-xl: 1.60rem; /* ≈ 25.6px (legacy --font-xl ≈ 28.8px) */

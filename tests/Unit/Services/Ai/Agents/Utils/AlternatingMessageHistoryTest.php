@@ -55,6 +55,67 @@ class AlternatingMessageHistoryTest extends TestCase
         static::assertSame($sut, $sut->registerAiMessage('hello'));
     }
 
+    public function testItRegistersAiMessageWithHandleReturnsSelf(): void
+    {
+        $sut = new AlternatingMessageHistory();
+        static::assertSame($sut, $sut->registerAiMessage('hello', 'math-tutor'));
+    }
+
+    // =========================================================================
+    // registerAiMessage — assistant attribution (ANSWER_SOURCE meta block)
+    // =========================================================================
+
+    public function testItAddsAnswerSourceMetaBlockForAttributedAiMessage(): void
+    {
+        $sut = new AlternatingMessageHistory();
+        $sut->registerAiMessage('1 + 5 = 6', 'math-tutor');
+
+        $messages = $sut->toArray();
+
+        static::assertSame(
+            "[HKI_META_ANSWER_SOURCE]\nThis earlier answer was written by the assistant \"@math-tutor\". Earlier turns in this conversation may come from different assistants or the default chat, each with their own instructions.\n[/HKI_META_ANSWER_SOURCE]\n\n1 + 5 = 6",
+            $messages[0]->content
+        );
+    }
+
+    public function testItAddsNoAnswerSourceMetaBlockWithoutAssistantHandle(): void
+    {
+        $sut = new AlternatingMessageHistory();
+        $sut->registerAiMessage('Hello!');
+
+        $messages = $sut->toArray();
+
+        static::assertSame('Hello!', $messages[0]->content);
+    }
+
+    public function testItAddsNoAnswerSourceMetaBlockForEmptyAssistantHandle(): void
+    {
+        $sut = new AlternatingMessageHistory();
+        $sut->registerAiMessage('Hello!', '');
+
+        $messages = $sut->toArray();
+
+        static::assertSame('Hello!', $messages[0]->content);
+    }
+
+    public function testItKeepsEachAnswerSourceBlockWhenMergingAttributedAiMessages(): void
+    {
+        $sut = new AlternatingMessageHistory();
+        $sut->registerAiMessage('first answer', 'math-tutor');
+        $sut->registerAiMessage('second answer', 'latin-tutor');
+
+        $messages = $sut->toArray();
+
+        static::assertCount(1, $messages);
+        $content = $messages[0]->content;
+        static::assertStringContainsString('@math-tutor', $content);
+        static::assertStringContainsString('first answer', $content);
+        static::assertStringContainsString('@latin-tutor', $content);
+        static::assertStringContainsString('second answer', $content);
+        static::assertStringContainsString('[[MESSAGE BOUNDARY]]', $content);
+        static::assertSame(2, substr_count($content, '[HKI_META_ANSWER_SOURCE]'));
+    }
+
     // =========================================================================
     // registerUserMessage
     // =========================================================================

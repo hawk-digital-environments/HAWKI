@@ -101,9 +101,10 @@ export function createToolOrCapabilityWithState(
                 return hasNativeCapability;
             }
             if (toolSelection === 'auto') {
-                return hasNativeCapability || tool.getToolsFor(model).length > 0;
+                return hasNativeCapability || tool.getToolsFor(model).some(candidate => withOffline || candidate.status !== 'offline');
             }
-            return model.tool_ids.includes(Number(toolSelection.id)) && (withOffline || toolSelection.status !== 'offline');
+            const selected = toolSelection;
+            return tool.getToolsFor(model).some(candidate => candidate.id === selected.id && (withOffline || candidate.status !== 'offline'));
         }
 
         return true;
@@ -130,10 +131,8 @@ export function createToolOrCapabilityWithState(
                     return 'online';
                 }
                 if (toolSelection === 'auto') {
-                    // This is flawed, because it will return 'online' even if the model doesn't have the online tools available,
-                    // Or we return offline, even if the model would have a native capability available.
-                    // But in this context, we don't have access to the model, so we can't check.
-                    return tool.getTools().some(t => t.status === 'online') ? 'online' : 'offline';
+                    // Availability of auto depends on the model. Consumers use toolAvailabilityFor().
+                    return 'unknown';
                 }
                 return toolSelection.status;
             }
@@ -208,6 +207,7 @@ export function createToolOrCapabilityWithStateFromTransferString(
             resolvedInnerTool = toolName;
         } else {
             resolvedInnerTool = resolvedTool.getTools().find(t => t.name === toolName);
+            if (!resolvedInnerTool) return null;
         }
     } else {
         const toolName = firstPart;
@@ -223,6 +223,7 @@ export function createToolOrCapabilityWithStateFromTransferString(
     try {
         if (resolvedSettingsString) {
             toolSettings = JSON.parse(resolvedSettingsString);
+            if (toolSettings === null || typeof toolSettings !== 'object' || Array.isArray(toolSettings)) return null;
         }
     } catch (e) {
         console.error('Failed to parse transfer string:', transferString, e);
@@ -230,4 +231,20 @@ export function createToolOrCapabilityWithStateFromTransferString(
     }
 
     return createToolOrCapabilityWithState(resolvedTool, resolvedInnerTool, toolSettings);
+}
+
+/** Resolve once against the current authorized catalog. Never silently drop requested tools. */
+export function validatedToolSnapshot(
+    requested: readonly string[],
+    toolStore: AiToolStore,
+    model: AiModel
+): string[] {
+    if (requested.length === 0) return [];
+    if (toolStore.authorizationState !== 'ready' || toolStore.authorizationRefreshing) throw new Error('TOOL_AUTHORIZATION_REFRESHING');
+    return requested.map(transferString => {
+        const tool = createToolOrCapabilityWithStateFromTransferString(transferString, toolStore);
+        if (!tool) throw new Error('TOOL_ACCESS_DENIED');
+        if (!model || !tool.isAvailableFor(model)) throw new Error('TOOL_UNAVAILABLE');
+        return tool.toTransferString();
+    });
 }

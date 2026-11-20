@@ -55,18 +55,9 @@
         buttonRef = $bindable(null)
     }: Props = $props();
 
-    const sendTooltip = $derived.by(() => {
-        if (!composerContext.message.trim()) {
-            return __('chat.composer.actions.noMessageTooltip');
-        }
-        if (composerContext.modelUsage.isValid) {
-            return __('chat.composer.actions.invalidModelTooltip');
-        }
-        if (!composerContext.message.trim()) {
-            return __('chat.composer.actions.emptyMessageTooltip');
-        }
-        return __('chat.composer.actions.sendTooltip');
-    });
+    // The guard's reason for blocking a send doubles as the tooltip — including the
+    // assistant-specific ones (deactivated assistant, unreachable model).
+    const sendTooltip = $derived(__(composerContext.guard.cannotSendReason ?? 'chat.composer.actions.sendTooltip'));
 
     const sendLabel = $derived.by(() => {
         if (composerContext.mode.isEdit) {

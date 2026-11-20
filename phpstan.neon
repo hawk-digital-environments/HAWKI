@@ -22,6 +22,11 @@ parameters:
         - app/Console/Commands/Dev/DbgCommand.php (?)
     ignoreErrors:
         - identifier: function.alreadyNarrowedType
+        # Kept alive by historical migrations in database/migrations, which are
+        # outside the analysed paths, so PHPStan cannot see its usages.
+        -
+            identifier: trait.unused
+            path: app/Services/Ai/ConfigFileSync/ConfigSyncMigrationTrait.php
     level: 5
     stubFiles:
         - phpstan.php.stub

@@ -1,7 +1,13 @@
 <!--
   @component One message in the chat log: avatar, author/timestamp line, the
   rendered body (Markdown, citations, attachments) and the per-message action
-  bar (copy, edit, regenerate, delete). Marks itself busy while pending.
+  bar (copy, edit, regenerate-with-model menu, delete). Marks itself busy while pending.
+
+  For screen readers each message is an article named by a visually hidden
+  "<author> wrote" heading (`headingLevel`, h3 in the log); the body's own
+  headings and the sources list start one level below it. The article is
+  focusable programmatically so the page can park focus on it after a message
+  was deleted or while a regenerated reply streams in.
 
   A trunk message additionally renders its thread: a toggle row with the reply
   count and, when open, the replies (this component, nested with
@@ -22,6 +28,7 @@
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
     import MessageCircleReplyIcon from '$lib/components/ui/icons/iconset/MessageCircleReplyIcon.svelte';
     import VolumeHighIcon from '$lib/components/ui/icons/iconset/VolumeHighIcon.svelte';
+    import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
     import ChatMessageSelf from '$plugins/core/modules/chat/components/ChatMessage.svelte';
     import MessageBody from '$plugins/core/modules/chat/components/message/MessageBody.svelte';
     import MessageReasoning from '$plugins/core/modules/chat/components/message/MessageReasoning.svelte';
@@ -29,9 +36,12 @@
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {messageTrunkId} from '$plugins/core/modules/chat/utils/messageThreads.js';
+    import {MESSAGE_HISTORY_CAP} from '$plugins/core/modules/chat/transport/ChatTransport.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import Link from '$lib/components/util/link/Link.svelte';
     import {formatDateTime} from '$lib/utils/date.js';
 
     interface Props extends HTMLAttributes<HTMLElement> {
@@ -43,11 +53,15 @@
         composer?: ComposerContext | null;
         onDelete: (message: ChatMessageType) => void;
         onDeleteAttachment: (message: ChatMessageType, fileId: string) => void;
+        /** Level of the message's visually hidden author heading; thread replies render one level deeper. Defaults to 3. */
+        headingLevel?: number;
     }
 
-    const {message, replies = [], isThreadReply = false, composer = null, onDelete, onDeleteAttachment, class: className, ...restProps}: Props = $props();
+    const {message, replies = [], isThreadReply = false, composer = null, onDelete, onDeleteAttachment, headingLevel = 3, class: className, ...restProps}: Props = $props();
     const {__} = useTranslator();
+    const toast = useToastContext();
     const aiModelStore = useStore('ai-models');
+    const handleStore = useStore('ai-handle');
     const experiments = useStore('experiments');
     const isAssistant = $derived(message.message_role === 'assistant');
     const showStats = $derived(isAssistant && experiments.isEnabled('statsForNerds') && Boolean(message.stats));
@@ -57,7 +71,7 @@
     );
     const authorName = $derived(
         isAssistant
-            ? aiModelStore.getOneById(message.model ?? '')?.label ?? message.model ?? 'HAWKI'
+            ? message.assistant?.name ?? aiModelStore.getOneById(message.model ?? '')?.label ?? message.model ?? 'HAWKI'
             : message.author.name
     );
 
@@ -77,9 +91,29 @@
                 ? __('chat.thread.replyCountOne')
                 : __('chat.thread.replyCount', {count: String(replies.length)})
     );
+    // Trunk message + replies have reached the send cap: older replies are dropped from AI runs.
+    const threadHistoryCapped = $derived(replies.length + 1 >= MESSAGE_HISTORY_CAP);
+    const historyCapLabel = $derived(__('chat.thread.historyCap', {count: String(MESSAGE_HISTORY_CAP)}));
+
+    // Who already answered this thread (participant rows from the `aiAssistants` hook): the
+    // latest assistant reply's author, else the trunk message's own author. Seeded once per
+    // thread; afterwards the addressed participant is the user's choice.
+    const threadSeedHandle = $derived.by(() => {
+        const answerable = (candidate: ChatMessageType): string | null => {
+            if (candidate.message_role !== 'assistant') return null;
+            const handle = candidate.assistant?.handle;
+            return handle !== undefined && handleStore.assistants.some(entry => entry.chatBinding === handle) ? handle : null;
+        };
+        for (let index = replies.length - 1; index >= 0; index--) {
+            const handle = answerable(replies[index]);
+            if (handle !== null) return handle;
+        }
+        return answerable(message);
+    });
 
     let threadOpen = $state(false);
     let wasComposingInThread = false;
+    let threadSeeded = false;
 
     // The thread follows the composer: entering thread mode opens it, leaving
     // the mode with nothing written closes it again (mirrors the legacy UI).
@@ -101,10 +135,20 @@
         if (trunkId === null) return;
         threadOpen = true;
         composer?.mode.enter('thread', String(trunkId));
+        // Entering reset the composer; pre-address whoever already answered, strictly on the
+        // first open of this thread. The empty-message guard leaves a blocked enter's draft alone.
+        const seed = threadSeedHandle;
+        if (!threadSeeded && seed !== null && composer?.mode.isThread && composer.message.trim() === '') {
+            threadSeeded = true;
+            composer.addHandleToMessage(`@${seed}`);
+        }
     }
 
     function copyMessage() {
-        navigator.clipboard.writeText(message.content.text);
+        navigator.clipboard.writeText(message.content.text).then(
+            () => toast.success(__('chat.actions.copied')),
+            () => toast.error(__('chat.actions.copyFailed'))
+        );
     }
 
     function speakMessage() {
@@ -112,20 +156,49 @@
         speechSynthesis.speak(new SpeechSynthesisUtterance(message.content.text));
     }
 
-    const threadPanelId = $props.id();
+    // `$props.id()` is intentionally called once: Svelte uses one stable
+    // component id as the root for all ids made by this component.
+    const componentId = $props.id();
+    const threadPanelId = `${componentId}-thread`;
+    const headingId = `${componentId}-heading`;
+    let article = $state<HTMLElement | null>(null);
 </script>
 
-<article {...restProps} class={["message", className]} class:user={!isAssistant} class:assistant={isAssistant} class:pending={message.isPending} aria-busy={message.isPending}>
+<article
+    {...restProps}
+    bind:this={article}
+    class={["message", className]}
+    class:user={!isAssistant}
+    class:assistant={isAssistant}
+    class:pending={message.isPending}
+    aria-busy={message.isPending}
+    aria-labelledby={headingId}
+    data-message-id={message.message_id}
+    tabindex="-1"
+>
     <div class="avatar-wrap">
         {#if isAssistant}
-            <span class="assistant-avatar" aria-hidden="true"><BotIcon size={18} /></span>
+            <span
+                class="assistant-avatar"
+                class:personalized={Boolean(message.assistant)}
+                style:--assistant-tint={message.assistant?.tint}
+                aria-hidden="true"
+            >
+                {#if message.assistant?.icon}
+                    <span class="assistant-glyph">{message.assistant.icon}</span>
+                {:else}
+                    <BotIcon size={18} />
+                {/if}
+            </span>
         {:else}
-            <Avatar src={message.author.avatar_url} name={message.author.name} label={message.author.name} size={32} />
+            <!-- Decorative: the heading right next to it already names the author. -->
+            <Avatar src={message.author.avatar_url} name={message.author.name} label="" aria-hidden="true" size={32} />
         {/if}
     </div>
     <div class="message-column">
         <div class="meta">
-            <span class="author">{authorName}</span>
+            <svelte:element this={`h${headingLevel}`} id={headingId} class="u-sr-only">{__('chat.message.authorHeading', {author: authorName})}</svelte:element>
+            <span class="author" aria-hidden="true">{authorName}</span>
             {#if message.created_at}
                 <time datetime={message.created_at}>{formatDateTime(message.created_at)}</time>
             {/if}
@@ -133,10 +206,10 @@
 
         <div class="content">
             {#if isAssistant && message.reasoning?.length}
-                <MessageReasoning parts={message.reasoning} active={Boolean(message.isStreaming && !message.content.text)} />
+                <MessageReasoning parts={message.reasoning} active={Boolean(message.isStreaming && !message.content.text)} headingLevel={headingLevel + 1} />
             {/if}
             {#if isAssistant}
-                <MessageBody message={message.content.text} citations={message.citations} isStreaming={message.isStreaming} />
+                <MessageBody message={message.content.text} citations={message.citations} isStreaming={message.isStreaming} headingLevel={headingLevel + 1} />
             {:else}
                 <p>{message.content.text}</p>
             {/if}
@@ -147,9 +220,9 @@
                         {#if message.isPending}
                             <span class="pending-attachment">{attachment.fileData.name}</span>
                         {:else}
-                            <a href={attachment.fileData.url} target="_blank" rel="noreferrer" download={attachment.fileData.name}>
+                            <Link href={attachment.fileData.url} target="_blank" download={attachment.fileData.name}>
                                 {attachment.fileData.name}
-                            </a>
+                            </Link>
                             <button class="remove-attachment" title={__('chat.actions.deleteAttachment')} aria-label={__('chat.actions.deleteAttachment')} onclick={() => onDeleteAttachment(message, attachment.fileData.uuid)}>×</button>
                         {/if}
                     {/each}
@@ -166,41 +239,46 @@
         </div>
 
         {#if !message.isStreaming && !message.isPending}
-            <div class="actions">
-                <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Copy01Icon} tooltip={__('chat.actions.copy')} onclick={copyMessage} />
-                <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={VolumeHighIcon} tooltip={__('chat.actions.speak')} onclick={speakMessage} />
+            <ul class="actions" aria-label={__('chat.actions.groupLabel', {author: authorName})}>
+                <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={Copy01Icon} tooltip={__('chat.actions.copy')} onclick={copyMessage} /></li>
+                <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={VolumeHighIcon} tooltip={__('chat.actions.speak')} onclick={speakMessage} /></li>
                 {#if composer && !isAssistant}
-                    <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageEdit01Icon} tooltip={__('chat.actions.edit')} onclick={() => composer?.mode.enter('edit', message)} />
+                    <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={MessageEdit01Icon} tooltip={__('chat.actions.edit')} onclick={() => composer?.mode.enter('edit', message)} /></li>
                 {/if}
                 {#if composer && isAssistant}
-                    <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={ArrowReloadHorizontalIcon} tooltip={__('chat.actions.regenerate')} onclick={() => composer?.mode.enter('regen', message)} />
+                    <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={ArrowReloadHorizontalIcon} tooltip={__('chat.actions.regenerate')} onclick={() => composer?.mode.enter('regen', message)} /></li>
                 {/if}
                 {#if canThread}
-                    <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={MessageCircleReplyIcon} tooltip={__('chat.actions.thread')} onclick={openThreadComposer} />
+                    <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={MessageCircleReplyIcon} tooltip={__('chat.actions.thread')} onclick={openThreadComposer} /></li>
                 {/if}
-                <ButtonWithTooltip variant="iconGhost" size="xs" iconLeft={Delete02Icon} tooltip={__('chat.actions.delete')} onclick={() => onDelete(message)} />
-            </div>
+                <li><ButtonWithTooltip variant="iconGhost" size="sm" iconLeft={Delete02Icon} tooltip={__('chat.actions.delete')} onclick={() => onDelete(message)} /></li>
+            </ul>
         {/if}
 
         {#if hasThreadSection}
             <div class="thread" class:composing={composingInThread}>
-                <button
-                    type="button"
-                    class="thread-toggle"
-                    class:open={threadOpen}
-                    aria-expanded={threadOpen}
-                    aria-controls={threadPanelId}
-                    onclick={() => threadOpen = !threadOpen}
-                >
-                    <MessageCircleReplyIcon size={16} />
-                    <span class="thread-label">{threadToggleLabel}</span>
-                    <span class="thread-chevron" aria-hidden="true"><ArrowRight01Icon size={16} /></span>
-                </button>
+                <div class="thread-head">
+                    <button
+                        type="button"
+                        class="thread-toggle"
+                        class:open={threadOpen}
+                        aria-expanded={threadOpen}
+                        aria-controls={threadPanelId}
+                        onclick={() => threadOpen = !threadOpen}
+                    >
+                        <MessageCircleReplyIcon size={16} />
+                        <span class="thread-label">{threadToggleLabel}</span>
+                        <span class="thread-chevron" aria-hidden="true"><ArrowRight01Icon size={16} /></span>
+                    </button>
+                    {#if threadHistoryCapped}
+                        <InfoPopover label={threadToggleLabel} info={historyCapLabel} popoverSide="top"/>
+                    {/if}
+                </div>
 
                 {#if threadOpen}
                     <div class="thread-panel" id={threadPanelId} transition:growTransition>
                         {#each replies as reply (reply.clientKey ?? reply.message_id)}
-                            <ChatMessageSelf message={reply} {composer} isThreadReply {onDelete} {onDeleteAttachment} />
+                            <ChatMessageSelf message={reply} {composer} isThreadReply {onDelete} {onDeleteAttachment} headingLevel={headingLevel + 1} />
                         {/each}
 
                         {#if composingInThread}
@@ -210,7 +288,7 @@
                             </div>
                         {:else if canThread}
                             <div class="thread-reply">
-                                <Button variant="ghost" size="xs" iconLeft={MessageCircleReplyIcon} onclick={openThreadComposer}>
+                                <Button variant="ghost" size="sm" iconLeft={MessageCircleReplyIcon} onclick={openThreadComposer}>
                                     {__('chat.thread.reply')}
                                 </Button>
                             </div>
@@ -238,11 +316,25 @@
         height: 2rem;
         place-items: center;
         border-radius: var(--corner-full);
-        background: var(--color-accent-100);
-        color: var(--color-accent-text);
+        background: var(--color-active-surface);
+        color: var(--color-active-text);
+    }
+
+    /* An assistant-authored message paints the circle in its own tint and
+       shows its glyph instead of the generic bot icon. */
+    .assistant-avatar.personalized {
+        background: color-mix(in oklab, var(--assistant-tint, var(--color-active-surface)) 18%, transparent);
+    }
+
+    .assistant-glyph {
+        font-size: 1.1rem;
+        line-height: 1;
     }
 
     .message-column { min-width: 0; }
+
+    /* Focus lands here programmatically only; the buttons inside keep their own rings. */
+    .message:focus { outline: none; }
 
     .pending { opacity: 0.72; }
 
@@ -279,7 +371,7 @@
         margin-top: var(--space-2);
     }
 
-    .attachments a,
+    .attachments :global(a),
     .pending-attachment {
         padding: var(--space-1) var(--space-2);
         border: var(--border);
@@ -307,12 +399,16 @@
         display: flex;
         gap: var(--space-0_5);
         min-height: 2rem;
-        margin-top: var(--space-1);
+        margin: var(--space-1) 0 0;
+        padding: 0;
+        list-style: none;
         opacity: 0;
         transition: opacity var(--duration-fast);
     }
 
-    .message:hover:not(:has(.message:hover)) > .message-column > .actions,
+    .actions li { display: contents; }
+
+    .message:hover .actions,
     .actions:focus-within { opacity: 1; }
 
     @media (hover: none) { .actions { opacity: 1; } }
@@ -320,6 +416,14 @@
     /* ── Thread ───────────────────────────────────────────────────────── */
 
     .thread { margin-top: var(--space-1); }
+
+    /* Toggle row: the toggle itself plus, once the thread's history reached the send
+       cap, the info affordance explaining that older replies are dropped from runs. */
+    .thread-head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
 
     /* Same quiet pill as the reasoning trigger: a line of accent text with a
        chevron, pulled left by its own padding so the icon aligns with the

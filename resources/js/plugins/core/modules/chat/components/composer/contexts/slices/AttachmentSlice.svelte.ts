@@ -107,7 +107,7 @@ export class AttachmentSlice implements CheckpointingInterface<AttachmentSliceCh
         // `remove()` deletes a file's uuid entry alongside the file, so any
         // file removed between checkpoint and restore would lose its uuid
         // permanently if we only restored `_list` — `getAssignedUuid` would
-        // return null for a file the server already has, breaking edit/regen.
+        // return null for a file the server already has, breaking edit.
         this._assignedUuids = [...checkpoint.uuids];
     }
 }

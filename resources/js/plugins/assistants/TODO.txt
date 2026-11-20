@@ -1,0 +1,143 @@
+KERNEL CHANGES NEEDED BY THE ASSISTANTS PLUGIN
+==============================================
+
+Two issues in shared kernel code block the assistants plugin from using the
+resource-schema system the way it is designed to be used. Both are generic —
+they affect any plugin, not just this one. Until they are resolved, the plugin
+works around them locally (the workarounds are marked in the code and listed at
+the bottom of this file).
+
+
+------------------------------------------------------------------------------
+1. `extendResourceSchema` rejects JSON:API link objects  [BLOCKER]
+------------------------------------------------------------------------------
+
+File:     resources/js/kernel/api/jsonApiEncoding.ts
+Function: extendResourceSchema()
+
+Current:
+
+    _links: z.record(z.string(), z.string()).optional()
+
+This types every link value as a plain URL string. The JSON:API spec allows a
+link to be either a string OR a link object:
+
+    https://jsonapi.org/format/#document-links
+
+    "link: ... an object ("link object") which can contain the following
+     members: href, rel, describedby, title, type, hreflang, meta"
+
+HAWKI's own backend emits link objects. `app/JsonApi/Resources/HasActionLinks.php`
+attaches one link per permitted action, each carrying an ALLOWED/DENIED verdict
+in `meta`:
+
+    "links": {
+      "self":   "https://hawki.test/api/v1/assistants/7",
+      "update": { "href": "...", "meta": { "message": "ALLOWED", "method": "PATCH" } },
+      "delete": { "href": "...", "meta": { "message": "DENIED",  "method": "DELETE" } },
+      "addFavorite": { "href": "...", "meta": { "message": "ALLOWED", "method": "POST" } }
+    }
+
+`JsonaPropertyMapper.setLinks()` puts that object on the decoded model as
+`_links`, and `extendResourceSchema` then fails to parse it.
+
+Verified failure (real payload through the real decode + validate pipeline):
+
+    [
+      { "code": "invalid_type", "expected": "string",
+        "path": [0, "_links", "update"],
+        "message": "Invalid input: expected string, received object" },
+      ... same for "delete", "addFavorite"
+    ]
+
+Consequence: registering a schema for ANY resource whose PHP resource class uses
+`HasActionLinks` makes every read of that resource throw. That is not specific to
+assistants — it is currently latent for every resource using that trait.
+
+Proposed fix (one field):
+
+    _links: z.record(
+        z.string(),
+        z.union([
+            z.string(),
+            z.looseObject({ href: z.string().optional() })
+        ])
+    ).optional()
+
+`looseObject` keeps `meta` (and any other spec member) intact so consumers can
+read the permission verdict. Verified: with this change the full pipeline
+(decode -> validate -> transform -> extendResourceCollection) passes, including
+recursive relationships.
+
+
+------------------------------------------------------------------------------
+2. The default transport throws an untyped Error (loses the HTTP status)
+------------------------------------------------------------------------------
+
+File:     resources/js/kernel/api/transport.ts
+Function: createDefaultTransport()
+
+On a non-2xx response it throws:
+
+    throw new Error(`API request failed with status ${response.status}: ${detail}`)
+
+The status code, the parsed `errors[]` array, and the response body are all
+discarded into a string. Callers cannot distinguish 401 / 403 / 404 / 422 from
+a genuine network failure without re-parsing English prose.
+
+This matters for anything that needs per-status behaviour:
+  - 401 -> re-authenticate
+  - 403 -> "you do not have permission" instead of a generic failure
+  - 404 -> render a not-found route
+  - 422 -> route validation errors to their form fields (the assistant builder
+           does exactly this via `ApiError.fieldErrors` -> JSON pointer -> field)
+
+Suggestion: throw a structured error instead, e.g.
+
+    export class ApiTransportError extends Error {
+        constructor(
+            readonly status: number,
+            readonly errors: Array<Record<string, unknown>>,
+            readonly body: unknown,
+            message: string
+        ) { super(message) }
+    }
+
+Anything carrying `status` + `errors[]` would do; the plugin's `ApiError.from()`
+can then consume it directly.
+
+
+------------------------------------------------------------------------------
+WHAT THE PLUGIN DOES IN THE MEANTIME
+------------------------------------------------------------------------------
+
+a) `assistants.schema.ts` IS written and tested, but is NOT registered in
+   `AssistantsPlugin.resourceSchemas()`, because registration would route it
+   through the broken `extendResourceSchema` above.
+
+   Instead `api/resources/assistantsClient.ts` passes `validateSchema: false`
+   and applies the schema itself.
+
+   ONCE ISSUE 1 IS FIXED:
+     - add to assistants.plugin.ts:
+
+           resourceSchemas(registrar) {
+               registrar.add('assistants', AssistantsSchema);
+           }
+
+       (or `registrar.addFromModules(import.meta.glob('$plugins/assistants/api/schemas/*.schema.ts', {eager: true}))`)
+
+     - in assistantsClient.ts, delete the `validateSchema: false` flag, the
+       `as unknown as` casts and the explicit `.parse(...)` calls. The RestApi
+       then validates and transforms on its own and the typed overloads
+       (`getResource('assistants', id)` -> `Assistant`) become truthful.
+
+     The `declare module` block registering `'assistants': Assistant` in
+     types/assistant/Assistant.ts is already in place and needs no change.
+
+b) `api/errors.ts` -> `ApiError.from()` was written against axios (it reads
+   `err.response.status`). The kernel transport throws a plain Error, so every
+   failure would otherwise be reported as status 0 = "Could not reach the
+   server. Please check your connection." — wrong and misleading for a 403.
+   A narrow fallback now recovers the status by parsing the transport's message.
+   That fallback should be DELETED once issue 2 is fixed.

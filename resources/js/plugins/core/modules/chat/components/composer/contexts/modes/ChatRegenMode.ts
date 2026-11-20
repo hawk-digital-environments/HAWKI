@@ -6,10 +6,14 @@ import type {ChatDefaultModeState} from '$plugins/core/modules/chat/components/c
 import {AbstractMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/contracts/AbstractMode.js';
 import type {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
+import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 
 export interface ChatRegenModeState {
     messageId: string;
     originalMessage: string;
+    /** Participant picked for the re-run in the model picker's regen groups;
+     *  `null` keeps the plain model run. Set in place by the picker (reactive `$state`). */
+    pickedParticipant: AiAssistant | null;
 }
 
 /**
@@ -18,8 +22,10 @@ export interface ChatRegenModeState {
  * Pre-fills the model and sampling parameters from the original message's
  * metadata so the regenerated reply uses the same configuration. If the
  * original model is no longer available, falls back to the default and shows
- * an info toast. Locks attachments, the message input, and suggestions — only
- * model and parameter selection are exposed. Exits after send.
+ * an info toast. Locks attachments, the message input, suggestions, and
+ * assistant `@`-addressing — only model and parameter selection are exposed;
+ * the re-run's participant is picked in the model picker's regenerate groups
+ * (see `ChatRegenModeState.pickedParticipant`). Exits after send.
  */
 export class ChatRegenMode extends AbstractMode<ChatMessage, ChatRegenModeState> {
     constructor(
@@ -43,7 +49,7 @@ export class ChatRegenMode extends AbstractMode<ChatMessage, ChatRegenModeState>
     }
 
     public disablesUiFeature(feature: DisabledChatFeature): boolean {
-        return ['attachments', 'input', 'suggestions'].includes(feature);
+        return ['attachments', 'input', 'suggestions', 'assistants'].includes(feature);
     }
 
     public canEnter(context: ComposerContext, data: ChatMessage): boolean | string {
@@ -96,7 +102,8 @@ export class ChatRegenMode extends AbstractMode<ChatMessage, ChatRegenModeState>
 
         return {
             messageId: data.message_id,
-            originalMessage: data.content.text
+            originalMessage: data.content.text,
+            pickedParticipant: null
         };
     }
 

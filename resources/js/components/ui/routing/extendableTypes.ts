@@ -73,3 +73,6 @@ export interface RouteContextExtensions {
 export interface GlobalMiddlewares {
 
 }
+
+/** Application-owned route metadata, extended through declaration merging. */
+export interface RouteMetaExtensions {}

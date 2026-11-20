@@ -44,6 +44,9 @@ class PrivateMessageHandler extends AbstractMessageHandler
                 'tools' => $data['metadata']['tools'] ?? null,
                 'params' => $data['metadata']['params'] ?? null,
                 'citations' => $data['metadata']['citations'] ?? null,
+                // Display identity of the assistant that answered, so the
+                // message log keeps showing who answered after reload.
+                'assistant' => $data['metadata']['assistant'] ?? null,
             ],
         ]);
 
@@ -82,6 +85,7 @@ class PrivateMessageHandler extends AbstractMessageHandler
                 'tools' => $data['metadata']['tools'] ?? null,
                 'params' => $data['metadata']['params'] ?? null,
                 'citations' => $data['metadata']['citations'] ?? null,
+                'assistant' => $data['metadata']['assistant'] ?? null,
             ]
         ]);
 

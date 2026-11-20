@@ -124,4 +124,4 @@ Returns `{}` with a console warning when labels are not yet loaded or the path i
 
 Translation labels are served by the `translation-labels` API resource and loaded automatically during the `main` boot stage by `LocalizationExtension`. The active locale comes from the connection object; if the requested labels fail to load, the system falls back to the configured default locale, and then to an empty label set. No manual setup is required — `useTranslator()` is available in any component after bootstrap.
 
-Labels live on the server side under `resources/lang/`. To add a new label, add the key to the appropriate language file there.
+Labels live on the server side under `resources/language/` (e.g. `chat_de_DE.json`). To add a new label, add the key to the appropriate language file there — one `{feature}_{locale}.json` file per locale.

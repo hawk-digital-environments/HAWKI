@@ -1,0 +1,596 @@
+{
+    "assistants": {
+        "assistant": "Assistent",
+        "assistants": "Assistenten",
+        "categories": {
+            "academic_writing": "Wissenschaftliches Schreiben",
+            "computer_science": "Informatik",
+            "study_tools": "Lernhilfen",
+            "science": "Naturwissenschaften",
+            "campus_life": "Campusleben",
+            "research": "Forschung",
+            "math": "Mathematik",
+            "languages": "Sprachen",
+            "all": "Alle"
+        },
+        "settings": {
+            "language": {
+                "label": "Sprache",
+                "description": "Die Sprache, die der Assistent für jede Antwort verwenden soll.",
+                "options": {
+                    "not_set": "Nicht festgelegt",
+                    "en": "Englisch",
+                    "de": "Deutsch"
+                }
+            },
+            "formality": {
+                "label": "Formalität",
+                "description": "Der Formalitätsgrad der Antworten des Assistenten.",
+                "options": {
+                    "not_set": "Nicht festgelegt",
+                    "casual": "Locker",
+                    "balanced": "Ausgewogen",
+                    "professional": "Formell",
+                    "academic": "Akademisch"
+                }
+            },
+            "answer_style": {
+                "label": "Antwortstil",
+                "description": "Der Ausführlichkeitsstil der Antworten des Assistenten.",
+                "options": {
+                    "not_set": "Nicht festgelegt",
+                    "concise": "Kurz",
+                    "balanced": "Mittel",
+                    "detailed": "Detailliert"
+                }
+            }
+        },
+        "sidebar": {
+            "home": "Startseite",
+            "store": "Store",
+            "my_assistants": "Meine Assistenten",
+            "drafts": "Entwürfe",
+            "private": "Privat",
+            "favourites": "Favoriten",
+            "shared": "Geteilt",
+            "create": "Assistent erstellen",
+            "switch_case": "Bereich wechseln",
+            "back": "Zurück",
+            "reviews": "Prüfungen"
+        },
+        "entry": {
+            "title": "Assistent erstellen",
+            "description": "Wähle, wie du deinen neuen Assistenten erstellen möchtest.",
+            "advanced": "Erweitert",
+            "advanced_description": "Volle Kontrolle über alle Einstellungen, Wissen, Modell und Freigabe.",
+            "coming_soon": "Bald verfügbar",
+            "assisted": "Assistiert",
+            "assisted_description": "Lass dich Schritt für Schritt durch die Erstellung führen."
+        },
+        "store": {
+            "title": "Assistenten Store",
+            "empty_title": "Keine Assistenten vorhanden",
+            "empty_description": ""
+        },
+        "drafts": {
+            "title": "Assistenten-Entwürfe",
+            "empty_title": "Keine Entwürfe vorhanden",
+            "empty_description": "Du hast noch keine Assistenten als Entwurf gespeichert."
+        },
+        "private": {
+            "title": "Private Assistenten",
+            "empty_title": "Keine privaten Assistenten vorhanden",
+            "empty_description": "Assistenten, die du als privat speicherst, sind nur für dich sichtbar."
+        },
+        "shared": {
+            "title": "Geteilte Assistenten",
+            "empty_title": "Keine geteilten Assistenten vorhanden",
+            "empty_description": "Hier erscheinen Assistenten, die andere Benutzer mit dir geteilt haben."
+        },
+        "favourites": {
+            "title": "Favorisierte Assistenten",
+            "empty_title": "Keine Favoriten gespeichert",
+            "empty_description": "Markiere Assistenten mit dem Herz-Symbol, um sie hier zu sehen."
+        },
+        "browser": {
+            "empty_title": "Keine Assistenten gefunden",
+            "empty_description": "Keine Assistenten passen zu deinen aktuellen Filtern.",
+            "loading": "Lade Assistenten…",
+            "no_results": "Es wurden keine Ergebnisse gefunden",
+            "pagination_of": "von",
+            "search": "Suchen",
+            "search_placeholder": "Assistenten durchsuchen…"
+        },
+        "card": {
+            "remix": "Remix",
+            "open_aria": "Details von :name öffnen",
+            "category_unknown": "Unbekannt",
+            "remixed_via": "via"
+        },
+        "availability": {
+            "deactivated": "Deaktiviert",
+            "deactivatedHint": "Das KI-Modell dieses Assistenten ist nicht mehr verfügbar. Er kann erst wieder genutzt werden, wenn die Person, die ihn erstellt hat, ein neues Modell auswählt.",
+            "deactivatedHintEditor": "Das KI-Modell dieses Assistenten ist nicht mehr verfügbar. Bearbeite den Assistenten und wähle ein neues Modell, um ihn wieder zu aktivieren.",
+            "offline": "Modell offline",
+            "offlineHint": "Das KI-Modell dieses Assistenten ist gerade nicht erreichbar. Er kann wieder genutzt werden, sobald das Modell wieder online ist."
+        },
+        "release_stage": {
+            "private": "Privat",
+            "organizational": "Hochschulintern",
+            "federated": "Föderiert",
+            "draft": "Entwurf"
+        },
+        "risk": {
+            "low": "Geringes Risiko",
+            "medium": "Mittleres Risiko",
+            "high": "Hohes Risiko"
+        },
+        "detail": {
+            "dialog_title": "Assistentendetails",
+            "back": "Zurück",
+            "edit": "Bearbeiten",
+            "menu_aria": "Assistenten-Menü öffnen",
+            "favourite_aria": "Favorit",
+            "favourite_failed": "Der Favorit konnte nicht gespeichert werden.",
+            "delete": "Löschen",
+            "delete_confirm_title": "Assistent :name löschen",
+            "delete_confirm_description": "Bist du sicher, dass du diesen Assistenten löschen möchtest? Dieser Vorgang kann nicht rückgängig gemacht werden.",
+            "deleted": "Assistent gelöscht.",
+            "delete_failed": "Der Assistent konnte nicht gelöscht werden.",
+            "remix": "Remixen",
+            "try_out": "Ausprobieren",
+            "read_more": "Weiterlesen",
+            "meta_creator": "Ersteller",
+            "meta_version": "Version",
+            "meta_usage": "Nutzung",
+            "meta_usage_unit": "Aufrufe",
+            "meta_updated": "Aktualisiert",
+            "trust_title": "Vertrauen & Risiko",
+            "history_title": "Änderungsverlauf",
+            "changed_fields": "Felder:",
+            "version_note": "Hinweis:",
+            "creation": "Erstellung",
+            "feedback_sent": "Feedback gesendet.",
+            "publish": "Veröffentlichen",
+            "release_draft": "Entwurf",
+            "release_private": "Privat",
+            "release_organizational": "Hochschulintern",
+            "release_federated": "Föderiert",
+            "release_pending": "In Prüfung",
+            "release_updated": "Veröffentlichungsstatus geändert.",
+            "release_submitted": "Assistent zur Prüfung eingereicht.",
+            "release_failed": "Der Veröffentlichungsstatus konnte nicht geändert werden.",
+            "review_title": "Prüfung",
+            "review_requested_hint": "In Prüfung — der Assistent wird nach Genehmigung als „:stage“ freigegeben.",
+            "review_decided_on": "Entschieden am :date",
+            "share": "Teilen",
+            "share_title": "Assistent teilen",
+            "share_description": "Lege fest, wer diesen Assistenten nutzen oder bearbeiten darf.",
+            "share_search_ph": "Name, Benutzername oder E-Mail suchen…",
+            "share_search_info": "Suche ab :min Zeichen — es werden die ersten :limit Treffer angezeigt.",
+            "share_searching": "Suche läuft…",
+            "share_no_results": "Keine Benutzer:innen gefunden.",
+            "share_search_failed": "Die Benutzer:innensuche ist fehlgeschlagen.",
+            "share_can_edit": "Darf bearbeiten",
+            "share_copy_link": "Per Link teilen",
+            "share_link_copied": "Link in die Zwischenablage kopiert.",
+            "share_copy_failed": "Der Link konnte nicht kopiert werden.",
+            "share_save": "Freigaben speichern",
+            "share_saved": "Freigaben gespeichert.",
+            "share_save_failed": "Die Freigaben konnten nicht gespeichert werden.",
+            "share_link_label": "Freigabelink",
+            "share_link_placeholder": "Link wird erstellt…",
+            "share_link_copy": "Link kopieren",
+            "share_link_expires": "Gültig bis :date. Alle Angemeldeten, die ihn öffnen, erhalten Zugriff.",
+            "share_link_create_failed": "Der Freigabelink konnte nicht erstellt werden.",
+            "share_link_can_edit": "Empfänger des Links dürfen bearbeiten",
+            "share_link_view_only": "Empfänger des Links können nur ansehen",
+            "share_link_invalidate": "Alle Freigabelinks widerrufen",
+            "share_link_invalidated": "Der Freigabelink wurde widerrufen.",
+            "share_link_invalidate_failed": "Der Freigabelink konnte nicht widerrufen werden.",
+            "share_link_redeemed": "Der Assistent wurde mit dir geteilt.",
+            "share_link_invalid": "Dieser Freigabelink ist ungültig oder abgelaufen."
+        },
+        "feedback": {
+            "feedback_to": "Feedback an",
+            "visible_to_creator": "Nur für den Ersteller sichtbar",
+            "send_feedback": "Feedback senden"
+        },
+        "remix": {
+            "remix_from": "Remix von",
+            "remix_from_creator": "Original erstellt von",
+            "original_status": "Original-Status:",
+            "remix_hint": "Dein Remix startet als privater Entwurf und muss vor einer breiteren Freigabe geprüft werden. Vertrauensstatus wird nicht vom Original übernommen."
+        },
+        "builder": {
+            "sidebar": {
+                "new_assistant": "Neuer Assistent",
+                "general": "Allgemein",
+                "behaviour": "Verhalten",
+                "knowledge": "Wissen & Daten",
+                "model": "Modell",
+                "test": "Testen",
+                "publish": "Veröffentlichen"
+            },
+            "steps": {
+                "progress": "Fortschritt",
+                "step_current": "Schritt :current",
+                "step_total": "von :total",
+                "back": "Zurück",
+                "continue": "Weiter",
+                "continue_to": "Weiter zu :step",
+                "required": "Dieses Feld ist erforderlich.",
+                "incomplete": "Bitte fülle die Pflichtfelder aus.",
+                "invalid": "Bitte korrigiere die markierten Felder."
+            },
+            "exit_dialog": {
+                "title": "Entwurf behalten?",
+                "description": "Dein Assistent ist noch nicht veröffentlicht. Möchtest du den Entwurf behalten oder endgültig verwerfen?",
+                "keep": "Entwurf behalten",
+                "discard": "Entwurf verwerfen",
+                "keep_failed": "Der Entwurf konnte nicht gespeichert werden. Bitte prüfe deine Eingaben und versuche es erneut.",
+                "discard_failed": "Der Entwurf konnte nicht verworfen werden.",
+                "changes_title": "Änderungen verwerfen?",
+                "changes_description": "Du hast diesen Assistenten geändert. Möchtest du deine Änderungen behalten oder verwerfen und den vorherigen Stand wiederherstellen?",
+                "changes_keep": "Änderungen behalten",
+                "changes_discard": "Änderungen verwerfen",
+                "revert_failed": "Deine Änderungen konnten nicht verworfen werden."
+            },
+            "general": {
+                "title": "Allgemeine Informationen",
+                "description": "Grundlegende Angaben zu deinem Assistenten.",
+                "input_name": "Name des Assistenten",
+                "input_handle": "Eindeutiger @Handle",
+                "input_handle_hint": "Eine eindeutige Adresse für deinen Assistenten, genutzt in Links und Erwähnungen. Nur Buchstaben, Zahlen, Binde- und Unterstriche.",
+                "handle_taken": "Dieser Handle ist bereits vergeben. Bitte wähle einen anderen.",
+                "handle_available": "Dieser Handle ist verfügbar.",
+                "handle_checking": "Verfügbarkeit wird geprüft…",
+                "input_description": "Kurzbeschreibung",
+                "input_description_hint": "Ein Satz, der auf der Karte des Assistenten im Assistenten-Store angezeigt wird.",
+                "input_short_description": "Ausführliche Beschreibung",
+                "input_detail_description_hint": "Wird auf der Detailseite angezeigt. Erkläre, was der Assistent macht, für wen er gedacht ist und wie man ihn nutzt.",
+                "input_category": "Kategorie",
+                "input_category_not_set": "Nicht festgelegt",
+                "avatar_title": "Erscheinungsbild",
+                "avatar_symbol_change": "Emoji ändern",
+                "avatar_background": "Hintergrund",
+                "avatar_ai": "Mit KI vorschlagen",
+                "avatar_ai_loading": "Suche passenden Avatar…",
+                "avatar_ai_error": "Gerade kein Vorschlag möglich. Bitte versuche es erneut.",
+                "avatar_random": "Zufall",
+                "avatar_backgrounds_prev": "Vorherige Hintergründe",
+                "avatar_backgrounds_next": "Weitere Hintergründe",
+                "input_tags": "Tags",
+                "input_tags_hint": "Schlagwörter, mit denen andere deinen Assistenten im Assistenten-Store finden.",
+                "tag_add": "Tag hinzufügen",
+                "tag_input_aria": "Tag eingeben",
+                "tag_confirm_aria": "Tag bestätigen"
+            },
+            "behaviour": {
+                "title": "Verhalten",
+                "description": "Lege fest, wie dein Assistent kommuniziert.",
+                "warning_system_prompt": "Änderungen am System-Prompt beeinflussen die Vertrauensprüfung.",
+                "input_system_prompt": "System-Prompt",
+                "input_system_prompt_hint": "Anweisungen, denen das Modell in jedem Gespräch folgt: Rolle, Aufgaben, Tonfall und Grenzen. Nutzer*innen sehen ihn nicht.",
+                "input_system_prompt_placeholder": "System-Prompt schreiben",
+                "input_greeting": "Begrüßungsnachricht",
+                "input_greeting_hint": "Die erste Nachricht, die Nutzer*innen in einem neuen Chat mit dem Assistenten sehen.",
+                "input_greeting_placeholder": "Begrüßungsnachricht schreiben",
+                "input_starter_prompts": "Vorgeschlagene Starter-Prompts",
+                "input_starter_prompts_add": "Prompt hinzufügen",
+                "input_starter_prompts_hint": "Beispielnachrichten, die in einem leeren Chat als Buttons erscheinen, damit Nutzer*innen mit einem Klick starten können."
+            },
+            "knowledge": {
+                "title": "Wissen & Daten",
+                "description": "Füge Kontextquellen hinzu, um die Antworten zu verbessern.",
+                "warning_knowledge_sources": "Wissensquellen können die Genehmigungsanforderungen beeinflussen.",
+                "upload_title": "Dateien hochladen",
+                "upload_hint": "Unterstützte Dateitypen",
+                "upload_max_size": "Maximale Dateigröße",
+                "upload_allowed_extensions": "Erlaubte Dateiendungen",
+                "upload_rejected_type": "Dateityp nicht unterstützt",
+                "upload_browse": "Dateien durchsuchen",
+                "upload_progress": "Dateien werden hochgeladen…",
+                "attached_files": "Angehängte Dateien",
+                "input_knowledge_databases": "Wissensdatenbanken",
+                "upload_ingesting": "Wird in die Wissensdatenbank aufgenommen…",
+                "rag_status": "RAG-Status",
+                "rag_status_pending": "Ausstehend",
+                "rag_status_success": "Erfolgreich",
+                "rag_status_failed": "Fehlgeschlagen",
+                "ingestion_failed": ":name konnte nicht zur Wissensdatenbank hinzugefügt werden: :reason",
+                "ingestion_failed_unknown_reason": "unbekannter Grund",
+                "no_files": "Noch keine Dateien hochgeladen.",
+                "manage_files": "Dateien verwalten",
+                "delete_all_files": "Alle Dateien löschen",
+                "delete_all_confirm_title": "Alle Dateien löschen?",
+                "delete_all_confirm_description": "Alle angehängten Dateien werden dauerhaft vom Assistenten entfernt.",
+                "delete_all_error": "Einige Dateien konnten nicht gelöscht werden.",
+                "load_files_in_context": "Der Inhalt von Dateien wird in den Konversationskontext geladen.",
+                "no_model_selected": "Noch kein Modell ausgewählt.",
+                "upload_disabled_model_not_configured": "Das aktuell ausgewählte Modell ist nicht für die Wissensdatenbank konfiguriert."
+            },
+            "model": {
+                "title": "Modelleinstellungen",
+                "description": "Wähle und konfiguriere das KI-Modell.",
+                "input_model": "Empfohlenes Modell",
+                "input_model_hint": "Das Modell, mit dem neue Chats mit diesem Assistenten starten.",
+                "select_model_placeholder": "Modell auswählen",
+                "input_allow_model_select": "Endnutzer darf Modell wählen",
+                "input_allow_model_select_description": "Nutzer können zwischen freigegebenen Modellen wählen.",
+                "input_temperature": "Temperatur",
+                "input_temperature_description": "Höhere Werte machen die Antworten kreativer, aber weniger vorhersehbar.",
+                "input_temperature_hint": "Steuert die Zufälligkeit der Antworten. Übliche Werte liegen zwischen 0 und 1.",
+                "input_top_p": "Top_P",
+                "input_top_p_description": "Begrenzt die Wahrscheinlichkeitsmasse, aus der das Modell sampelt.",
+                "input_top_p_hint": "Niedrigere Werte machen das Sampling fokussierter, höhere Werte offener.",
+                "input_max_tokens": "Max. Ausgabelänge",
+                "input_max_tokens_description": "Maximale Tokenanzahl pro Antwort.",
+                "input_max_tokens_hint": "Höhere Werte ermöglichen längere Antworten, kosten aber mehr Zeit.",
+                "advanced_title": "Erweiterte Einstellungen",
+                "advanced_description": "Temperature, Top_P und max. Ausgabelänge",
+                "conflict": {
+                    "titleSingle": ":model unterstützt :tool nicht",
+                    "titleMultiple": ":model unterstützt eines oder mehrere der ausgewählten Tools nicht",
+                    "singleModelCapable": "Dieses Modell kann alles was du brauchst.",
+                    "multipleModelsCapable": "Diese :count Modelle können alles was du brauchst.",
+                    "noModelsAvailable": "Kein verfügbares Modell unterstützt diese Kombination. Entferne ein Tool."
+                }
+            },
+            "tools": {
+                "title": "Tools & MCP",
+                "description": "Wähle Tools aus genehmigten MCP-Servern. Jedes Tool beeinflusst die Risikostufe und Veröffentlichungspfade.",
+                "selectedCount": ":selected von :count"
+            },
+            "test": {
+                "title": "Private Testumgebung",
+                "description": "Teste und verfeinere deinen Assistenten.",
+                "open": "Unterhaltung öffnen",
+                "close": "Unterhaltung schließen",
+                "reset": "Unterhaltung neu starten",
+                "no_model": "Wähle zuerst ein Modell",
+                "mode": "Chat-Modus",
+                "mode_test": "Testen",
+                "mode_guide": "KI-Guide"
+            },
+            "guide": {
+                "placeholder": "Frag den Guide…",
+                "empty_title": "Gemeinsam einrichten",
+                "empty_hint": "Beschreib dein Ziel oder zieh Material hinein – der Guide füllt die Felder aus.",
+                "applied": "Ausgefüllt",
+                "open_field": ":field anzeigen",
+                "error": "Der Guide konnte nicht antworten. Bitte versuche es erneut.",
+                "attach": "Dateien zur Wissensbasis hinzufügen",
+                "drop_label": "Dateien ablegen, um sie zur Wissensbasis hinzuzufügen",
+                "ingest": {
+                    "uploading": "Wird zur Wissensbasis hinzugefügt…",
+                    "done": "Zur Wissensbasis hinzugefügt",
+                    "failed": "Dateien konnten nicht hinzugefügt werden",
+                    "file_failed": "Fehlgeschlagen"
+                },
+                "starters": {
+                    "label": "Beispielanfragen",
+                    "build": "Bau mir einen Schreibcoach für Hausarbeiten",
+                    "prompt": "Was macht einen guten System-Prompt aus?",
+                    "model": "Welches Modell sollte ich wählen?",
+                    "knowledge": "Wie funktionieren Wissensdateien?"
+                }
+            },
+            "publish": {
+                "title": "Veröffentlichen",
+                "description": "Wähle den Veröffentlichungspfad.",
+                "finish": "Fertig",
+                "not_allowed": "Nur die Erstellerin bzw. der Ersteller darf diesen Assistenten veröffentlichen.",
+                "release_stage": {
+                    "title": "Veröffentlichungspfad wählen",
+                    "draft_label": "Als Entwurf behalten",
+                    "draft_description": "Später weiterbearbeiten, nichts wird veröffentlicht.",
+                    "private_label": "Als privaten Assistenten speichern",
+                    "private_description": "Nur für dich sichtbar, keine Genehmigung nötig.",
+                    "organizational_label": "Hochschulintern freigeben",
+                    "organizational_description": "Für die Freigabe innerhalb deiner Hochschule.",
+                    "federated_label": "Föderiert freigeben",
+                    "federated_description": "Hochschulübergreifend sichtbar. Strenge Validierung."
+                },
+                "status": {
+                    "draft": "Entwurf",
+                    "private": "Privat",
+                    "organizational": "In Prüfung",
+                    "federated": "In Prüfung",
+                    "denied": "Abgelehnt",
+                    "needs_revision": "Überarbeitung erforderlich"
+                },
+                "status_hint": {
+                    "draft": "Noch nicht veröffentlicht",
+                    "private": "Nur für dich sichtbar",
+                    "organizational": "Prüfung durch deine Hochschule",
+                    "federated": "Prüfung im Verbund",
+                    "denied": "Wende dich an die Administration",
+                    "needs_revision": "Setze das Feedback der Review um"
+                },
+                "denied": {
+                    "description": "Dein Assistent wurde dauerhaft abgelehnt. Bitte wende dich an die Systemverwaltung.",
+                    "reason_label": "Grund:"
+                },
+                "needs_revision": {
+                    "title": "Überarbeitung erforderlich",
+                    "hint": "Dein Assistent muss überarbeitet werden. Setze das Feedback der Review um und reiche ihn erneut ein."
+                },
+                "risk": {
+                    "title": "Risiko-Übersicht",
+                    "description": "Die Risikostufe ergibt sich aus Wissensdateien und Tools.",
+                    "label_status": "Status",
+                    "label_risk_level": "Risikostufe",
+                    "risk_level_low": "Niedriges Risiko",
+                    "hint": "Basierend auf Dateien und Tools"
+                },
+                "completeness": {
+                    "title": "Checkliste",
+                    "description": "Pflicht für die Veröffentlichung.",
+                    "label": "Anforderungen",
+                    "ready": "Bereit zur Veröffentlichung",
+                    "open": ":count noch offen"
+                },
+                "triggers": {
+                    "title": "Prüfungsauslöser"
+                },
+                "review_info": {
+                    "title": "Prüfung starten",
+                    "description": "Sobald du den Assistenten von „Privat“ auf „Hochschulintern“ oder „Föderiert“ stellst, wird eine Prüfung ausgelöst.",
+                    "note": "MCP-Konfigurationen werden von uns eigenständig überprüft."
+                },
+                "input_allow_remix": "Remixen erlauben",
+                "input_allow_remix_description": "Andere können eine eigene Version erstellen.",
+                "input_version_note": "Versionshinweis",
+                "input_version_note_hint": "Beschreibe, was sich in dieser Version geändert hat. Reviewer*innen sehen diesen Hinweis.",
+                "input_version_note_placeholder": "Was hat sich geändert?",
+                "save_as_private_assistant": "Als privaten Assistenten speichern",
+                "save_as_review": "Zur Prüfung einreichen",
+                "keep_as_draft": "Als Entwurf behalten",
+                "saved": "Assistent gespeichert.",
+                "submitted": "Assistent zur Prüfung eingereicht.",
+                "save_failed": "Speichern fehlgeschlagen."
+            },
+            "edit_released_title": "Sie sind dabei, einen veröffentlichten Assistenten zu bearbeiten",
+            "edit_released_description": "Jede Änderung setzt ihn auf privat zurück und erfordert eine neue Veröffentlichungsanfrage.",
+            "edit_released_confirm": "Trotzdem bearbeiten",
+            "edit_released_cancel": "Zurück"
+        },
+        "testChat": {
+            "status": {
+                "sending": "Sendet deine Nachricht…",
+                "reading": "Liest deine Nachricht…",
+                "reviewing": "Sieht sich deinen Assistenten an…",
+                "reading_files": "Liest deine Dateien…",
+                "planning_files": "Überlegt, wie sie sich nutzen lassen…",
+                "thinking": "Denkt nach…",
+                "writing": "Schreibt die Antwort…"
+            },
+            "empty_hint": "Schreib eine Nachricht, um ihn auszuprobieren. Änderungen wirken sofort, ohne Speichern.",
+            "no_model_hint": "Wähle ein Modell, um mit dem Testen zu beginnen.",
+            "required_fields": "Erforderliche Felder:",
+            "unnamed": "Dein Assistent",
+            "placeholder": "Nachricht an deinen Assistenten…",
+            "send": "Senden"
+        },
+        "reviews": {
+            "title": "Meine Einreichungen",
+            "empty_title": "Noch nichts eingereicht",
+            "empty_description": "Assistenten, die du zur Prüfung einreichst, erscheinen hier mit ihrem Prüfungsstatus.",
+            "tab": {
+                "all": "Alle"
+            }
+        },
+        "review": {
+            "outdated_hint": "Veraltete Genehmigung. Für eine Veröffentlichung bitte erneut zur Prüfung einreichen.",
+            "status": {
+                "pending": "In Prüfung",
+                "approved": "Genehmigt",
+                "denied": "Abgelehnt",
+                "needs_revision": "Überarbeitung erforderlich"
+            }
+        },
+        "admin": {
+            "section": "Assistenten-Prüfung",
+            "queue": {
+                "title": "Prüfungswarteschlange",
+                "description": "Einreichungen, die vor der Veröffentlichung auf eine Entscheidung warten.",
+                "empty": "Keine Prüfungen in diesem Status.",
+                "no_access": "Du hast keine Berechtigung, Assistenten zu prüfen.",
+                "tab": {
+                    "label": "Prüfungsstatus",
+                    "all": "Alle",
+                    "pending": "Offen",
+                    "needs_revision": "Überarbeitung nötig",
+                    "denied": "Abgelehnt",
+                    "approved": "Genehmigt"
+                },
+                "columns": {
+                    "name": "Assistent",
+                    "handle": "Handle",
+                    "stage": "Release-Stufe",
+                    "submitted": "Eingereicht",
+                    "status": "Status"
+                },
+                "status": {
+                    "pending": "In Prüfung",
+                    "approved": "Genehmigt",
+                    "denied": "Abgelehnt",
+                    "needs_revision": "Überarbeitung nötig"
+                }
+            },
+            "detail": {
+                "title": "Prüfung",
+                "no_access": "Du hast keine Berechtigung, Assistenten zu prüfen.",
+                "previous_reason": "Vorherige Entscheidung",
+                "decisions_title": "Entscheidungen",
+                "changed_keys": "Geändert seit der letzten Veröffentlichung",
+                "no_draft": "Kein offener Entwurf.",
+                "fields": {
+                    "description": "Beschreibung",
+                    "greeting": "Begrüßung",
+                    "system_prompt": "System-Prompt",
+                    "name": "Name",
+                    "handle": "Handle",
+                    "detail_description": "Detaillierte Beschreibung",
+                    "model": "Modell",
+                    "max_tokens": "Max. Tokens",
+                    "temp": "Temperatur",
+                    "top_p": "Top-P",
+                    "allow_remix": "Remix erlauben",
+                    "allow_model_select": "Modellauswahl",
+                    "category": "Kategorie",
+                    "tags": "Tags",
+                    "prompts": "Prompts",
+                    "tools": "Werkzeuge",
+                    "settings": "Einstellungen",
+                    "attachments": "Wissensdateien",
+                    "avatar": "Avatar"
+                },
+                "versions": "Versionen",
+                "draft_version": "Arbeitsentwurf (offene Änderungen)",
+                "no_versions": "Noch keine veröffentlichten Versionen.",
+                "rollback": "Zurücksetzen",
+                "rollback_confirm_title": "Auf Version :version zurücksetzen?",
+                "rollback_confirm_description": "Alle Versionen über :version werden gelöscht und der Assistent auf diesen Stand zurückgesetzt. Das kann nicht rückgängig gemacht werden.",
+                "rollback_submit_description": "Das Zurücksetzen auf Version :version wird zur Prüfung eingereicht und erst nach Freigabe durch eine Administratorin angewendet.",
+                "reason": "Begründung",
+                "reason_placeholder": "Sag der Erstellerin oder dem Ersteller, was zu ändern ist…",
+                "toast": {
+                    "approved": "Prüfung genehmigt — die neue Version ist veröffentlicht.",
+                    "denied": "Prüfung abgelehnt.",
+                    "needs_revision": "Überarbeitung angefordert.",
+                    "rolled_back": "Auf Version :version zurückgesetzt.",
+                    "rollback_submitted": "Zurücksetzen auf Version :version zur Prüfung eingereicht.",
+                    "failed": "Aktion fehlgeschlagen:"
+                },
+                "note_label": "Einreichungshinweis",
+                "previous_step": "Vorheriger Schritt",
+                "next_step": "Nächster Schritt",
+                "chip_jump_hint": "Im entsprechenden Schritt anzeigen",
+                "field_required": "Dieses Feld ist erforderlich.",
+                "value_yes": "Ja",
+                "value_no": "Nein",
+                "decision_title": "Entscheidung wählen",
+                "decision_approved_label": "Genehmigen",
+                "decision_approved_description": "Veröffentlicht den eingereichten Stand als nächste Version.",
+                "decision_needs_revision_label": "Überarbeitung anfordern",
+                "decision_needs_revision_description": "Sendet deine Begründung zurück; die Erstellerin kann überarbeiten und erneut einreichen.",
+                "decision_needs_revision_lift_description": "Hebt die Ablehnung auf — es wird nichts veröffentlicht und die Erstellerin kann überarbeiten und erneut einreichen.",
+                "decision_denied_label": "Ablehnen",
+                "decision_denied_description": "Blockiert diese Einreichung endgültig.",
+                "decided_approved": "Genehmigt am :date",
+                "decided_denied": "Abgelehnt am :date",
+                "decided_needs_revision": "Überarbeitung angefordert am :date"
+            },
+            "steps": {
+                "progress": "Prüfungsfortschritt",
+                "changes": "Änderungen",
+                "review": "Prüfung",
+                "back": "Zurück",
+                "continue_to": "Weiter zu :step",
+                "submit": "Absenden"
+            }
+        }
+    }
+}

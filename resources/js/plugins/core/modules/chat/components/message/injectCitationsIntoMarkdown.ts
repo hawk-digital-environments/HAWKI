@@ -10,13 +10,20 @@ import type {EnrichedUrlCitation} from '$lib/components/ui/citations/types.js';
 export const CITATION_ANCHOR_PREFIX = '#citation-';
 
 /**
- * Href for a `CitationReference` chip's own link element. Distinct from the
- * markers `injectCitationsIntoMarkdown` writes into the markdown body (which
- * use `CITATION_ANCHOR_PREFIX` directly) — this one is never parsed back via
- * `citationIdFromAnchorId`, only ever clicked and intercepted.
+ * DOM id of the `Citation` tile for `identifier` (`citation-<identifier>`).
+ * `citationAnchorId` links to it.
+ */
+export function citationElementId(identifier: string): string {
+    return CITATION_ANCHOR_PREFIX.slice(1) + identifier;
+}
+
+/**
+ * Href for a `CitationReference` chip's own link element: a fragment pointing
+ * at the tile's {@link citationElementId}, so the link also works without the
+ * click interception (`#citation-<identifier>`).
  */
 export function citationAnchorId(identifier: string): string {
-    return CITATION_ANCHOR_PREFIX.slice(1) + identifier;
+    return '#' + citationElementId(identifier);
 }
 
 /**

@@ -112,6 +112,11 @@ class AiToolRepository extends AbstractRepositoryWithContextualScopes
             $server->id
         ));
 
+        $existing = $this->getQueryWithoutContextualScopes()->where('mcp_server_id', $server->id)->where('mcp_name', $definition->name)->first();
+        if ($existing) {
+            $existing->update(['mcp_config' => $definition->config]);
+            return $existing;
+        }
         return $this->getQueryWithoutContextualScopes()->updateOrCreate(
             ['name' => $name],
             [

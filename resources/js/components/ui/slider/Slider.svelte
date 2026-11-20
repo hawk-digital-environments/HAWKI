@@ -5,7 +5,12 @@
   pointer while hovering, previewing the stepped value under the cursor before
   the user commits to it by dragging/clicking.
 
-  Not bindable — pass `value` down and react to changes via `onValueChange`.
+  Not bindable — pass `value` down and react to changes via `onValueChange`
+  (every intermediate position) and `onValueCommit` (pointer/keyboard release,
+  the point to persist the value).
+
+  Always pass `aria-label` (or `aria-labelledby`): it is applied to the thumb,
+  which carries `role="slider"`, together with an `aria-valuetext`.
 
   @example
   ```svelte
@@ -31,13 +36,26 @@
         max?: number;
         /** Step between selectable values. */
         step?: number;
-        /** Called when the user changes the value. */
+        /** Called for every intermediate value while the user drags. */
         onValueChange?: (value: number) => void;
+        /** Called once when the user releases the slider (pointer or keyboard). */
+        onValueCommit?: (value: number) => void;
         /** Whether the slider is disabled. */
         disabled?: boolean;
     }>;
 
-    const {value = 0, min = 0, max = 1, step = 0.01, onValueChange, disabled = false, ...restProps}: Props = $props();
+    const {
+        value = 0,
+        min = 0,
+        max = 1,
+        step = 0.01,
+        onValueChange,
+        onValueCommit,
+        disabled = false,
+        'aria-label': ariaLabel,
+        'aria-labelledby': ariaLabelledby,
+        ...restProps
+    }: Props = $props();
 
     let rootEl = $state<HTMLElement | null>(null);
     let hovering = $state(false);
@@ -57,7 +75,9 @@
         pointerX = Math.min(width, Math.max(0, event.clientX - left));
         const fraction = width === 0 ? 0 : pointerX / width;
         const raw = min + fraction * (max - min);
-        hoverValue = Math.min(max, Math.max(min, Math.round(raw / step) * step));
+        // Snap to the same min-anchored grid the slider uses for its values.
+        const gridOffset = Math.round((raw - min) / step) * step;
+        hoverValue = Math.min(max, Math.max(min, min + gridOffset));
     }
 </script>
 
@@ -69,6 +89,7 @@
     {step}
     {disabled}
     {onValueChange}
+    {onValueCommit}
     {...mergeProps({
         class: 'slider-root',
         onpointerenter: () => (hovering = true),
@@ -82,7 +103,13 @@
             <SliderPrimitive.Range class="slider-range"/>
         </span>
         {#each thumbs as thumb (thumb)}
-            <SliderPrimitive.Thumb index={thumb} class="slider-thumb"/>
+            <SliderPrimitive.Thumb
+                index={thumb}
+                class="slider-thumb"
+                aria-label={ariaLabel}
+                aria-labelledby={ariaLabelledby}
+                aria-valuetext={String(format(value))}
+            />
         {/each}
         {#if hovering && !disabled}
             <span class="slider-tooltip" style="left: {pointerX}px">{format(hoverValue)}</span>
@@ -158,15 +185,14 @@
         pointer-events: none;
     }
 
-    :global(*[data-disabled]) {
-        .slider-track {
-            cursor: not-allowed;
-            background-color: var(--color-disabled-bg);
-        }
-        :global(.slider-range) {
-            background-color: var(--color-text-disabled);
-        }
+    /* Disabled: the enabled look, faded. No darker fill — a grey range reads
+       as *more* filled than the light enabled one — and no lifted thumb. */
+    :global(.slider-root[data-disabled]) {
+        opacity: 0.4;
+        cursor: not-allowed;
+
         :global(.slider-thumb) {
+            box-shadow: none;
             cursor: not-allowed;
         }
     }

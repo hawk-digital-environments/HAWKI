@@ -1,0 +1,224 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Assistant;
+
+use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantSetting;
+use App\Models\Assistants\AssistantSettingValue;
+use App\Models\User;
+use App\Services\Ai\Agents\Utils\ExtractTextCollector;
+use App\Services\Assistant\Values\AssistantPromptTemplate;
+use App\Services\Assistant\Values\AssistantReleaseStage;
+use App\Services\Assistant\Values\WellKnownAssistantSettingKeys;
+use App\Services\Storage\FileStorageService;
+use App\Services\Storage\Values\StoredFileIdentifier;
+use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Support\Collection;
+
+class AssistantPromptComposer
+{
+    public function __construct(
+        private readonly FileStorageService   $fileStorage,
+        private readonly Gate                 $gate,
+        private readonly ExtractTextCollector $extractTextCollector,
+    ) {
+    }
+
+    /**
+     * @param list<string> $agentToolInstructions rendered usage-instruction
+     *                                            modules contributed by active
+     *                                            agent tools, appended before
+     *                                            the knowledge-files fragment
+     */
+    public function compose(Assistant $assistant, ?User $actor = null, bool $knowledgeHandledByAgentTool = false, array $agentToolInstructions = []): string
+    {
+        $prompt = $assistant->system_prompt ?? '';
+
+        $values = $assistant->settingValues()->with('setting')->get();
+
+        $effectiveValues = $this->resolveEffectiveValues($values);
+
+        $answerStyle = null;
+
+        foreach ($effectiveValues as $entry) {
+            if (WellKnownAssistantSettingKeys::ANSWER_STYLE === $entry['setting']->key
+                && \is_string($entry['value'])) {
+                $answerStyle = $entry['value'];
+            }
+
+            $fragment = $this->resolveFragment($entry['setting'], $entry['value']);
+
+            if ('' !== $fragment) {
+                $prompt .= "\n\n" . $fragment;
+            }
+        }
+
+        // The token-budget module is composed in code rather than read from a
+        // settings row: max_tokens is a plain assistant column, and the module
+        // must cooperate with the answer_style target captured above. Appended
+        // before the knowledge-files fragment, which stays last (see below).
+        $lengthFragment = AssistantPromptTemplate::answerLength(
+            (int) ($assistant->max_tokens ?? 0),
+            $answerStyle,
+        );
+
+        if ('' !== $lengthFragment) {
+            $prompt .= "\n\n" . $lengthFragment;
+        }
+
+        // Usage-instruction modules of the active agent tools (e.g. the
+        // knowledge-tool retrieval rules) sit between the composed settings
+        // modules and the knowledge-files fragment: the files fragment stays
+        // last while it is used (cached prefix, see below), and when an
+        // agent tool delivers the knowledge instead, the instructions are
+        // the tail — the two never overlap for the same capability.
+        foreach ($agentToolInstructions as $module) {
+            $prompt .= "\n\n" . $module;
+        }
+
+        $attachmentFragment = $this->resolveAttachmentFragment($assistant, $actor, $knowledgeHandledByAgentTool);
+
+        if ('' !== $attachmentFragment) {
+            $prompt .= "\n\n" . $attachmentFragment;
+        }
+
+        return $prompt;
+    }
+
+    /**
+     * Adds text extracts from knowledge-files at the end of the system
+     * prompt if there is *NO* RAG available.
+     * For every attachment on the assistant, the stored file is
+     * retrieved and each of its extracts (plain-text virtual extracts or
+     * converter-produced text) is concatenated as a "Source: {filename}"
+     * block and substituted into the {{content}} placeholder of the
+     * AssistantPromptTemplate::KNOWLEDGE_FILES module.
+     *
+     * Files whose extracts are null (converter not enabled at storage time)
+     * or empty (e.g. images with no extractable text) are silently skipped.
+     * Files whose underlying blob is missing on disk are also skipped so a
+     * stale attachment row never breaks prompt composition.
+     *
+     * Placement at the end of the prompt preserves the cached prefix
+     * (system_prompt + settings) when files are added, removed or replaced;
+     * when an agent tool delivers the knowledge instead, its
+     * usage-instruction module takes this fragment's place as the tail.
+     */
+    private function resolveAttachmentFragment(Assistant $assistant, ?User $actor, bool $knowledgeHandledByAgentTool): string
+    {
+        if ($knowledgeHandledByAgentTool) {
+            return '';
+        }
+
+        if (!$this->actorMayUseKnowledge($assistant, $actor)) {
+            return '';
+        }
+
+        if ($assistant->assistantAttachments->isEmpty()) {
+            return '';
+        }
+
+        $blocks = [];
+
+        foreach ($assistant->assistantAttachments as $attachment) {
+            $file = $this->fileStorage->retrieve(StoredFileIdentifier::fromAssistantAttachment($attachment));
+
+            if (null === $file) {
+                continue;
+            }
+
+            // Only PLAIN_TEXT extracts are inlined into the text system prompt;
+            $content = $this->extractTextCollector->collect($file);
+
+            if ('' === $content) {
+                continue;
+            }
+
+            $blocks[] = "Source: {$attachment->name}\n{$content}";
+        }
+
+        if ([] === $blocks) {
+            return '';
+        }
+
+        return str_replace(
+            '{{content}}',
+            implode("\n\n", $blocks),
+            AssistantPromptTemplate::KNOWLEDGE_FILES,
+        );
+    }
+
+    /**
+     * Whether the actor may run the assistant and therefore have its
+     * knowledge files injected: viewers pass the `view` gate; a missing
+     * actor only passes for publicly visible assistants.
+     */
+    private function actorMayUseKnowledge(Assistant $assistant, ?User $actor): bool
+    {
+        if (null === $actor) {
+            return \in_array($assistant->release_stage, AssistantReleaseStage::publiclyVisibleCases(), true);
+        }
+
+        return $this->gate->forUser($actor)->check('view', $assistant);
+    }
+
+    /**
+     * @param Collection<int, AssistantSettingValue> $values
+     *
+     * @return array<int, array{setting: AssistantSetting, value: mixed}>
+     */
+    private function resolveEffectiveValues($values): array
+    {
+        $result = [];
+
+        foreach ($values as $valueRecord) {
+            $setting = $valueRecord->setting;
+
+            if (null === $setting) {
+                continue;
+            }
+
+            $value = $valueRecord->value ?? $setting->default_value;
+
+            if (null === $value || [] === $value) {
+                continue;
+            }
+
+            // An empty string is the catalog's "not set" option: the user
+            // explicitly chose no behavior, so no module is appended (an
+            // earlier version injected the template with a blank {{value}}).
+            if (\is_string($value) && '' === \trim($value)) {
+                continue;
+            }
+
+            $result[] = ['setting' => $setting, 'value' => $value];
+        }
+
+        return $result;
+    }
+
+    private function resolveFragment(AssistantSetting $setting, mixed $value): string
+    {
+        if ('select' === $setting->ui_type) {
+            foreach ($setting->ui_options ?? [] as $option) {
+                if ($option['value'] === $value) {
+                    if (!empty($option['prompt'])) {
+                        return $option['prompt'];
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        if (null !== $setting->prompt_template) {
+            $displayValue = \is_array($value) ? implode(', ', $value) : (string) $value;
+
+            return str_replace('{{value}}', $displayValue, $setting->prompt_template);
+        }
+
+        return '';
+    }
+}

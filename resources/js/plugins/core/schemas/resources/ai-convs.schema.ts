@@ -10,6 +10,9 @@ import AiConvMessageSchema from '$plugins/core/schemas/resources/ai-conv-message
  * `?include=messages`, so listings never download chat histories they do not
  * display.
  *
+ * HAWKI-specific extensions travel inside the `hawkiExtensions` attribute
+ * envelope instead of as flat attributes.
+ *
  * Registers the resource under the key `'ai-convs'` in `HawkiResourceSchemas`
  * (see the `declare module` augmentation below).
  */
@@ -18,6 +21,9 @@ const AiConvSchema = z.object({
     name: z.string(),
     slug: z.string(),
     system_prompt: z.string().nullable().optional(),
+    hawkiExtensions: z.object({
+        assistant_handle: z.string().nullable().optional()
+    }).optional(),
     created_at: z.string().nullable(),
     updated_at: z.string().nullable(),
     messages: z.array(AiConvMessageSchema).optional()

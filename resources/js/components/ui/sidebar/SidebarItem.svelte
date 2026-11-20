@@ -18,6 +18,8 @@
     import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import ChevronRightIcon from '$lib/components/ui/icons/iconset/ChevronRightIcon.svelte';
+    import Link from '$lib/components/util/link/Link.svelte';
+    import type {ComponentProps} from 'svelte';
 
     interface Props extends HTMLButtonAttributes {
         /** Hugeicons icon shown before the label. Ignored when `media` is provided.
@@ -44,6 +46,13 @@
         trailing?: Snippet;
         /** Sub-items revealed beneath this row. Presence renders a chevron. */
         children?: Snippet;
+        /** Navigation target. When set, the row renders as a `Link` (`<a>`)
+            instead of a `<button>`; accepts everything `Link`'s `href` does,
+            e.g. `'/path'` or `{name: 'route.name'}`. */
+        href?: ComponentProps<typeof Link>['href'];
+        /** Anchor target, only used together with `href` (e.g. `_blank` for an
+            external link — `Link` adds the matching `rel`). */
+        target?: string;
     }
 
     let {
@@ -57,6 +66,8 @@
         defaultExpanded = false,
         expanded = $bindable(defaultExpanded),
         children,
+        href,
+        target,
         onclick,
         class: className,
         ...rest
@@ -90,45 +101,73 @@
     }
 </script>
 
+{#snippet rowContent()}
+    {#if media || Icon}
+        <span class="icon-wrap">
+            {#if media}
+                {@render media()}
+            {:else if Icon}
+                <Icon size={18} strokeWidth={2} aria-hidden="true" />
+            {/if}
+        </span>
+    {/if}
+    <span class="label">{label}</span>
+    {#if hasChildren}
+        <span class="caret" class:open={expanded} aria-hidden="true">
+            <ChevronRightIcon size={16} strokeWidth={2} />
+        </span>
+    {:else if drill}
+        <span class="caret" aria-hidden="true">
+            <ChevronRightIcon size={16} strokeWidth={2} />
+        </span>
+    {:else if trailing}
+        <span class="caret trailing" aria-hidden="true">
+            {@render trailing()}
+        </span>
+    {/if}
+{/snippet}
+
 {#snippet row(attach: Attachment<HTMLElement>)}
-    <button
-        type="button"
-        {@attach attach}
-        aria-current={active && !isPopupTrigger ? 'page' : undefined}
-        aria-expanded={hasChildren ? expanded : undefined}
-        {...mergeProps(rest, {
-            class: ['sidebar-item', className],
-            onclick: handleClick
-        })}
-        class:active
-        class:indent
-        class:drill
-        class:standalone
-    >
-        {#if media || Icon}
-            <span class="icon-wrap">
-                {#if media}
-                    {@render media()}
-                {:else if Icon}
-                    <Icon size={18} strokeWidth={2} aria-hidden="true" />
-                {/if}
-            </span>
-        {/if}
-        <span class="label">{label}</span>
-        {#if hasChildren}
-            <span class="caret" class:open={expanded} aria-hidden="true">
-                <ChevronRightIcon size={16} strokeWidth={2} />
-            </span>
-        {:else if drill}
-            <span class="caret" aria-hidden="true">
-                <ChevronRightIcon size={16} strokeWidth={2} />
-            </span>
-        {:else if trailing}
-            <span class="caret trailing" aria-hidden="true">
-                {@render trailing()}
-            </span>
-        {/if}
-    </button>
+    {#if href}
+        <!-- A link row: `Link` computes navigation, rel, aria-current and the
+             screen-reader hints, but the anchor itself is rendered here — an
+             element inside another component would miss this component's
+             scoped `.sidebar-item` styles. -->
+        <Link {href} target={target ?? undefined} active={active && !isPopupTrigger}>
+            {#snippet child({props: linkProps, hints})}
+                <a
+                    {@attach attach}
+                    {...(mergeProps({
+                        class: ['sidebar-item', className],
+                        onclick: handleClick
+                    }, linkProps) as Record<string, unknown>)}
+                    class:active
+                    class:indent
+                    class:drill
+                    class:standalone
+                >
+                    {@render rowContent()}{@render hints()}
+                </a>
+            {/snippet}
+        </Link>
+    {:else}
+        <button
+            type="button"
+            {@attach attach}
+            aria-current={active && !isPopupTrigger ? 'page' : undefined}
+            aria-expanded={hasChildren ? expanded : undefined}
+            {...mergeProps(rest, {
+                class: ['sidebar-item', className],
+                onclick: handleClick
+            })}
+            class:active
+            class:indent
+            class:drill
+            class:standalone
+        >
+            {@render rowContent()}
+        </button>
+    {/if}
 {/snippet}
 
 <MenuListItem {active} inset={indent}>
@@ -144,6 +183,10 @@
 {/if}
 
 <style>
+    a.sidebar-item {
+        text-decoration: none;
+    }
+
     .sidebar-item {
         position: relative;
         /* Rows paint above the sliding highlight behind them. */

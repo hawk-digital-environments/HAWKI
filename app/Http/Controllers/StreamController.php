@@ -1,20 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;
+use App\Services\Ai\Agents\Contracts\AgentInterface;
 use App\Services\Ai\AiService;
 use App\Services\Ai\Exceptions\AmbiguousModelIdException;
 use App\Services\Ai\Models\Identifiers\ModelFinder;
 use App\Services\Ai\UsageAnalyzerService;
+use App\Services\Ai\Extensions\HawkiExtensionsRegistry;
+use App\Services\Ai\Values\StreamErrorCode;
 use App\Services\Chat\Events\RoomAiWritingEndedEvent;
 use App\Services\Chat\Events\RoomAiWritingStartedEvent;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
+use App\Services\Chat\Room\Repositories\RoomRepository;
 use App\Services\ExternalContent\CitationUrlCleaner;
 use App\Services\Storage\AvatarStorageService;
-use App\Services\Chat\Room\Repositories\RoomRepository;
 use App\Services\Users\Repositories\UserRepository;
 use Hawk\HawkiCrypto\SymmetricCrypto;
 use Illuminate\Contracts\Support\Arrayable;
@@ -22,6 +27,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Laravel\Ai\Responses\Data\Citation as CitationData;
 use Laravel\Ai\Streaming\Events\Citation;
 use Laravel\Ai\Streaming\Events\Error;
 use Laravel\Ai\Streaming\Events\ProviderToolEvent;
@@ -38,22 +44,23 @@ class StreamController extends Controller
 {
     public function __construct(
         private readonly UsageAnalyzerService $usageAnalyzer,
-        private readonly AiService            $aiService,
+        private readonly AiService $aiService,
         private readonly AvatarStorageService $avatarStorage,
-        private readonly GroupMessageHandler  $groupMessageHandler,
-        private readonly LoggerInterface      $logger,
-        private readonly UserRepository       $userRepository,
-        private readonly RoomRepository       $roomRepository,
-        private readonly CitationUrlCleaner   $citationCleaner,
-        private readonly ModelFinder          $modelFinder
-    )
-    {
+        private readonly GroupMessageHandler $groupMessageHandler,
+        private readonly LoggerInterface $logger,
+        private readonly UserRepository $userRepository,
+        private readonly RoomRepository $roomRepository,
+        private readonly CitationUrlCleaner $citationCleaner,
+        private readonly HawkiExtensionsRegistry $hawkiExtensions,
+        private readonly ModelFinder $modelFinder,
+    ) {
     }
 
     public function handleExternalRequest(Request $request)
     {
         // Find out user model
         $user = Auth::user();
+
         if (!$user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
@@ -66,13 +73,15 @@ class StreamController extends Controller
                 'payload.messages.*.role' => 'required|string',
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'required|string',
+                'payload.tools' => 'sometimes|array',
+                'payload.tools.*' => 'string',
             ]);
         } catch (ValidationException $e) {
             // Return detailed validation error response
             return response()->json([
                 'success' => false,
                 'message' => 'Validation Error',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         }
 
@@ -114,7 +123,7 @@ class StreamController extends Controller
     }
 
     /**
-     * Handle AI connection requests using the new architecture
+     * Handle AI connection requests using the new architecture.
      */
     public function handleAiConnectionRequest(Request $request)
     {
@@ -128,8 +137,15 @@ class StreamController extends Controller
                 'payload.messages.*.content.text' => 'nullable|string',
                 'payload.messages.*.content.attachments' => 'nullable|array',
                 'payload.tools' => 'nullable|array',
+                'payload.tools.*' => 'string',
                 'payload.params' => 'nullable|array',
-
+                // Slices declare their own `hawkiExtensions` fields (rules
+                // per envelope location); the core merges them without
+                // naming any of them.
+                ...$this->hawkiExtensions->rulesFor(
+                    'payload.hawkiExtensions',
+                    'payload.messages.*.hawkiExtensions',
+                ),
                 'broadcast' => 'required|boolean',
                 'isUpdate' => 'nullable|boolean',
                 'messageId' => 'nullable|string',
@@ -140,24 +156,32 @@ class StreamController extends Controller
 
             // Ensure that nullable fields are set to default values if not provided
             foreach ($validatedData['payload']['messages'] as &$message) {
-                if (isset($message['content']['text']) && !is_string($message['content']['text'])) {
+                if (isset($message['content']['text']) && !\is_string($message['content']['text'])) {
                     $message['content']['text'] = '';
                 }
-                if (isset($message['content']['attachments']) && !is_array($message['content']['attachments'])) {
+
+                if (isset($message['content']['attachments']) && !\is_array($message['content']['attachments'])) {
                     $message['content']['attachments'] = [];
                 }
             }
+
             unset($message);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation Error',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         }
 
+        // Materialize selections before opening a stream or acknowledging background work.
+        // The context captures the initiating user here and reloads that ID at every execution.
+        $validatedData['payload']['broadcast'] = $validatedData['broadcast'];
+        $agent = $this->aiService->getAgent($validatedData);
+
         if ($validatedData['broadcast']) {
             $room = $this->roomRepository->findOneBySlugOrFail($validatedData['slug']);
+
             try {
                 $model = $this->modelFinder->findOrFail($validatedData['payload']['model']);
             } catch (\Throwable) {
@@ -172,8 +196,8 @@ class StreamController extends Controller
                 'data' => [
                     'slug' => $room->slug,
                     'isGenerating' => true,
-                    'model' => $validatedData['payload']['model']
-                ]
+                    'model' => $validatedData['payload']['model'],
+                ],
             ]));
 
             // We want the request to be handled after the response is sent,
@@ -182,61 +206,66 @@ class StreamController extends Controller
             // This is useful for group chat requests where we don't want to block the client waiting for the AI response
             // and we want to handle the request asynchronously.
             // Note: This is not the best practice and should be migrated into a proper job queue in the future.
-            register_shutdown_function(function () use ($validatedData, $model) {
-                $this->handleGroupChatRequest($validatedData, $model);
+            register_shutdown_function(function () use ($validatedData, $model, $agent): void {
+                $this->handleGroupChatRequest($validatedData, $model, $agent);
             });
 
             return response()->json(['success' => true]);
         }
 
-        if ($validatedData['payload']['stream'] === false) {
-            return response()->json($this->handleNonStreamingRequest($validatedData));
+        if (false === $validatedData['payload']['stream']) {
+            return response()->json($this->handleNonStreamingRequest($validatedData, $agent));
         }
 
         try {
             return response()->stream(
-                callback: fn() => yield from $this->handleStreamingRequest($validatedData),
+                callback: fn () => yield from $this->handleStreamingRequest($validatedData, $agent),
                 headers: [
                     'Content-Type' => 'text/event-stream',
                     'Cache-Control' => 'no-cache',
                     // @todo I deem those two weird in this context, but they are in the original code, so I keep them for now. I will investigate if they are needed.
                     'Connection' => 'keep-alive',
-                    'Access-Control-Allow-Origin' => '*'
-                ]);
+                    'Access-Control-Allow-Origin' => '*',
+                ],
+            );
         } catch (RequestException $e) {
             $this->logger->error('RequestException while streaming response of agent', [
                 'exception' => $e,
-                'response' => $e->response->body()
+                'response' => $e->response->body(),
             ]);
+
             return response()->json(['success' => false], 500);
         } catch (\Throwable $e) {
             $this->logger->error('Unexpected error while streaming response of agent', ['exception' => $e]);
+
             return response()->json(['success' => false], 500);
         }
     }
 
     /**
-     * Handle streaming request with the new architecture
+     * Handle streaming request with the new architecture.
      */
     private function handleStreamingRequest(
-        array $validatedData
-    ): iterable
-    {
+        array $validatedData,
+        AgentInterface $agent,
+    ): iterable {
         $hawki = $this->userRepository->findHawki();
         $avatar_url = $this->avatarStorage->retrieveAvatar($hawki)?->getUrl();
 
-        $formatError = static fn(string $errorMessage) => json_encode([
-                'content' => $errorMessage,
-                'type' => 'error',
-                'isDone' => true
-            ], JSON_THROW_ON_ERROR) . "\n";
+        // `code` lets clients show a translated, specific message; `content` stays for older clients.
+        $formatError = static fn (string $errorMessage, StreamErrorCode $code = StreamErrorCode::GENERATION_FAILED) => json_encode([
+            'content' => $errorMessage,
+            'code' => $code->value,
+            'type' => 'error',
+            'isDone' => true,
+        ], \JSON_THROW_ON_ERROR) . "\n";
 
         $formatData = function (
-            string|array|object $content,
-            string        $type,
-            bool          $isDone = false,
-            array|null    $status = null,
-            array|null    $additionalData = null
+            array|object|string $content,
+            string $type,
+            bool $isDone = false,
+            ?array $status = null,
+            ?array $additionalData = null,
         ) use ($formatError) {
             $messageData = array_merge(
                 $additionalData ?? [],
@@ -245,18 +274,18 @@ class StreamController extends Controller
                     'content' => $content,
                     'type' => $type,
                     'status' => $status,
-                ]
+                ],
             );
 
             try {
-                return json_encode($messageData, JSON_THROW_ON_ERROR) . "\n";
+                return json_encode($messageData, \JSON_THROW_ON_ERROR) . "\n";
             } catch (\Throwable $e) {
                 $this->logger->error('Error encoding message data to JSON', [
                     'exception' => $e,
                     'messageData' => array_merge(
                         $messageData,
-                        ['author' => '**hidden**', 'content' => '**hidden**']
-                    )
+                        ['author' => '**hidden**', 'content' => '**hidden**'],
+                    ),
                 ]);
 
                 return $formatError('There was an HAWKI internal issue. Please try again later.');
@@ -276,54 +305,73 @@ class StreamController extends Controller
                 ],
                 'model' => $validatedData['payload']['model'] ?? 'unknown',
                 'tools' => $validatedData['payload']['tools'] ?? [],
-            ]
+            ],
         );
 
         try {
-            $agent = $this->aiService->getAgent($validatedData);
-
             $res = $agent->sendStreaming();
 
             // We batch the citations first, so we can clean them all at once
             // We do this, because we can do multiple URL requests in parallel, which is faster than doing them one by one
-            /** @var \Laravel\Ai\Responses\Data\Citation[] $citations */
+            /** @var list<CitationData> $citations */
             $citations = [];
 
             foreach ($res as $chunk) {
                 switch (true) {
                     case $chunk instanceof Error:
                         $this->logger->error('Error chunk received from agent response', ['chunk' => $chunk]);
+
                         yield $formatData(content: $chunk->message, type: 'message', isDone: true);
+
                         break;
+
                     case $chunk instanceof Citation:
                         $citations[] = $chunk->citation;
+
                         break;
+
                     case $chunk instanceof TextDelta:
                         yield $formatData(content: $chunk->delta, type: 'message');
+
                         break;
+
                     case $chunk instanceof ReasoningStart:
                         yield $formatData(content: $chunk->toArray(), type: 'reasoning_start');
+
                         break;
+
                     case $chunk instanceof ReasoningDelta:
                         yield $formatData(content: $chunk->toArray(), type: 'reasoning_delta');
+
                         break;
+
                     case $chunk instanceof ReasoningEnd:
                         yield $formatData(content: $chunk->toArray(), type: 'reasoning_end');
+
                         break;
+
                     case $chunk instanceof ProviderToolEvent:
                         yield $formatData(content: $chunk->toArray(), type: 'provider_tool_event');
+
                         break;
+
                     case $chunk instanceof ToolCallEvent:
                         yield $formatData(content: $chunk->toArray(), type: 'tool_call');
+
                         break;
+
                     case $chunk instanceof ToolResult:
                         yield $formatData(content: $chunk->toArray(), type: 'tool_result');
+
                         break;
+
                     case $chunk instanceof StreamEnd:
                         foreach ($this->citationCleaner->cleanMany($citations) as $cleanedCitation) {
                             yield $formatData(content: $cleanedCitation, type: 'citation');
                         }
+
                         yield $formatData(content: '', type: 'message');
+
                         break;
                 }
             }
@@ -334,19 +382,28 @@ class StreamController extends Controller
                 content: $res->text,
                 type: 'completion',
                 isDone: true,
-                additionalData: ['usage' => $agent->getUsage()->toArray()]
+                additionalData: ['usage' => $agent->getUsage()->toArray()],
             );
-
         } catch (RequestException $e) {
             $this->logger->error('RequestException while streaming response of agent', [
                 'exception' => $e,
-                'response' => $e->response->body()
+                'response' => $e->response->body(),
             ]);
-            yield $formatError('There was an error while sending your request to the AI agent. Please try again later.');
+
+            yield $formatError(
+                'There was an error while sending your request to the AI agent. Please try again later.',
+                StreamErrorCode::fromThrowable($e),
+            );
+
             return;
         } catch (\Throwable $e) {
             $this->logger->error('Something went wrong in the stream', ['exception' => $e]);
-            yield $formatError('There was an error while sending your request to the AI agent. Please try again later.');
+
+            yield $formatError(
+                'There was an error while sending your request to the AI agent. Please try again later.',
+                StreamErrorCode::fromThrowable($e),
+            );
+
             return;
         }
 
@@ -357,19 +414,20 @@ class StreamController extends Controller
      * Handle a non-streaming request that is not part of a group chat.
      * This is used for the "export" feature, or any other feature that requires a single response from the AI agent without streaming.
      */
-    private function handleNonStreamingRequest(array $validatedData): array
+    private function handleNonStreamingRequest(array $validatedData, AgentInterface $agent): array
     {
         try {
-            $agent = $this->aiService->getAgent($validatedData);
             $res = $agent->send();
         } catch (RequestException $e) {
             $this->logger->error('RequestException while sending request to agent', [
                 'exception' => $e,
-                'response' => $e->response->body()
+                'response' => $e->response->body(),
             ]);
+
             return ['success' => false, 'error' => 'There was an error while sending your request to the AI agent. Please try again later.'];
         } catch (\Throwable $e) {
             $this->logger->error('Unexpected error while sending request to agent', ['exception' => $e]);
+
             return ['success' => false, 'error' => 'There was an unexpected error while processing your request. Please try again later.'];
         }
 
@@ -380,10 +438,20 @@ class StreamController extends Controller
         $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'private');
 
         try {
-            return ['success' => true, 'content' => json_encode(['text' => $res->text], JSON_THROW_ON_ERROR)];
+            $content = ['text' => $res->text];
+
+            // Provider and RAG document citations ride the same encrypted
+            // content shape as the streaming paths.
+            $citations = $res->meta->citations->all();
+
+            if ([] !== $citations) {
+                $content['citations'] = $citations;
+            }
+
+            return ['success' => true, 'content' => json_encode($content, \JSON_THROW_ON_ERROR)];
         } catch (\Throwable $e) {
             $this->logger->error('Error encoding message data to JSON', [
-                'exception' => $e
+                'exception' => $e,
             ]);
 
             return ['success' => false, 'error' => 'There was an error while processing the AI agent response. Please try again later.'];
@@ -391,11 +459,11 @@ class StreamController extends Controller
     }
 
     /**
-     * Handle group chat requests with the new architecture
+     * Handle group chat requests with the new architecture.
      */
-    private function handleGroupChatRequest(array $validatedData, AiModel $model): void
+    private function handleGroupChatRequest(array $validatedData, AiModel $model, AgentInterface $agent): void
     {
-        $isUpdate = (bool)($validatedData['isUpdate'] ?? false);
+        $isUpdate = (bool) ($validatedData['isUpdate'] ?? false);
         // Store the qualified identifier, even if the request referenced the model by its numeric id
         $validatedData['payload']['model'] = $model->getIdentifier();
 
@@ -408,8 +476,8 @@ class StreamController extends Controller
                 'data' => [
                     'slug' => $room->slug,
                     'isGenerating' => true,
-                    'model' => $validatedData['payload']['model']
-                ]
+                    'model' => $validatedData['payload']['model'],
+                ],
             ];
 
             broadcast(new RoomMessageEvent($generationStatus));
@@ -417,7 +485,6 @@ class StreamController extends Controller
             // We set this to true, to tell the request factory to look for the group chat context and not the private context.
             // Ugly as sin, and a real hack, but just a temporary construct until 2.6.0, so go and judge me!
             $validatedData['payload']['broadcast'] = true;
-            $agent = $this->aiService->getAgent($validatedData);
 
             $res = $agent->send();
 
@@ -438,22 +505,24 @@ class StreamController extends Controller
                     'slug' => $room->slug,
                     'isGenerating' => false,
                     'error' => 'Failed to generate response. Please try again later.',
-                    'model' => $validatedData['payload']['model']
-                ]
+                    'code' => null,
+                    'model' => $validatedData['payload']['model'],
+                ],
             ]));
 
             return;
         }
 
         $content = [
-            'text' => $text
+            'text' => $text,
         ];
 
         if (!empty($citations)) {
-            $content['citations'] = array_map(static function (\Laravel\Ai\Responses\Data\Citation $citation): array {
+            $content['citations'] = array_map(static function (CitationData $citation): array {
                 if ($citation instanceof Arrayable) {
                     return $citation->toArray();
                 }
+
                 return [
                     'title' => $citation->title ?? '',
                 ];
@@ -461,12 +530,13 @@ class StreamController extends Controller
         }
 
         $encryptedData = (new SymmetricCrypto())->encrypt(
-            json_encode($content, JSON_THROW_ON_ERROR),
-            base64_decode($validatedData['key'])
+            json_encode($content, \JSON_THROW_ON_ERROR),
+            base64_decode($validatedData['key'], true),
         );
 
         // Store message
         $member = $room->members()->where('user_id', 1)->firstOrFail();
+
         if ($isUpdate) {
             $message = $this->groupMessageHandler->update($room, [
                 'message_id' => $validatedData['messageId'],
@@ -476,7 +546,7 @@ class StreamController extends Controller
                         'ciphertext' => base64_encode($encryptedData->ciphertext),
                         'iv' => base64_encode($encryptedData->iv),
                         'tag' => base64_encode($encryptedData->tag),
-                    ]
+                    ],
                 ],
                 'metadata' => [
                     'tools' => $validatedData['payload']['tools'] ?? null,
@@ -496,14 +566,14 @@ class StreamController extends Controller
                             'ciphertext' => base64_encode($encryptedData->ciphertext),
                             'iv' => base64_encode($encryptedData->iv),
                             'tag' => base64_encode($encryptedData->tag),
-                        ]
+                        ],
                     ],
                     'metadata' => [
                         'tools' => $validatedData['payload']['tools'] ?? null,
                         'params' => $validatedData['payload']['params'] ?? null,
                     ],
                 ],
-                $member->user
+                $member->user,
             );
         }
 
@@ -522,8 +592,8 @@ class StreamController extends Controller
             'data' => [
                 'slug' => $room->slug,
                 'isGenerating' => false,
-                'model' => $validatedData['payload']['model']
-            ]
+                'model' => $validatedData['payload']['model'],
+            ],
         ]));
     }
 }

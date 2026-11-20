@@ -2,12 +2,15 @@ import type {ApiTransport} from '$lib/kernel/api/transport.js';
 import z from 'zod';
 import {decodeJsonApiIndexResponse, decodeJsonApiResourceResponse, extendResourceCollection, extendResourceSchema, type JsonApiCollection} from '$lib/kernel/api/jsonApiEncoding.js';
 import {buildQueryString, type FetchCollectionQuery, type FetchResourceQuery} from '$lib/kernel/api/buildQueryString.js';
+import {ClientSchemaDocumentSchema, type ClientSchemaDocument} from '$lib/kernel/clientSchema/clientSchemaDocument.js';
 import type {HawkiResourceSchemas} from '$lib/kernel/extendableTypes.js';
 import type {UriBuilder} from '$lib/kernel/api/UriBuilder.js';
 import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
 import type {Connection} from '$lib/app/schemas/resources/connections.schema.js';
 
 export type FetchOptions = RequestInit & {
+    /** Forward raw response streams to legacy consumers through the shared transport. */
+    responseType?: 'json' | 'stream';
     /**
      * Optional locale to send with the request. If provided, it will be added as a query parameter to the URL.
      * If not provided, the default locale from the connection will be used.
@@ -151,7 +154,7 @@ export class RestApi {
         id: string | number,
         options?: GetResourceOptions
     ): Promise<any> {
-        const url = this.uriBuilder.jsonApiUri(resourceType, id.toString()) + buildQueryString(options?.query);
+        const url = this.uriBuilder.jsonApiUri(resourceType, encodeURIComponent(id.toString())) + buildQueryString(options?.query);
         const fetchOptions: FetchOptions = {
             ...options,
             beforeSchema: decodeJsonApiResourceResponse
@@ -161,6 +164,21 @@ export class RestApi {
             if (schema) fetchOptions.schema = extendResourceSchema(schema);
         }
         return await this.fetch(url, {method: 'GET', ...fetchOptions});
+    }
+
+    /**
+     * Fetches the machine-readable client schema describing every JSON:API
+     * resource: endpoints (with policy-derived `allowed` flags — employee-type
+     * based), attributes with
+     * constraints and writable paths, relationships, actions, and the
+     * per-resource JSON-Schema block used for form rendering. Validated against
+     * {@link ClientSchemaDocumentSchema}.
+     */
+    public async getClientSchema(): Promise<ClientSchemaDocument> {
+        return await this.fetch(this.uriBuilder.jsonApiUri('assistants', 'schema'), {
+            method: 'GET',
+            schema: ClientSchemaDocumentSchema
+        });
     }
 
     /**
@@ -207,22 +225,40 @@ export class RestApi {
      * Creates a resource via a JSON:API `POST /{resourceType}` request and
      * returns the decoded created resource (`{ id, ...attributes }`).
      *
+     * Pass `options.relationships` for resources whose create/update rules
+     * require a relationship alongside attributes (e.g. a `belongsTo` set on
+     * create) — it's merged into the request document as JSON:API's
+     * `data.relationships`, the same shape `assistantToApi()`-style mappers
+     * already produce.
+     *
      * @example
      * const conversation = await createResource('ai-convs', {name: 'New chat'});
+     *
+     * @example
+     * const prompt = await createResource('assistant-user-prompts', {text}, {
+     *     relationships: {assistant: {data: {type: 'assistants', id}}}
+     * });
      */
     public async createResource(
         resourceType: string,
         attributes: Record<string, unknown>,
-        options?: CommonGetResourceOptions
+        options?: CommonGetResourceOptions & { relationships?: Record<string, unknown> }
     ): Promise<any> {
         return this.writeResource('POST', this.uriBuilder.jsonApiUri(resourceType), resourceType, {
-            data: {type: resourceType, attributes}
+            data: {
+                type: resourceType,
+                attributes,
+                ...(options?.relationships ? {relationships: options.relationships} : {})
+            }
         }, options);
     }
 
     /**
      * Updates a resource via a JSON:API `PATCH /{resourceType}/{id}` request and
      * returns the decoded updated resource (`{ id, ...attributes }`).
+     *
+     * Pass `options.relationships` to update relationships alongside
+     * attributes in the same request — see {@link createResource}.
      *
      * @example
      * await updateResource('ai-convs', slug, {name: 'Renamed chat'});
@@ -231,10 +267,15 @@ export class RestApi {
         resourceType: string,
         id: string | number,
         attributes: Record<string, unknown>,
-        options?: CommonGetResourceOptions
+        options?: CommonGetResourceOptions & { relationships?: Record<string, unknown> }
     ): Promise<any> {
-        return this.writeResource('PATCH', this.uriBuilder.jsonApiUri(resourceType, id.toString()), resourceType, {
-            data: {type: resourceType, id: id.toString(), attributes}
+        return this.writeResource('PATCH', this.uriBuilder.jsonApiUri(resourceType, encodeURIComponent(id.toString())), resourceType, {
+            data: {
+                type: resourceType,
+                id: id.toString(),
+                attributes,
+                ...(options?.relationships ? {relationships: options.relationships} : {})
+            }
         }, options);
     }
 
@@ -242,7 +283,7 @@ export class RestApi {
      * Deletes a resource via a JSON:API `DELETE /{resourceType}/{id}` request.
      */
     public async deleteResource(resourceType: string, id: string | number, options?: RequestInit): Promise<void> {
-        await this.fetch(this.uriBuilder.jsonApiUri(resourceType, id.toString()), {
+        await this.fetch(this.uriBuilder.jsonApiUri(resourceType, encodeURIComponent(id.toString())), {
             method: 'DELETE',
             ...options
         });
@@ -346,7 +387,14 @@ export class RestApi {
         return await this.fetch(url, {
             method: 'POST',
             body: data instanceof FormData ? data : JSON.stringify(data),
-            ...options
+            ...options,
+            headers: {
+                // Custom actions still live under the JSON:API server prefix, which
+                // rejects write requests with any other content type — same reason
+                // writeResource() sets this for plain create/update.
+                ...(data instanceof FormData ? {} : {'Content-Type': 'application/vnd.api+json'}),
+                ...(options?.headers as Record<string, string> | undefined ?? {})
+            }
         });
     }
 
@@ -376,7 +424,11 @@ export class RestApi {
         return await this.fetch(url, {
             method: 'PATCH',
             body: data instanceof FormData ? data : JSON.stringify(data),
-            ...options
+            ...options,
+            headers: {
+                ...(data instanceof FormData ? {} : {'Content-Type': 'application/vnd.api+json'}),
+                ...(options?.headers as Record<string, string> | undefined ?? {})
+            }
         });
     }
 

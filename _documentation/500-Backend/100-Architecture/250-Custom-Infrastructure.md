@@ -130,7 +130,7 @@ Repositories are `#[Singleton]` by default via the base class attribute.
 
 HAWKI needs three things the built-in translator does not provide:
 
-1. **Merge custom JSON files on top of Laravel's defaults.** HAWKI ships its own `resources/lang/*.json` files that must overlay (not replace) Laravel's own validation messages and other defaults.
+1. **Merge custom JSON files on top of Laravel's defaults.** HAWKI ships its own `resources/language/*_{locale}.json` files that must overlay (not replace) Laravel's own validation messages and other defaults.
 
 2. **Expose labels via JSON:API.** The Svelte frontend fetches translation strings via `GET /api/hawki/v1/translation-labels/{locale}` at startup. Laravel's translator has no mechanism for this.
 

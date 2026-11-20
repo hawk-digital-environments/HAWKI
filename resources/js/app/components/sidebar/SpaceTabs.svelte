@@ -27,6 +27,9 @@
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
+    import type {HawkiCoreModule} from '$lib/kernel/modules/types.js';
+    import {useModuleSelectorEntries} from '$lib/app/ui/useSidebarHooks.svelte.js';
+    import type {SidebarContext} from '$lib/app/ui/sidebarHooks.js';
 
     const STORAGE_KEY = 'hawki.sidebar.pinnedSpaces';
 
@@ -34,29 +37,68 @@
         id: string;
         label: string;
         icon?: IconComponent;
+        onSelect: (ctx: SidebarContext) => void;
     }
 
     const app = useApp();
     const router = useRouter();
     const {__, translate} = useTranslator();
 
-    const modules = $derived(app.modules.all.filter(module => module.routes));
-    const locale = $derived(app.localization.locale);
+    // Plugins contribute extra spaces (e.g. the assistants store) via the `moduleSelectorEntries` hook.
+    const moduleSelector = useModuleSelectorEntries();
 
-    const spaces: Space[] = $derived(modules.map(module => {
-        const icon = module.icon?.(locale);
-        return {
-            id: `${module.plugin.name}:${module.name}`,
-            label: module.title?.(translate, locale) ?? module.name,
-            // The tabs render icons as components; a string (URL) icon has no slot here.
-            icon: typeof icon === 'string' ? undefined : icon as IconComponent | undefined
-        };
-    }));
+    const modules = $derived(app.modules.all
+        .filter(module => module.routes)
+        .filter(module => module.visible?.(app) ?? true));
+    const locale = $derived(app.localization.locale);
+    const hookCtx = $derived({locale, translate, router});
+
+    const spaces: Space[] = $derived.by(() => {
+        // Modules come first; hook entries fold over them and win on id
+        // collision (a plugin declaring both keeps its authored label/icon/onSelect).
+        const byId = new Map<string, Space>();
+        for (const module of modules) {
+            const icon = module.icon?.(locale);
+            byId.set(`${module.plugin.name}:${module.name}`, {
+                id: `${module.plugin.name}:${module.name}`,
+                label: module.title?.(translate, locale) ?? module.name,
+                // The tabs render icons as components; a string (URL) icon has no slot here.
+                icon: typeof icon === 'string' ? undefined : icon as IconComponent | undefined,
+                onSelect: (ctx: SidebarContext) => {
+                    const prefix = getModuleRoutePrefix(
+                        module.plugin.name,
+                        module.name,
+                        module.plugin.isCorePlugin,
+                        (module as HawkiCoreModule).pluginNameInRoutes
+                    );
+                    void ctx.router.goTo(ctx.router.p(prefix));
+                }
+            });
+        }
+        for (const entry of moduleSelector.entries) {
+            byId.set(entry.id, {
+                id: entry.id,
+                label: entry.label,
+                icon: typeof entry.icon === 'string' ? undefined : entry.icon as IconComponent | undefined,
+                onSelect: entry.onSelect
+            });
+        }
+        return [...byId.values()];
+    });
 
     const current = $derived.by(() => {
-        const module = modules.find(candidate =>
+        // The active tab follows route ownership: invisible modules (the builder
+        // wizard) light their plugin's space, hook-contributed spaces (the admin
+        // tab) their own `active` flag.
+        const activeModule = app.modules.all.find(candidate =>
             router.isRouteActive(getModuleRouteGroupName(candidate.plugin.name, candidate.name)));
-        return module ? `${module.plugin.name}:${module.name}` : spaces[0]?.id ?? null;
+        if (activeModule) {
+            const ownId = `${activeModule.plugin.name}:${activeModule.name}`;
+            return spaces.find(space => space.id === ownId)?.id
+                ?? spaces.find(space => space.id.startsWith(`${activeModule.plugin.name}:`))?.id
+                ?? spaces[0]?.id ?? null;
+        }
+        return moduleSelector.entries.find(entry => entry.active)?.id ?? spaces[0]?.id ?? null;
     });
 
     // Null until the user first pins or unpins, so that until then spaces registered
@@ -99,10 +141,9 @@
     }
 
     function selectSpace(id: string) {
-        const module = modules.find(candidate => `${candidate.plugin.name}:${candidate.name}` === id);
-        if (!module) return;
-        const prefix = getModuleRoutePrefix(module.plugin.name, module.name, module.plugin.isCorePlugin);
-        void router.goTo(router.p(prefix));
+        const space = spaces.find(candidate => candidate.id === id);
+        if (!space) return;
+        space.onSelect(hookCtx);
     }
 
     function switchByShortcut(id: string) {

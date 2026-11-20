@@ -55,14 +55,23 @@
         descriptionProps?: Omit<DialogDescriptionProps, 'children'>;
         /** Additional props to apply to the header container. */
         headerProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
+        /** When provided, wraps the main content in a `.dialog-body` region that
+            grows with the content and becomes the scroll container once the dialog
+            hits its max-height; consumers managing their own scrollers style it
+            through these props (e.g. to opt out of clipping). */
+        bodyProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
         /** An optional footer to display at the bottom of the dialog. Can be either a string or a snippet. */
         footer?: Snippet | string;
+        /** Rendered at the end of the header row (e.g. an avatar next to the title). */
+        headerTrailing?: Snippet;
         /** Additional props to apply to the footer container. */
         footerProps?: Omit<HTMLAttributes<HTMLDivElement>, 'children'>;
         /** The main content of the dialog, rendered between the header and footer. This is a Svelte snippet that receives no arguments. */
         children?: Snippet;
         /** Additional props to apply to the DialogContent component. */
         contentProps?: Omit<DialogContentProps, 'children'>;
+        /** ARIA role of the dialog surface; `alertdialog` for blocking confirmations. */
+        role?: 'dialog' | 'alertdialog';
         /** Additional props to apply to the DialogOverlay component. */
         overlayProps?: Omit<DialogOverlayProps, 'children'>;
     }
@@ -77,11 +86,14 @@
         description,
         descriptionProps,
         headerProps,
+        bodyProps,
         footer,
         footerProps,
+        headerTrailing,
         children,
         contentProps,
-        overlayProps
+        overlayProps,
+        role
 
     }: Props = $props();
 </script>
@@ -100,24 +112,35 @@
     {/if}
     <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay {...mergeProps({class: 'dialog-overlay'}, overlayProps)}/>
-        <DialogPrimitive.Content {...mergeProps({class: 'dialog-content'}, contentProps)}>
-            {#if title || description}
-                <div {...mergeProps({class: 'dialog-header'}, headerProps)}>
-                    {#if title}
-                        <DialogPrimitive.Title {...mergeProps({class: 'dialog-title'}, titleProps)}>
-                            <SnippetOrString value={title}/>
-                        </DialogPrimitive.Title>
-                    {/if}
+        <DialogPrimitive.Content {...mergeProps({class: 'dialog-content', ...(role ? {role} : {})}, contentProps)}>
+            {#if title || description || headerTrailing}
+                <div {...mergeProps({class: headerTrailing ? 'dialog-header dialog-header--row' : 'dialog-header'}, headerProps)}>
+                    <div class="dialog-header-text">
+                        {#if title}
+                            <DialogPrimitive.Title {...mergeProps({class: 'dialog-title'}, titleProps)}>
+                                <SnippetOrString value={title}/>
+                            </DialogPrimitive.Title>
+                        {/if}
 
-                    {#if description}
-                        <DialogPrimitive.Description {...mergeProps({class: 'dialog-description'}, descriptionProps)}>
-                            <SnippetOrString value={description}/>
-                        </DialogPrimitive.Description>
+                        {#if description}
+                            <DialogPrimitive.Description {...mergeProps({class: 'dialog-description'}, descriptionProps)}>
+                                <SnippetOrString value={description}/>
+                            </DialogPrimitive.Description>
+                        {/if}
+                    </div>
+                    {#if headerTrailing}
+                        {@render headerTrailing()}
                     {/if}
                 </div>
             {/if}
 
-            {@render children?.()}
+            {#if bodyProps}
+                <div {...mergeProps({class: 'dialog-body'}, bodyProps)}>
+                    {@render children?.()}
+                </div>
+            {:else}
+                {@render children?.()}
+            {/if}
 
             {#if footer}
                 <div {...mergeProps({class: 'dialog-footer'}, footerProps)}>
@@ -138,6 +161,21 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-1);
+    }
+
+    :global(.dialog-header.dialog-header--row) {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-4);
+        padding-inline-end: calc(var(--space-4) + var(--space-6) + var(--space-2));
+    }
+
+    :global(.dialog-header-text) {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: var(--space-1);
+        min-width: 0;
     }
 
     :global(.dialog-title) {
@@ -180,6 +218,15 @@
         &[data-state="closed"] {
             animation: dialog-content-out var(--duration-normal, 200ms) var(--easing-default, ease);
         }
+    }
+
+    :global(.dialog-body) {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
     }
 
     :global(.dialog-close) {

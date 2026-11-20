@@ -1,17 +1,85 @@
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
-import type {ChatMessage, MessageStats} from '$plugins/core/modules/chat/types.js';
+import type {ChatAssistantIdentity, ChatMessage, MessageStats} from '$plugins/core/modules/chat/types.js';
 import type {MessageSenderTransportInterface, MessageSenderTransportOptions} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import type {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
-import {aiPacketText} from '$lib/kernel/ai/AiApi.js';
-import type {AiMessage} from '$lib/kernel/ai/types.js';
-import type {SendMessageResponse} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageResponse.svelte.js';
+import {AiApiError, aiPacketText} from '$lib/kernel/ai/AiApi.js';
+import type {AiMessage, AiStreamRequest} from '$lib/kernel/ai/types.js';
 import {applyThinkingEvent, emptyThinkingTimeline} from '$plugins/core/modules/chat/utils/thinkingEvents.js';
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
+import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+import {ApiTransportError} from '$lib/kernel/api/errors.js';
+import {validatedToolSnapshot} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
+import type {ChatSendDescriptor} from '$plugins/core/modules/chat/hooks/chatSendHooks.js';
+import type {ChatRegeneratePick} from '$plugins/core/modules/chat/hooks/chatRegenerateHooks.js';
+
+/** How many trailing messages of a conversation or thread are sent to the model per run
+ *  (see `ChatTransport.messageHistory`); older ones are dropped from the request. */
+export const MESSAGE_HISTORY_CAP = 20;
+
+/** Translation keys for the error codes a run can fail with — raised by the transport's own
+ *  checks, returned by `/req/streamAI` as an HTTP error body, or sent as an `error` packet. */
+const errorCodeKeys: Record<string, string> = {
+    TOOL_ACCESS_DENIED: 'chat.tools.accessDenied',
+    TOOL_UNAVAILABLE: 'chat.tools.unavailable',
+    TOOL_OFFLINE: 'chat.tools.requiredOffline',
+    TOOL_AUTHORIZATION_REFRESHING: 'chat.tools.authorizationRefreshing',
+    MODEL_UNAVAILABLE: 'chat.errors.modelUnavailable',
+    ASSISTANT_MODEL_UNAVAILABLE: 'chat.errors.assistantModelUnavailable',
+    PROVIDER_UNREACHABLE: 'chat.errors.providerUnreachable',
+    PROVIDER_BUSY: 'chat.errors.providerBusy',
+    GENERATION_FAILED: 'chat.errors.generationFailed'
+};
+
+/**
+ * Lifecycle of one assistant reply as seen by the page that owns the
+ * conversation. Pages use it to announce progress to screen readers
+ * (the message log itself is not a live region while it streams).
+ */
+export type GenerationEvent =
+    | {type: 'started'; slug: string; messageId: string; regenerate: boolean}
+    | {type: 'completed'; slug: string; message: ChatMessage}
+    | {type: 'aborted'; slug: string}
+    | {type: 'failed'; slug: string; error: string};
 
 interface ChatTransportOptions {
     onConversationCreated?: (slug: string) => void;
     /** Shows the first message while the server is still creating its conversation. */
     onConversationPending?: (message: ChatMessage | null) => void;
+    /** Reports start, completion, abort and failure of every assistant reply this transport streams. */
+    onGeneration?: (event: GenerationEvent) => void;
+}
+
+/** Everything one assistant reply needs, independent of whether the composer or the
+ *  regenerate action on a message asked for it. */
+interface AssistantRequest {
+    actorId: number;
+    modelId: string;
+    /** Tools in their transfer-string form (see `AiToolOrCapabilityWithState.toTransferString`). */
+    tools: string[];
+    params: AiStreamRequest['params'];
+    systemPrompt: string;
+    /** Thread the reply belongs to; `0` for the trunk conversation. */
+    threadId: number;
+    /** Id of the assistant message to replace in place; `null` for a fresh reply. */
+    regenerateMessageId: string | null;
+    /**
+     * Assistant handle the run is bound to, resolved by the `chatSend` hook; null for a
+     * plain run (see {@link ChatTransport.regenerateMessage}).
+     */
+    assistantHandle?: string | null;
+    /** Display author for the streamed assistant message; falls back to the default HAWKI author. */
+    author?: ChatMessage['author'] | null;
+    /** Display identity persisted on the AI message, so the log keeps showing who answered after reload. */
+    assistant?: ChatAssistantIdentity;
+}
+
+/** Write surface the streaming loop reports into. `SendMessageResponse` satisfies it for
+ *  composer sends; {@link ChatTransport.regenerateMessage} passes a promise adapter. */
+interface AssistantStreamSink {
+    setAbortController(controller: AbortController): void;
+    triggerBodyChunk(chunk: string): void;
+    triggerReceived(): void;
+    triggerError(error: string): void;
 }
 
 export class ChatTransport implements MessageSenderTransportInterface {
@@ -72,9 +140,17 @@ export class ChatTransport implements MessageSenderTransportInterface {
             return;
         }
 
+        let request: AssistantRequest;
+        try {
+            request = this.requestFromContext(context);
+        } catch (error) {
+            setResponseFailed(this.errorMessage(error));
+            return;
+        }
         let generationStarted = false;
         let conversationCreated = false;
         let provisionalTitle: string | null = null;
+        // A regenerate re-runs an existing reply in place — no user message is shown or persisted.
         const optimisticMessage = context.mode.isRegen ? null : this.optimisticUserMessage(opt);
 
         // A new conversation has no slug/cache entry yet. Let ChatIndex render
@@ -89,7 +165,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 // seconds. Create the chat immediately with a useful fallback
                 // so it never blocks the user's actual message.
                 provisionalTitle = this.fallbackTitle(sentMessage);
-                targetSlug = (await this.store.create(provisionalTitle, context.systemPrompt, false)).slug;
+                targetSlug = (await this.store.create(provisionalTitle, context.systemPrompt, false, request.assistantHandle ?? null)).slug;
                 conversationCreated = true;
             }
 
@@ -103,7 +179,21 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 if (provisionalTitle !== null) void this.generateAndApplyTitle(targetSlug, sentMessage, provisionalTitle);
             }
 
-            await this.uploadAttachments(opt);
+            // The persisted binding follows the assistant this send addresses (null = plain
+            // HAWKI chat). Awaited alongside the uploads so a failed rebind fails the send
+            // visibly instead of silently diverging from what the run used; a freshly created
+            // conversation already carries the binding from `create` above. A regenerate is
+            // exempt: re-running one reply must not rebind the conversation.
+            if (context.mode.isRegen) {
+                await this.uploadAttachments(opt);
+            } else if (conversationCreated) {
+                await this.uploadAttachments(opt);
+            } else {
+                await Promise.all([
+                    this.uploadAttachments(opt),
+                    this.store.updateAssistantHandle(targetSlug, request.assistantHandle ?? null)
+                ]);
+            }
             if (status.failed) {
                 if (optimisticMessage) this.store.removeCachedMessage(targetSlug, optimisticMessage.message_id);
                 this.store.finishGeneration(targetSlug);
@@ -112,20 +202,24 @@ export class ChatTransport implements MessageSenderTransportInterface {
             }
 
             if (!context.mode.isRegen) {
-                const threadId = context.mode.isThread ? Number(context.mode.getState('thread').threadId) : 0;
+                this.assertCurrentRequest(request);
                 const encrypted = await this.store.encryptText(sentMessage);
+                this.assertCurrentRequest(request);
                 const userMessage = await this.store.persistMessage(targetSlug, {
                     isAi: false,
-                    threadId: Number.isFinite(threadId) ? threadId : 0,
+                    threadId: request.threadId,
                     completion: true,
                     content: {text: encrypted, attachments: this.attachmentUuids(opt)},
                     __plainText: sentMessage
                 });
+                status.markAccepted();
+                if (request.actorId !== this.actorId()) throw new Error('TOOL_ACCESS_DENIED');
                 if (optimisticMessage) {
                     this.store.replaceMessage(targetSlug, optimisticMessage.message_id, {...userMessage, clientKey: optimisticMessage.clientKey});
                 } else {
                     this.store.appendMessage(targetSlug, userMessage);
                 }
+                this.assertCurrentRequest(request);
             }
         } catch (error) {
             if (optimisticMessage && targetSlug) {
@@ -133,17 +227,177 @@ export class ChatTransport implements MessageSenderTransportInterface {
             }
             if (generationStarted && targetSlug) this.store.finishGeneration(targetSlug);
             if (conversationCreated || !targetSlug) this.options.onConversationPending?.(null);
-            setResponseFailed(this.errorMessage(error));
+            setResponseFailed(status.accepted ? this.app.translator.__('chat.tools.messageAccepted') : this.errorMessage(error));
             return;
         }
 
+        try {
+            this.assertCurrentRequest(request);
+        } catch (error) {
+            this.store.finishGeneration(targetSlug);
+            setResponseFailed(status.accepted ? this.app.translator.__('chat.tools.messageAccepted') : this.errorMessage(error));
+            return;
+        }
         const conversationSlug = targetSlug;
         waitForResponse(async response => {
             try {
-                await this.streamAssistant(conversationSlug, opt, response);
+                await this.streamAssistant(conversationSlug, request, response);
             } finally {
                 this.store.finishGeneration(conversationSlug);
             }
+        });
+    }
+
+    /**
+     * Re-runs the assistant reply `message` and replaces it in place, addressed to the
+     * participant of the menu `pick` (see `ChatRegeneratePick`): a handler that claims it
+     * through the `chatSend` hook re-runs the reply with that participant's logic, exactly
+     * as a composer send addressed to it would. An unclaimed pick (HAWKI, `null`) stays a
+     * plain model rerun from the message's snapshot. `onNotice` reports model fallback.
+     * Rejects with the error message on failure. The conversation's assistant binding is
+     * deliberately not rebound — that follows the next composer send.
+     */
+    public async regenerateMessage(
+        conversationSlug: string,
+        message: ChatMessage,
+        pick: ChatRegeneratePick | null,
+        onNotice?: (notice: string) => void
+    ): Promise<void> {
+        const translator = this.app.translator;
+        const requestedModelId = pick?.model ?? message.model;
+        const model = this.app.stores.get('ai-models').getModelByIdOrFallback(requestedModelId);
+        if (!model) throw new Error(this.errorMessage('MODEL_UNAVAILABLE'));
+
+        // The message's snapshot is the base; a claiming handler may replace any of it.
+        const storedTools = message.metadata?.tools;
+        const tools: string[] = Array.isArray(storedTools) ? storedTools : [];
+        const storedParams = message.metadata?.params;
+        const params: Record<string, number> = {};
+        if (typeof storedParams?.temperature === 'number') params.temperature = storedParams.temperature;
+        if (typeof storedParams?.top_p === 'number') params.top_p = storedParams.top_p;
+
+        const send = this.resolveRegenerateDescriptor(message, conversationSlug, pick, {
+            model: model.model_id,
+            tools,
+            params: Object.keys(params).length ? params : null
+        });
+
+        const resolvedModel = this.app.stores.get('ai-models').getOneById(send.model);
+        if (!resolvedModel) throw new Error(this.errorMessage(send.assistantHandle ? 'ASSISTANT_MODEL_UNAVAILABLE' : 'MODEL_UNAVAILABLE'));
+        // The fallback notice concerns the plain path only — a claimed run's model comes from the participant.
+        if (!send.assistantHandle && requestedModelId && resolvedModel.model_id !== requestedModelId) {
+            onNotice?.(translator.__('chat.regenerate.modelNotAvailable', {model: requestedModelId, fallback: resolvedModel.label}));
+        }
+        let resolvedTools: string[];
+        try {
+            resolvedTools = validatedToolSnapshot(send.tools, this.app.stores.get('ai-tools'), resolvedModel);
+        } catch (error) {
+            throw new Error(this.errorMessage(error));
+        }
+
+        const request: AssistantRequest = {
+            actorId: this.actorId(),
+            modelId: resolvedModel.model_id,
+            tools: resolvedTools,
+            params: send.params,
+            systemPrompt: (this.store.active?.slug === conversationSlug ? this.store.active.system_prompt : null)
+                ?? this.app.stores.get('system-prompts').getPromptByType('default').prompt,
+            threadId: this.threadIdForMessage(message.message_id),
+            regenerateMessageId: message.message_id,
+            assistantHandle: send.assistantHandle,
+            author: send.author,
+            assistant: send.assistant ?? undefined
+        };
+
+        this.store.beginGeneration(conversationSlug);
+        try {
+            await new Promise<void>((resolve, reject) => {
+                this.streamAssistant(conversationSlug, request, {
+                    setAbortController: () => undefined,
+                    triggerBodyChunk: () => undefined,
+                    triggerReceived: () => resolve(),
+                    triggerError: error => reject(new Error(error))
+                }).then(resolve, reject);
+            });
+        } finally {
+            this.store.finishGeneration(conversationSlug);
+        }
+    }
+
+    /** Snapshot of the composer state that shapes the assistant reply for a regular send. */
+    private requestFromContext(context: ComposerContext): AssistantRequest {
+        const regenState = context.mode.isRegen ? context.mode.getState('regen') : null;
+        const threadId = regenState
+            ? this.threadIdForMessage(regenState.messageId)
+            : context.mode.isThread ? Number(context.mode.getState('thread').threadId) : 0;
+        // The resolved run description: the composer's own selection, possibly
+        // rewritten by a `chatSend` hook handler (e.g. pinning model/tools/
+        // params to the addressed assistant and binding the conversation).
+        const send = this.resolveSendDescriptor(context);
+        if (context.tools.reconcile(context.model.current, false)) throw new Error('TOOL_ACCESS_DENIED');
+        const model = this.app.stores.get('ai-models').getOneById(send.model);
+        if (!model) throw new Error(send.assistantHandle ? 'ASSISTANT_MODEL_UNAVAILABLE' : 'MODEL_UNAVAILABLE');
+        return {
+            actorId: this.actorId(),
+            modelId: model.model_id,
+            tools: validatedToolSnapshot(send.tools, this.app.stores.get('ai-tools'), model),
+            params: send.params,
+            systemPrompt: context.systemPrompt,
+            threadId: Number.isFinite(threadId) ? threadId : 0,
+            regenerateMessageId: regenState?.messageId ?? null,
+            assistantHandle: send.assistantHandle,
+            author: send.author,
+            assistant: send.assistant ?? undefined
+        };
+    }
+
+    /**
+     * Resolves the run description for one send: the composer's own selection threaded
+     * through the `chatSend` hook so plugins can bind the exchange to an addressed assistant
+     * and adapt the run to it (e.g. pinning model/tools/params and supplying its display
+     * identity). The result still passes through the same authorization revalidation as the
+     * composer's own selection — a hook may rewrite what gets sent, but never what is allowed.
+     */
+    private resolveSendDescriptor(context: ComposerContext): ChatSendDescriptor {
+        return this.app.hooks.apply('chatSend', {
+            assistantHandle: null,
+            assistant: null,
+            author: null,
+            model: context.model.current.model_id,
+            tools: context.tools.active.map(tool => tool.toTransferString()),
+            params: context.modelParameters.requestParameters
+        }, {
+            composer: context,
+            conversation: this.store.active,
+            regenMessage: null,
+            // A regen participant picked in the model picker; unclaimed stays a plain run.
+            regenParticipant: context.mode.isRegen
+                ? context.mode.getState('regen').pickedParticipant ?? null
+                : null
+        });
+    }
+
+    /**
+     * Resolves the run description for one regenerate: the message's snapshot as the
+     * base, addressed to the picked participant. Mirrors {@link resolveSendDescriptor}
+     * minus the composer; the result passes through the same validation.
+     */
+    private resolveRegenerateDescriptor(
+        message: ChatMessage,
+        conversationSlug: string,
+        pick: ChatRegeneratePick | null,
+        base: Pick<ChatSendDescriptor, 'model' | 'tools' | 'params'>
+    ): ChatSendDescriptor {
+        return this.app.hooks.apply('chatSend', {
+            assistantHandle: null,
+            assistant: null,
+            author: null,
+            ...base
+        }, {
+            composer: null,
+            conversation: this.store.active?.slug === conversationSlug ? this.store.active : null,
+            regenMessage: message,
+            regenParticipant: pick?.participant ?? null
         });
     }
 
@@ -209,26 +463,27 @@ export class ChatTransport implements MessageSenderTransportInterface {
             .filter((uuid): uuid is string => uuid !== null);
     }
 
-    private async streamAssistant(conversationSlug: string, opt: MessageSenderTransportOptions, responseWriter: SendMessageResponse): Promise<void> {
-        const {context} = opt;
+    private async streamAssistant(conversationSlug: string, request: AssistantRequest, responseWriter: AssistantStreamSink): Promise<void> {
         const controller = new AbortController();
         responseWriter.setAbortController(controller);
 
-        const regenState = context.mode.isRegen ? context.mode.getState('regen') : null;
-        const threadId = context.mode.isThread
-            ? Number(context.mode.getState('thread').threadId)
-            : (regenState ? this.threadIdForMessage(regenState.messageId) : 0);
-        const temporaryId = regenState?.messageId ?? `stream-${crypto.randomUUID()}`;
-        const existing = regenState ? this.store.findMessage(conversationSlug, regenState.messageId) : null;
+        const {threadId, regenerateMessageId} = request;
+        const temporaryId = regenerateMessageId ?? `stream-${crypto.randomUUID()}`;
+        const existing = regenerateMessageId ? this.store.findMessage(conversationSlug, regenerateMessageId) : null;
+        // The replacement follows the request's resolved identity instead of the previous answer's.
+        const author = request.author ?? {username: 'HAWKI', name: 'HAWKI', avatar_url: ''};
         const temporary: ChatMessage = existing ? {
             ...existing,
             content: {...existing.content, text: ''},
             citations: [],
             isStreaming: true,
-            status: 'running'
+            status: 'running',
+            author,
+            assistant: request.assistant ?? undefined,
+            model: request.modelId
         } : {
-            author: {username: 'HAWKI', name: 'HAWKI', avatar_url: ''},
-            threadId: Number.isFinite(threadId) ? threadId : 0,
+            author,
+            threadId,
             completion: 0,
             content: {text: '', attachments: []},
             created_at: new Date().toISOString(),
@@ -236,14 +491,16 @@ export class ChatTransport implements MessageSenderTransportInterface {
             clientKey: temporaryId,
             message_role: 'assistant',
             metadata: {tools: null, params: null},
-            model: context.model.current?.model_id ?? null,
+            model: request.modelId,
             updated_at: new Date().toISOString(),
             citations: [],
+            assistant: request.assistant ?? undefined,
             isStreaming: true,
             status: 'running'
         };
         if (existing) this.store.replaceMessage(conversationSlug, existing.message_id, temporary);
         else this.store.appendMessage(conversationSlug, temporary);
+        this.options.onGeneration?.({type: 'started', slug: conversationSlug, messageId: temporaryId, regenerate: existing !== null});
 
         let text = '';
         let thinking = emptyThinkingTimeline();
@@ -269,17 +526,23 @@ export class ChatTransport implements MessageSenderTransportInterface {
             };
         };
         try {
+            this.assertCurrentRequest(request);
             for await (const packet of this.app.aiApi.stream({
-                model: context.model.current.model_id,
-                messages: this.messageHistory(conversationSlug, context.systemPrompt, threadId, regenState?.messageId),
-                tools: context.tools.active.map(tool => tool.toTransferString()),
-                params: context.modelParameters.requestParameters,
-                threadIndex: Number.isFinite(threadId) ? threadId : 0,
-                isUpdate: Boolean(regenState),
-                messageId: regenState?.messageId ?? null
+                model: request.modelId,
+                messages: this.messageHistory(conversationSlug, request.systemPrompt, threadId, regenerateMessageId ?? undefined),
+                tools: request.tools,
+                params: request.params,
+                assistantHandle: request.assistantHandle,
+                threadIndex: threadId,
+                isUpdate: regenerateMessageId !== null,
+                messageId: regenerateMessageId
             }, {signal: controller.signal})) {
                 responseWriter.triggerBodyChunk(JSON.stringify(packet));
-                if (packet.type === 'error') throw new Error(String(packet.content ?? this.app.translator.__('chat.page.requestFailed')));
+                if (packet.type === 'error') {
+                    if (packet.code === 'TOOL_ACCESS_DENIED') void this.app.refreshConnection().catch(() => undefined);
+                    // A known code is translated by `errorMessage`; server prose is never shown.
+                    throw new Error(typeof packet.code === 'string' && packet.code in errorCodeKeys ? packet.code : 'GENERATION_FAILED');
+                }
                 if (packet.type === 'reasoning_start' || packet.type === 'reasoning_delta'
                     || packet.type === 'reasoning_end' || packet.type === 'provider_tool_event') {
                     thinking = applyThinkingEvent(thinking, packet);
@@ -315,32 +578,37 @@ export class ChatTransport implements MessageSenderTransportInterface {
             const encrypted = await this.store.encryptText(JSON.stringify({text: finalText, citations, ...(thinking.parts.length ? {reasoning: thinking.parts} : {}), stats}));
             const saved = await this.store.persistMessage(conversationSlug, {
                 isAi: true,
-                ...(regenState ? {message_id: regenState.messageId} : {threadId: Number.isFinite(threadId) ? threadId : 0}),
+                ...(regenerateMessageId ? {message_id: regenerateMessageId} : {threadId}),
                 content: {text: encrypted},
                 metadata: {
-                    tools: context.tools.active.map(tool => tool.toTransferString()),
-                    params: context.modelParameters.requestParameters
+                    tools: request.tools,
+                    params: request.params,
+                    // The assistant's display identity, so the message log
+                    // keeps showing who answered after reload.
+                    ...(request.assistant ? {assistant: request.assistant} : {})
                 },
-                model: context.model.current.model_id,
+                model: request.modelId,
                 completion,
                 __plainText: finalText,
                 __citations: citations,
                 __reasoning: thinking.parts.length ? thinking.parts : undefined,
                 __stats: stats
-            }, Boolean(regenState));
+            }, regenerateMessageId !== null);
             // Keep the render key of the streamed message so the keyed list
             // does not remount it when the persisted id replaces the temporary one.
             this.store.replaceMessage(conversationSlug, temporaryId, {...saved, clientKey: temporaryId});
+            this.options.onGeneration?.({type: 'completed', slug: conversationSlug, message: saved});
             responseWriter.triggerReceived();
         } catch (error) {
-            if (controller.signal.aborted) {
-                if (!existing) this.store.removeCachedMessage(conversationSlug, temporaryId);
-                else this.store.replaceMessage(conversationSlug, existing.message_id, existing);
-                return;
-            }
             if (!existing) this.store.removeCachedMessage(conversationSlug, temporaryId);
             else this.store.replaceMessage(conversationSlug, existing.message_id, existing);
-            responseWriter.triggerError(this.errorMessage(error));
+            if (controller.signal.aborted) {
+                this.options.onGeneration?.({type: 'aborted', slug: conversationSlug});
+                return;
+            }
+            const message = this.errorMessage(error, request);
+            this.options.onGeneration?.({type: 'failed', slug: conversationSlug, error: message});
+            responseWriter.triggerError(message);
         }
     }
 
@@ -353,12 +621,36 @@ export class ChatTransport implements MessageSenderTransportInterface {
                 const [whole, decimal = 0] = message.message_id.split('.').map(Number);
                 return threadId === 0 ? decimal === 0 : whole === threadId;
             })
-            .slice(-20);
+            .slice(-MESSAGE_HISTORY_CAP);
         return [
             {role: 'system', content: {text: systemPrompt}},
             ...selected
-                .filter(message => !message.isStreaming && message.content.text.trim())
-                .map(message => ({role: message.message_role, content: {text: message.content.text}}))
+                .filter(message => !message.isStreaming && !message.isPending && message.content.text.trim())
+                .map(message => {
+                    // Attachment uuids ride the message content so the model
+                    // receives uploaded files alongside the text (the backend
+                    // resolves them from private storage and inlines them).
+                    const attachments = message.content.attachments
+                        .map(attachment => attachment.fileData.uuid)
+                        .filter(uuid => !uuid.startsWith('pending-'));
+
+                    return {
+                        role: message.message_role,
+                        content: {
+                            text: message.content.text,
+                            ...(attachments.length > 0 ? {attachments} : {})
+                        },
+                        // Past-assistant attribution: lets the model
+                        // distinguish answers from different assistants when
+                        // the conversation switched mid-way. Default HAWKI
+                        // answers stay unattributed. Rides the HAWKI-specific
+                        // hawkiExtensions envelope, not the OpenAI-shaped
+                        // message fields.
+                        ...(message.message_role === 'assistant' && message.assistant?.handle
+                            ? {hawkiExtensions: {assistant_handle: message.assistant.handle}}
+                            : {})
+                    };
+                })
         ];
     }
 
@@ -406,7 +698,34 @@ export class ChatTransport implements MessageSenderTransportInterface {
         return compact.length > 52 ? compact.slice(0, 49) + '…' : compact || this.app.translator.__('chat.page.newChat');
     }
 
-    private errorMessage(error: unknown): string {
+    private actorId(): number {
+        if (!this.app.connection.isAuthenticated) throw new Error('TOOL_ACCESS_DENIED');
+        return this.app.connection.userinfo.id;
+    }
+
+    /** Check the captured choices again after uploads and before dispatch, without changing them. */
+    private assertCurrentRequest(request: AssistantRequest): void {
+        if (request.actorId !== this.actorId()) throw new Error('TOOL_ACCESS_DENIED');
+        const model = this.app.stores.get('ai-models').getOneById(request.modelId);
+        if (!model) throw new Error(request.assistantHandle ? 'ASSISTANT_MODEL_UNAVAILABLE' : 'MODEL_UNAVAILABLE');
+        const current = validatedToolSnapshot(request.tools, this.app.stores.get('ai-tools'), model);
+        if (current.some((tool, index) => tool !== request.tools[index])) throw new Error('TOOL_ACCESS_DENIED');
+    }
+
+    /**
+     * The user-facing message for a failed send/regenerate: `error` is an error code (as a
+     * string or the message of an `Error`), or a transport error carrying one. `request` lets
+     * a generic `MODEL_UNAVAILABLE` from the server name the addressed assistant instead.
+     */
+    private errorMessage(error: unknown, request?: AssistantRequest): string {
+        let code = typeof error === 'string' ? error
+            : error instanceof ApiTransportError || error instanceof AiApiError ? error.code
+            : error instanceof Error ? error.message : undefined;
+        if (code === 'MODEL_UNAVAILABLE' && request?.assistantHandle) code = 'ASSISTANT_MODEL_UNAVAILABLE';
+        const key = code ? errorCodeKeys[code] : undefined;
+        if (key) return this.app.translator.__(key);
+        // The server answered with an error that has no known code: never show its raw text.
+        if (error instanceof ApiTransportError || error instanceof AiApiError) return this.app.translator.__('chat.page.requestFailed');
         return error instanceof Error ? error.message : this.app.translator.__('chat.page.sendError');
     }
 }

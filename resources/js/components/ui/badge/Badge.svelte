@@ -1,5 +1,8 @@
-<script module lang="ts">
-    import {cva, type VariantProps} from 'class-variance-authority';
+<script
+    module
+    lang="ts"
+>
+    import { cva, type VariantProps } from 'class-variance-authority';
 
     const badgeVariants = cva('badge', {
         variants: {
@@ -7,15 +10,16 @@
                 default: 'badge--default',
                 secondary: 'badge--secondary',
                 destructive: 'badge--destructive',
-                outline: 'badge--outline',
-            },
+                outline: 'badge--outline'
+            }
         },
-        defaultVariants: {variant: 'default'},
+        defaultVariants: { variant: 'default' }
     });
 
     export type BadgeVariant = VariantProps<typeof badgeVariants>['variant'];
-    export {badgeVariants};
+    export { badgeVariants };
 </script>
+
 <!--
   @component Small status/label chip. Supports `default`, `secondary`,
   `destructive`, and `outline` variants. Renders a `<div>` with `children` as
@@ -27,18 +31,18 @@
   ```
 -->
 <script lang="ts">
-    import type {HTMLAttributes} from 'svelte/elements';
-    import {mergeProps} from 'bits-ui';
+    import type { HTMLAttributes } from 'svelte/elements';
+    import { mergeProps } from 'bits-ui';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Visual style variant. */
         variant?: BadgeVariant;
     }
 
-    const {variant, children, ...restProps}: Props = $props();
+    const { variant, children, ...restProps }: Props = $props();
 </script>
 
-<div {...mergeProps({class: badgeVariants({variant})}, restProps)}>
+<div {...mergeProps({ class: badgeVariants({ variant }) }, restProps)}>
     {@render children?.()}
 </div>
 
@@ -51,7 +55,7 @@
         padding-inline: var(--space-2);
         padding-block: var(--space-0_5);
         font-size: var(--font-size-xxs);
-        font-weight: var(--font-weight-semibold, 600);
+        font-weight: var(--font-weight-normal);
         line-height: var(--line-height-tight);
         white-space: nowrap;
     }
@@ -64,8 +68,9 @@
         border-color: transparent;
     }
 
+    /* Neutral grey, not the tinted secondary background. */
     .badge--secondary {
-        background-color: var(--color-bg-secondary);
+        background-color: var(--color-surface-light);
         color: var(--color-text-muted);
         border-color: transparent;
     }

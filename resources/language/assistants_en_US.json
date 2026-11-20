@@ -1,0 +1,596 @@
+{
+    "assistants": {
+        "assistant": "Assistant",
+        "assistants": "Assistants",
+        "categories": {
+            "academic_writing": "Academic Writing",
+            "computer_science": "Computer Science",
+            "study_tools": "Study Tools",
+            "science": "Natural Sciences",
+            "campus_life": "Campus Life",
+            "research": "Research",
+            "math": "Mathematics",
+            "languages": "Languages",
+            "all": "All"
+        },
+        "settings": {
+            "language": {
+                "label": "Language",
+                "description": "The language the assistant must use for every response.",
+                "options": {
+                    "not_set": "Not set",
+                    "en": "English",
+                    "de": "German"
+                }
+            },
+            "formality": {
+                "label": "Formality",
+                "description": "The formality level of the assistant responses.",
+                "options": {
+                    "not_set": "Not set",
+                    "casual": "Casual",
+                    "balanced": "Balanced",
+                    "professional": "Professional",
+                    "academic": "Academic"
+                }
+            },
+            "answer_style": {
+                "label": "Answer Style",
+                "description": "The verbosity style of the assistant responses.",
+                "options": {
+                    "not_set": "Not set",
+                    "concise": "Concise",
+                    "balanced": "Balanced",
+                    "detailed": "Detailed"
+                }
+            }
+        },
+        "sidebar": {
+            "home": "Home",
+            "store": "Store",
+            "my_assistants": "My Assistants",
+            "drafts": "Drafts",
+            "private": "Private",
+            "favourites": "Favourites",
+            "shared": "Shared",
+            "create": "Create assistant",
+            "switch_case": "Switch Section",
+            "back": "Back",
+            "reviews": "Reviews"
+        },
+        "entry": {
+            "title": "Create assistant",
+            "description": "Choose how you want to create your new assistant.",
+            "advanced": "Advanced",
+            "advanced_description": "Full control over all settings, knowledge, model and release.",
+            "coming_soon": "Coming soon",
+            "assisted": "Assisted",
+            "assisted_description": "Let us guide you through the creation step by step."
+        },
+        "store": {
+            "title": "Assistant Store",
+            "empty_title": "No assistants found",
+            "empty_description": ""
+        },
+        "drafts": {
+            "title": "Draft Assistants",
+            "empty_title": "No drafts yet",
+            "empty_description": "You haven't saved any assistants as a draft yet."
+        },
+        "private": {
+            "title": "Private Assistants",
+            "empty_title": "No private assistants yet",
+            "empty_description": "Assistants you save as private are only visible to you."
+        },
+        "shared": {
+            "title": "Shared Assistants",
+            "empty_title": "No shared assistants",
+            "empty_description": "Assistants that other users share with you appear here."
+        },
+        "favourites": {
+            "title": "Favorite Assistants",
+            "empty_title": "No favourites saved",
+            "empty_description": "Mark assistants with the heart icon to see them here."
+        },
+        "browser": {
+            "empty_title": "No assistants found",
+            "empty_description": "No assistants match your current filters.",
+            "loading": "Loading assistants…",
+            "no_results": "No results were found",
+            "pagination_of": "of",
+            "search": "Search",
+            "search_placeholder": "Search assistants…"
+        },
+        "card": {
+            "remix": "Remix",
+            "open_aria": "Open details for :name",
+            "category_unknown": "Unknown",
+            "remixed_via": "via"
+        },
+        "availability": {
+            "deactivated": "Deactivated",
+            "deactivatedHint": "This assistant's AI model is no longer available. It can't be used until its creator chooses a new model.",
+            "deactivatedHintEditor": "This assistant's AI model is no longer available. Edit the assistant and choose a new model to reactivate it.",
+            "offline": "Model offline",
+            "offlineHint": "This assistant's AI model can't be reached right now. It can be used again once the model is back online."
+        },
+        "release_stage": {
+            "private": "Private",
+            "organizational": "University-internal",
+            "federated": "Federated",
+            "draft": "Draft"
+        },
+        "risk": {
+            "low": "Low risk",
+            "medium": "Medium risk",
+            "high": "High risk"
+        },
+        "detail": {
+            "dialog_title": "Assistant details",
+            "back": "Back",
+            "edit": "Edit",
+            "menu_aria": "Open assistant menu",
+            "favourite_aria": "Favourite",
+            "favourite_failed": "The favourite could not be saved.",
+            "delete": "Delete",
+            "delete_confirm_title": "Delete assistant :name",
+            "delete_confirm_description": "Are you sure you want to delete this assistant? This action cannot be undone.",
+            "deleted": "Assistant deleted.",
+            "delete_failed": "The assistant could not be deleted.",
+            "remix": "Remix",
+            "try_out": "Try it out",
+            "read_more": "Read more",
+            "meta_creator": "Creator",
+            "meta_version": "Version",
+            "meta_usage": "Usage",
+            "meta_usage_unit": "uses",
+            "meta_updated": "Updated",
+            "trust_title": "Trust & risk",
+            "history_title": "Change history",
+            "changed_fields": "Fields:",
+            "version_note": "Note:",
+            "creation": "Creation",
+            "feedback_sent": "Feedback sent.",
+            "publish": "Publish",
+            "release_draft": "Draft",
+            "release_private": "Private",
+            "release_organizational": "University-wide",
+            "release_federated": "Federated",
+            "release_pending": "In review",
+            "release_updated": "Release status updated.",
+            "release_submitted": "Assistant submitted for review.",
+            "release_failed": "The release status could not be changed.",
+            "review_title": "Review",
+            "review_requested_hint": "Awaiting review — the assistant is released as “:stage” once approved.",
+            "review_decided_on": "Decided on :date",
+            "share": "Share",
+            "share_title": "Share assistant",
+            "share_description": "Decide who may use or edit this assistant.",
+            "share_search_ph": "Search name, username or email…",
+            "share_search_info": "Search needs at least :min characters — the first :limit matches are shown.",
+            "share_searching": "Searching…",
+            "share_no_results": "No users found.",
+            "share_search_failed": "The user search failed.",
+            "share_can_edit": "Can edit",
+            "share_copy_link": "Share via link",
+            "share_link_copied": "Link copied to clipboard.",
+            "share_copy_failed": "The link could not be copied.",
+            "share_save": "Save shares",
+            "share_saved": "Shares saved.",
+            "share_save_failed": "The shares could not be saved.",
+            "share_link_label": "Share link",
+            "share_link_placeholder": "Creating link…",
+            "share_link_copy": "Copy link",
+            "share_link_expires": "Valid until :date. Anyone signed in who opens it gets access.",
+            "share_link_create_failed": "The share link could not be created.",
+            "share_link_can_edit": "Link recipients can edit",
+            "share_link_view_only": "Link recipients can only view",
+            "share_link_invalidate": "Revoke all share links",
+            "share_link_invalidated": "The share link has been revoked.",
+            "share_link_invalidate_failed": "The share link could not be revoked.",
+            "share_link_redeemed": "The assistant has been shared with you.",
+            "share_link_invalid": "This share link is invalid or has expired."
+        },
+        "feedback": {
+            "feedback_to": "Feedback to",
+            "visible_to_creator": "Only visible to creator",
+            "send_feedback": "Send Feedback"
+        },
+        "remix": {
+            "remix_from": "Remix from",
+            "remix_from_creator": "Originally created by",
+            "original_status": "Original-Status:",
+            "remix_hint": "Your remix starts as a private draft and must be reviewed before it can be shared more widely. The trust status is not carried over from the original."
+        },
+        "builder": {
+            "sidebar": {
+                "new_assistant": "New assistant",
+                "general": "General",
+                "behaviour": "Behaviour",
+                "knowledge": "Knowledge & data",
+                "model": "Model",
+                "test": "Test",
+                "publish": "Publish"
+            },
+            "steps": {
+                "progress": "Progress",
+                "step_current": "Step :current",
+                "step_total": "of :total",
+                "back": "Back",
+                "continue": "Continue",
+                "continue_to": "Continue to :step",
+                "required": "This field is required.",
+                "incomplete": "Please fill in the required fields.",
+                "invalid": "Please correct the marked fields."
+            },
+            "exit_dialog": {
+                "title": "Keep draft?",
+                "description": "This assistant hasn't been published yet. Keep the draft or discard it permanently?",
+                "keep": "Keep draft",
+                "discard": "Discard draft",
+                "keep_failed": "The draft could not be saved. Please check your input and try again.",
+                "discard_failed": "The draft could not be discarded.",
+                "changes_title": "Discard changes?",
+                "changes_description": "You have changed this assistant. Keep your changes, or discard them and restore it to how it was?",
+                "changes_keep": "Keep changes",
+                "changes_discard": "Discard changes",
+                "revert_failed": "Your changes could not be discarded."
+            },
+            "general": {
+                "title": "General information",
+                "description": "Basic details about your assistant.",
+                "input_name": "Assistant name",
+                "input_handle": "Unique @handle",
+                "input_handle_hint": "A unique address for your assistant, used in links and mentions. Only letters, numbers, hyphens and underscores.",
+                "handle_taken": "This handle is already taken. Please choose another one.",
+                "handle_available": "This handle is available.",
+                "handle_checking": "Checking availability…",
+                "input_description": "Short description",
+                "input_description_hint": "One sentence shown on the assistant's card in the Assistant Store.",
+                "input_short_description": "Detailed description",
+                "input_detail_description_hint": "Shown on the detail page. Explain what the assistant does, who it is for and how to use it.",
+                "input_category": "Category",
+                "input_category_not_set": "Not set",
+                "avatar_title": "Appearance",
+                "avatar_symbol_change": "Change emoji",
+                "avatar_background": "Background",
+                "avatar_ai": "Suggest with AI",
+                "avatar_ai_loading": "Finding an avatar…",
+                "avatar_ai_error": "No suggestion right now. Please try again.",
+                "avatar_random": "Shuffle",
+                "avatar_backgrounds_prev": "Previous backgrounds",
+                "avatar_backgrounds_next": "More backgrounds",
+                "input_tags": "Tags",
+                "input_tags_hint": "Keywords that help others find your assistant in the Assistant Store.",
+                "tag_add": "Add tag",
+                "tag_input_aria": "Enter tag",
+                "tag_confirm_aria": "Confirm tag"
+            },
+            "behaviour": {
+                "title": "Behaviour",
+                "description": "Define how your assistant communicates.",
+                "warning_system_prompt": "Changes to the system prompt affect the trust review.",
+                "input_system_prompt": "System prompt",
+                "input_system_prompt_hint": "Instructions the model follows in every conversation: role, tasks, tone and limits. Users don't see it.",
+                "input_system_prompt_placeholder": "Write a system prompt",
+                "input_greeting": "Greeting message",
+                "input_greeting_hint": "The first message users see when they open a new chat with the assistant.",
+                "input_greeting_placeholder": "Write a greeting message",
+                "input_starter_prompts": "Suggested starter prompts",
+                "input_starter_prompts_add": "Add prompt",
+                "input_starter_prompts_hint": "Example messages shown as buttons in an empty chat, so users can start with one click."
+            },
+            "knowledge": {
+                "title": "Knowledge & data",
+                "description": "Add context sources to improve the answers.",
+                "warning_knowledge_sources": "Knowledge sources can affect the approval requirements.",
+                "upload_title": "Upload files",
+                "upload_hint": "Supported file types",
+                "upload_max_size": "Maximum file size",
+                "upload_allowed_extensions": "Allowed extensions",
+                "upload_rejected_type": "File type not supported",
+                "upload_browse": "Browse files",
+                "upload_progress": "Uploading files",
+                "attached_files": "Attached files",
+                "input_knowledge_databases": "Knowledge databases",
+                "upload_ingesting": "Adding to knowledge database…",
+                "rag_status": "RAG status",
+                "rag_status_pending": "Pending",
+                "rag_status_success": "Success",
+                "rag_status_failed": "Failed",
+                "ingestion_failed": ":name could not be added to the knowledge database: :reason",
+                "ingestion_failed_unknown_reason": "unknown reason",
+                "no_files": "No files uploaded yet",
+                "manage_files": "Manage files",
+                "delete_all_files": "Delete all files",
+                "delete_all_confirm_title": "Delete all files?",
+                "delete_all_confirm_description": "All attached files are permanently removed from the assistant.",
+                "delete_all_error": "Some files could not be deleted.",
+                "load_files_in_context": "Files are loaded into the conversation context.",
+                "no_model_selected": "No model selected yet.",
+                "upload_disabled_model_not_configured": "The currently selected model is not configured for the knowledge base."
+            },
+            "model": {
+                "title": "Model settings",
+                "description": "Choose and configure the AI model.",
+                "input_model": "Recommended model",
+                "input_model_hint": "The model new chats with this assistant start with.",
+                "select_model_placeholder": "Select a model",
+                "input_allow_model_select": "End users may choose the model",
+                "input_allow_model_select_description": "Users can pick between the approved models.",
+                "input_temperature": "Temperature",
+                "input_temperature_description": "Higher values make the answers more creative but less predictable.",
+                "input_temperature_hint": "Controls the randomness of the answers. Common values are between 0 and 1.",
+                "input_top_p": "Top_P",
+                "input_top_p_description": "Limits the probability mass the model samples from.",
+                "input_top_p_hint": "Lower values make sampling more focused, higher values more open.",
+                "input_max_tokens": "Max. output length",
+                "input_max_tokens_description": "Maximum number of tokens per answer.",
+                "input_max_tokens_hint": "Higher values allow longer answers but take more time.",
+                "advanced_title": "Advanced settings",
+                "advanced_description": "Temperature, Top_P and max. output length",
+                "conflict": {
+                    "titleSingle": ":model does not support :tool",
+                    "titleMultiple": ":model does not support one or more of the selected tools",
+                    "singleModelCapable": "This model can do everything you need.",
+                    "multipleModelsCapable": "These :count models can do everything you need.",
+                    "noModelsAvailable": "No available model supports this combination. Remove a tool."
+                }
+            },
+            "tools": {
+                "title": "Tools & MCP",
+                "description": "Choose tools from approved MCP servers. Every tool affects the risk level and the publishing paths.",
+                "selectedCount": ":selected of :count"
+            },
+            "test": {
+                "title": "Private test environment",
+                "description": "Test and refine your assistant.",
+                "open": "Open conversation",
+                "close": "Close conversation",
+                "reset": "Restart conversation",
+                "no_model": "Choose a model first",
+                "mode": "Chat mode",
+                "mode_test": "Test",
+                "mode_guide": "AI guide"
+            },
+            "guide": {
+                "placeholder": "Ask the guide…",
+                "empty_title": "Build it together",
+                "empty_hint": "Describe your goal or drop in material – the guide fills in the fields.",
+                "applied": "Filled in",
+                "open_field": "Show :field",
+                "error": "The guide could not answer. Please try again.",
+                "attach": "Add files to the knowledge base",
+                "drop_label": "Drop files to add them to the knowledge base",
+                "ingest": {
+                    "uploading": "Adding to the knowledge base…",
+                    "done": "Added to the knowledge base",
+                    "failed": "Couldn't add the files",
+                    "file_failed": "Failed"
+                },
+                "starters": {
+                    "label": "Example requests",
+                    "build": "Build me a writing coach for student essays",
+                    "prompt": "What makes a good system prompt?",
+                    "model": "Which model should I choose?",
+                    "knowledge": "How do knowledge files work?"
+                }
+            },
+            "publish": {
+                "title": "Publish",
+                "description": "Choose the publishing path.",
+                "finish": "Finish",
+                "not_allowed": "Only the creator may publish this assistant.",
+                "release_stage": {
+                    "title": "Choose the publishing path",
+                    "draft_label": "Keep as draft",
+                    "draft_description": "Continue editing later; nothing gets published.",
+                    "private_label": "Save as private assistant",
+                    "private_description": "Visible only to you, no approval needed.",
+                    "organizational_label": "Share within your university",
+                    "organizational_description": "For release within your university.",
+                    "federated_label": "Share across the federation",
+                    "federated_description": "Visible across universities. Strict validation."
+                },
+                "status": {
+                    "draft": "Draft",
+                    "private": "Private",
+                    "organizational": "In review",
+                    "federated": "In review",
+                    "denied": "Denied",
+                    "needs_revision": "Needs revision"
+                },
+                "status_hint": {
+                    "draft": "Not published yet",
+                    "private": "Visible only to you",
+                    "organizational": "Reviewed by your university",
+                    "federated": "Reviewed across the federation",
+                    "denied": "Contact your administrator",
+                    "needs_revision": "Address the reviewer's feedback"
+                },
+                "denied": {
+                    "description": "Your assistant has been permanently denied. Please contact your system administrator.",
+                    "reason_label": "Reason:"
+                },
+                "needs_revision": {
+                    "title": "Revision required",
+                    "hint": "Your assistant needs revision. Address the reviewer's feedback and resubmit."
+                },
+                "risk": {
+                    "title": "Risk overview",
+                    "description": "The risk level results from knowledge files and tools.",
+                    "label_status": "Status",
+                    "label_risk_level": "Risk level",
+                    "risk_level_low": "Low risk",
+                    "hint": "Based on files and tools"
+                },
+                "completeness": {
+                    "title": "Checklist",
+                    "description": "Mandatory for publishing.",
+                    "label": "Requirements",
+                    "ready": "Ready to publish",
+                    "open": ":count still open"
+                },
+                "triggers": {
+                    "title": "Review triggers"
+                },
+                "review_info": {
+                    "title": "Start review",
+                    "description": "As soon as you move the assistant from “Private” to “University-wide” or “Federated”, a review is triggered.",
+                    "note": "MCP configurations are reviewed by us separately."
+                },
+                "input_allow_remix": "Allow remixing",
+                "input_allow_remix_description": "Others can create their own version.",
+                "input_version_note": "Version note",
+                "input_version_note_hint": "Describe what changed in this version. Reviewers see this note.",
+                "input_version_note_placeholder": "What has changed?",
+                "save_as_private_assistant": "Save as private assistant",
+                "save_as_review": "Submit for review",
+                "keep_as_draft": "Keep as draft",
+                "saved": "Assistant saved.",
+                "submitted": "Assistant submitted for review.",
+                "save_failed": "Could not save the assistant."
+            },
+            "edit_released_title": "You are about to edit a published assistant",
+            "edit_released_description": "Any change takes it back to private and requires a new publishing request.",
+            "edit_released_confirm": "Edit anyway",
+            "edit_released_cancel": "Go back"
+        },
+        "testChat": {
+            "status": {
+                "sending": "Sending your message…",
+                "reading": "Reading your message…",
+                "reviewing": "Looking at your assistant…",
+                "reading_files": "Reading your files…",
+                "planning_files": "Working out how to use them…",
+                "thinking": "Thinking…",
+                "writing": "Writing a reply…"
+            },
+            "empty_hint": "Send a message to try it out. Your changes apply instantly, no need to save.",
+            "no_model_hint": "Pick a model to start testing.",
+            "required_fields": "Required fields:",
+            "unnamed": "Your assistant",
+            "placeholder": "Message your assistant…",
+            "send": "Send"
+        },
+        "reviews": {
+            "title": "My submissions",
+            "empty_title": "Nothing submitted yet",
+            "empty_description": "Assistants you submit for review appear here with their review state.",
+            "tab": {
+                "all": "All"
+            }
+        },
+        "review": {
+            "outdated_hint": "Outdated approval. Resubmit for a new review for publishing.",
+            "status": {
+                "pending": "In review",
+                "approved": "Approved",
+                "denied": "Denied",
+                "needs_revision": "Needs revision"
+            }
+        },
+        "admin": {
+            "section": "Assistant review",
+            "queue": {
+                "title": "Review queue",
+                "description": "Submissions waiting for a decision before they are published.",
+                "empty": "No reviews in this state.",
+                "no_access": "You do not have permission to review assistants.",
+                "tab": {
+                    "label": "Review status",
+                    "all": "All",
+                    "pending": "Pending",
+                    "needs_revision": "Needs revision",
+                    "denied": "Denied",
+                    "approved": "Approved"
+                },
+                "columns": {
+                    "name": "Assistant",
+                    "handle": "Handle",
+                    "stage": "Release stage",
+                    "submitted": "Submitted",
+                    "status": "Status"
+                },
+                "status": {
+                    "pending": "In review",
+                    "approved": "Approved",
+                    "denied": "Denied",
+                    "needs_revision": "Needs revision"
+                }
+            },
+            "detail": {
+                "title": "Review",
+                "no_access": "You do not have permission to review assistants.",
+                "previous_reason": "Previous decision",
+                "decisions_title": "Decisions",
+                "changed_keys": "Changed since last publish",
+                "no_draft": "No pending draft.",
+                "fields": {
+                    "description": "Description",
+                    "greeting": "Greeting",
+                    "system_prompt": "System prompt",
+                    "name": "Name",
+                    "handle": "Handle",
+                    "detail_description": "Detailed description",
+                    "model": "Model",
+                    "max_tokens": "Max tokens",
+                    "temp": "Temperature",
+                    "top_p": "Top-P",
+                    "allow_remix": "Allow remix",
+                    "allow_model_select": "Model selection",
+                    "category": "Category",
+                    "tags": "Tags",
+                    "prompts": "Prompts",
+                    "tools": "Tools",
+                    "settings": "Settings",
+                    "attachments": "Knowledge files",
+                    "avatar": "Avatar"
+                },
+                "versions": "Versions",
+                "draft_version": "Working draft (pending changes)",
+                "no_versions": "No published versions yet.",
+                "rollback": "Roll back",
+                "rollback_confirm_title": "Roll back to version :version?",
+                "rollback_confirm_description": "Every version above :version is deleted and the assistant is restored to this state. This cannot be undone.",
+                "rollback_submit_description": "The rollback to version :version is submitted for review and applied only when an admin approves it.",
+                "reason": "Reason",
+                "reason_placeholder": "Tell the creator what needs to change…",
+                "toast": {
+                    "approved": "Review approved — the new version is published.",
+                    "denied": "Review denied.",
+                    "needs_revision": "Revision requested.",
+                    "rolled_back": "Rolled back to version :version.",
+                    "rollback_submitted": "Rollback to version :version submitted for review.",
+                    "failed": "Action failed:"
+                },
+                "note_label": "Submission note",
+                "previous_step": "Previous step",
+                "next_step": "Next step",
+                "chip_jump_hint": "Show on the corresponding step",
+                "field_required": "This field is required.",
+                "value_yes": "Yes",
+                "value_no": "No",
+                "decision_title": "Choose the decision",
+                "decision_approved_label": "Approve",
+                "decision_approved_description": "Publishes the submitted state as the next version.",
+                "decision_needs_revision_label": "Request revision",
+                "decision_needs_revision_description": "Sends your reason back; the creator may revise and resubmit.",
+                "decision_needs_revision_lift_description": "Lifts the denial — nothing is published and the creator may revise and resubmit.",
+                "decision_denied_label": "Deny",
+                "decision_denied_description": "Permanently blocks this submission.",
+                "decided_approved": "Approved on :date",
+                "decided_denied": "Denied on :date",
+                "decided_needs_revision": "Revision requested on :date"
+            },
+            "steps": {
+                "progress": "Review progress",
+                "changes": "Changes",
+                "review": "Review",
+                "back": "Back",
+                "continue_to": "Continue to :step",
+                "submit": "Submit"
+            }
+        }
+    }
+}
