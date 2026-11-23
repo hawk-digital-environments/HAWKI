@@ -4,7 +4,9 @@
   sidebar's main menu items and derives from the same assistant menu entries
   the sidebar renders, so trail and sidebar can never drift apart. The page's
   full title stays in the document outline as PageHeaderBar's visually hidden
-  h1 and doubles as the current crumb's tooltip. A lone crumb shows no trail.
+  h1 and doubles as the current crumb's tooltip. The trail shows only with two
+  or more crumbs, and then only when the sidebar is collapsed or the trail runs
+  deeper than two levels.
 
   While an assistant's detail modal is open (`openDetail`, the list modal and
   the standalone route alike), the bar floats over its cover with only a back
@@ -22,9 +24,10 @@
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import UserAiIcon from '$lib/components/ui/icons/iconset/UserAiIcon.svelte';
-    import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
-    import type {AssistantMenuEntry} from '$plugins/assistants/hooks/assistantMenuHooks.svelte';
+    import DropdownMenuRadioGroup from '$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte';
+    import DropdownMenuRadioItem from '$lib/components/ui/dropdown-menu/DropdownMenuRadioItem.svelte';
     import type {IconComponent} from '$lib/components/ui/icons';
+    import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
 
     interface Props {
         /** The page's full title — the bar's visually hidden h1 and the
@@ -37,6 +40,7 @@
     const router = useRouter();
     const {__} = useTranslator();
     const menu = useAssistantMenuEntries();
+    const sidebar = useSidebar();
 
     // The sidebar's active dashboard section (same precedence as its rows).
     const section = $derived(
@@ -46,11 +50,21 @@
         ) ?? null
     );
 
-    /** The sidebar group the section sits in (My Assistants): its own crumb,
-     *  with no page of its own, so it opens a menu of the group's sections. */
+    /** The sidebar group the section sits in (My Assistants): a plain label
+     *  crumb, while the section crumb switches between the group's sections. */
     const groupEntries = $derived(
         section?.group ? menu.entries.filter(entry => entry.level === 'dashboard' && entry.group === section.group) : []
     );
+
+    /** An open sidebar already shows where you are: the trail only earns its
+     *  place with the sidebar collapsed, or deeper than two levels. */
+    const depth = $derived(section ? (groupEntries.length ? 2 : 1) : 0);
+    const showTrail = $derived(depth > 1 && (!sidebar.navOpen || depth > 2));
+
+    function openSection(id: string): void {
+        const route = groupEntries.find(entry => entry.id === id)?.route;
+        if (route) void router.goToRoute(route);
+    }
 
     const detail = $derived(openDetail.assistant);
     const closeDetail = $derived(detail ? openDetail.close : null);
@@ -62,24 +76,18 @@
         return overlayContrastMode(cssDeclaration(avatar.iconCss, 'background'));
     });
 </script>
-{#snippet groupCrumb()}
-    {#if groupEntries.length}
-        <BreadcrumbItem label={__('assistants.sidebar.my_assistants')} icon={UserAiIcon} current={false}>
-            {#snippet menu()}
-                {#each groupEntries as entry (entry.id)}
-                    {@render groupItem(entry)}
-                {/each}
-            {/snippet}
-        </BreadcrumbItem>
-    {/if}
-{/snippet}
-
-{#snippet groupItem(entry: AssistantMenuEntry)}
-    <DropdownMenuItem
-        iconLeft={entry.icon as IconComponent}
-        disabled={entry.disabled}
-        onSelect={() => (entry.route ? void router.goToRoute(entry.route) : undefined)}
-    >{entry.label}</DropdownMenuItem>
+{#snippet sectionMenu()}
+    <DropdownMenuRadioGroup value={section?.id} onValueChange={openSection}>
+        {#each groupEntries as entry (entry.id)}
+            <DropdownMenuRadioItem
+                value={entry.id}
+                indicator="check"
+                indicatorSide="end"
+                iconLeft={entry.icon as IconComponent}
+                disabled={entry.disabled}
+            >{entry.label}</DropdownMenuRadioItem>
+        {/each}
+    </DropdownMenuRadioGroup>
 {/snippet}
 
 <PageHeaderBar srHeading={detail?.name ?? title} overCover={detail !== null} data-cover-mode={coverMode ?? undefined}>
@@ -95,10 +103,10 @@
                     onclick={closeDetail}
                 />
             {/if}
-        {:else if section && groupEntries.length}
+        {:else if section && showTrail}
             <BreadcrumbTrail>
-                {@render groupCrumb()}
-                <BreadcrumbItem label={title ?? section.label} icon={section.icon} />
+                <BreadcrumbItem label={__('assistants.sidebar.my_assistants')} icon={UserAiIcon} current={false} />
+                <BreadcrumbItem label={title ?? section.label} icon={section.icon} current menu={sectionMenu} />
             </BreadcrumbTrail>
         {/if}
     </div>

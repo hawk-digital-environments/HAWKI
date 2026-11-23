@@ -20,6 +20,8 @@
   - FR2 `menu` takes precedence over `route`/`onclick` (dev-time warning).
   - FR3 a current crumb renders as a plain marker, never a link; a current
     crumb with a menu keeps `aria-current` on its trigger.
+  - FR4 a crumb with no destination that is not current is a plain label:
+    not focusable, no `aria-current`.
 
   Deliberate deviations from astryx: icon-only visuals — the label is sr-only
   text plus a tooltip, never visible; destinations are named routes; a glyph
@@ -49,9 +51,9 @@
         /** Activation handler, alternative to `route`. */
         onclick?: (event: MouseEvent) => void;
         /** Menu content (DropdownMenuItem composition); takes precedence over
-         *  `route`/`onclick` and adds a trailing chevron. Reserved for
-         *  collapsing long trails (A ▾ › … › E, on an ancestor crumb) — not
-         *  for acting on the current page. */
+         *  `route`/`onclick` and adds a trailing chevron. For switching
+         *  between the current crumb's siblings, or collapsing long trails
+         *  on an ancestor crumb — not for acting on the current page. */
         menu?: Snippet;
         /** The current page: `true` marks this crumb, `false` opts out,
          *  `undefined` auto-detects (the trail's last item, when no sibling
@@ -112,7 +114,7 @@
                         <button
                             {...mergeProps(props, tooltipProps)}
                             type="button"
-                            class="crumb link"
+                            class={['crumb', 'link', isCurrent && 'current']}
                             aria-current={isCurrent ? 'page' : undefined}
                         >
                             <span class="glyph">
@@ -140,6 +142,17 @@
                     </span>
                     <span class="u-sr-only">{label}</span>
                 </button>
+            {/snippet}
+        </Tooltip>
+    {:else if !isCurrent}
+        <!-- A label with nowhere to go (FR4): no tab stop, no current state. -->
+        <Tooltip tooltip={label} side="bottom" sideOffset={6} delayDuration={300} focusable={false}>
+            {#snippet children({props})}
+                <span {...props} class="crumb label">
+                    <span class="glyph">
+                        {@render glyph()}
+                    </span>
+                </span>
             {/snippet}
         </Tooltip>
     {:else}
@@ -209,6 +222,10 @@
            fg tint gives the hover, like the cover's own buttons. Plain trails
            resolve this to nothing (the var is undefined there). */
         background: color-mix(in oklch, var(--crumb-fg) 16%, transparent);
+    }
+
+    .crumb.label {
+        color: var(--color-text-muted);
     }
 
     .crumb.current {
