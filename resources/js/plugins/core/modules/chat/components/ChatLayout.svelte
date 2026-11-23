@@ -183,6 +183,10 @@
            space bar, even on an empty chat; the welcome block centres in the
            room above it instead of travelling with the composer. */
         .chat-body.empty { padding-bottom: 0; }
+
+        /* The AI disclaimer above the composer is shown until the first
+           message; after that it would only cost room on a small screen. */
+        .chat-body:not(.empty) :global(.composer-dock .disclaimer) { display: none; }
         .empty .scroll-region {
             display: flex;
             flex: 1 0 auto;

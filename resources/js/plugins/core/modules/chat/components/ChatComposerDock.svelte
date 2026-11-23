@@ -133,6 +133,17 @@ padding so the composer stays aligned with the centred message column).
     /* Mobile: the space bar right below brings its own padding, so the dock
        adds none of its own under the disclaimer. */
     @media (--bp-md-and-smaller) {
-        .composer-dock { padding-bottom: 0; }
+        .composer-dock {
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 0;
+        }
+
+        /* The disclaimer moves above the composer, so the composer meets the
+           space bar directly. */
+        .disclaimer {
+            order: -1;
+            margin: 0 0 var(--space-2);
+        }
     }
 </style>
