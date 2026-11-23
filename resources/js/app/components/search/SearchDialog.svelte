@@ -17,6 +17,8 @@
     import HeightTransition from '$lib/components/ui/height-transition/HeightTransition.svelte';
     import Kbd from '$lib/components/ui/kbd/Kbd.svelte';
     import SearchBar from '$lib/app/components/search/SearchBar.svelte';
+    import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
+    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import type {SearchEntry} from '$lib/kernel/search/types.js';
@@ -24,12 +26,17 @@
     interface Props {
         /** Whether the dialog is open. Supports bind:open. */
         open?: boolean;
+        /** Called when a result is picked, after the dialog closes and before its action runs. */
+        onSelect?: (entry: SearchEntry) => void;
     }
 
-    let {open = $bindable(false)}: Props = $props();
+    let {open = $bindable(false), onSelect}: Props = $props();
 
     const search = useApp().search;
     const {__} = useTranslator();
+    // The sidebar's mobile breakpoint: where the nav is a drawer, search is a sheet.
+    const breakpoint = useBreakpoint();
+    const compact = $derived(breakpoint.is('bpMdAndSmaller'));
 
     /**
      * The session outlives the close animation so the results do not
@@ -65,6 +72,7 @@
 
     function select(entry: SearchEntry) {
         open = false;
+        onSelect?.(entry);
         entry.onSelect();
     }
 </script>
@@ -73,18 +81,29 @@
     {#snippet children()}{/snippet}
 </Kbd>
 
-<DialogPrimitive.Root bind:open>
-    <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay class="dialog-overlay" />
-        <DialogPrimitive.Content class="search-dialog" aria-describedby={undefined}>
-            <DialogPrimitive.Title class="u-sr-only">{__('ui.search.title')}</DialogPrimitive.Title>
-            <!-- The panel eases to the rows' height as they filter. -->
-            <HeightTransition>
-                <SearchBar {search} active={sessionActive} autofocus onSelect={select} />
-            </HeightTransition>
-        </DialogPrimitive.Content>
-    </DialogPrimitive.Portal>
-</DialogPrimitive.Root>
+{#if compact}
+    <!-- Mobile: a sheet from the bottom edge, at a fixed height so the field
+         holds still while the rows under it filter. -->
+    <BottomSheet bind:open contentProps={{class: 'search-sheet', 'aria-describedby': undefined}}>
+        {#snippet title()}<span class="u-sr-only">{__('ui.search.title')}</span>{/snippet}
+        <div class="search-sheet-fill">
+            <SearchBar {search} active={sessionActive} autofocus onSelect={select} />
+        </div>
+    </BottomSheet>
+{:else}
+    <DialogPrimitive.Root bind:open>
+        <DialogPrimitive.Portal>
+            <DialogPrimitive.Overlay class="dialog-overlay" />
+            <DialogPrimitive.Content class="search-dialog" aria-describedby={undefined}>
+                <DialogPrimitive.Title class="u-sr-only">{__('ui.search.title')}</DialogPrimitive.Title>
+                <!-- The panel eases to the rows' height as they filter. -->
+                <HeightTransition>
+                    <SearchBar {search} active={sessionActive} autofocus onSelect={select} />
+                </HeightTransition>
+            </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
+{/if}
 
 <style>
     /* Portalled out of this subtree, so everything is addressed globally under
@@ -150,12 +169,17 @@
         }
     }
 
-    /* The field snaps to the top edge so the on-screen keyboard leaves as much
-       room as possible for results. */
-    @media (--bp-md-and-smaller) {
-        :global(.search-dialog) {
-            --search-dialog-max-height: calc(100dvh - 2 * var(--space-4));
-            top: var(--space-4);
-        }
+    /* Mobile sheet: a fixed height rather than one that follows the rows, so
+       the field never moves under the thumb while typing. */
+    :global(.sheet-content.search-sheet) {
+        height: min(85dvh, 40rem);
+    }
+
+    /* Fills the sheet's body so the result list, not the whole body, scrolls
+       and the field stays pinned at the top. */
+    .search-sheet-fill {
+        display: flex;
+        height: 100%;
+        flex-direction: column;
     }
 </style>
