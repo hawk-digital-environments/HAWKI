@@ -296,6 +296,12 @@
                 border-radius 360ms var(--settle) 120ms,
                 box-shadow 360ms var(--settle);
         }
+
+        /* Docked to the top edge: a nav-row-high row puts the actions on the
+           sidebar header's midline, like the page's own nav row. */
+        .panel-header {
+            grid-template-rows: minmax(var(--nav-row-h), auto);
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {

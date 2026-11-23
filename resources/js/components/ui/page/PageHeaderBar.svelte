@@ -131,16 +131,6 @@
         display: none;
     }
 
-    /* The row centers on the cover's own top-bar actions (fav/menu at
-       --cover-inset = --space-6): same centre, so the trail and the heart
-       button share a midline. Below sm the cover insets by --space-4, which
-       the default row formula already matches. */
-    @media (--bp-bigger-than-sm) {
-        .page-header-bar.over-cover {
-            min-height: calc(2 * var(--space-6) + var(--nav-row-h));
-        }
-    }
-
     /* Single-line title. */
     .page-title {
         margin: 0;

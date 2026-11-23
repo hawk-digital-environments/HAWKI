@@ -13,6 +13,10 @@
   (falling back to the store, the detail's back target; opted out of current
   while the leaf is missing, since the trail then changes shape in place) and
   the leaf becomes the current crumb, shown as the assistant's avatar disc.
+
+  The list modal's leaf also gets a back button before the trail: it closes
+  the overlay back onto the list. The standalone route has no list to return
+  to, so it shows none.
 -->
 <script lang="ts">
     import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
@@ -25,6 +29,8 @@
     import {openDetail} from '$plugins/assistants/components/breadcrumb/openDetail.svelte';
     import {resolveAssistantAvatar} from '$plugins/assistants/utils/resolveAssistantAvatar';
     import {cssDeclaration, overlayContrastMode} from '$lib/utils/color.js';
+    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
+    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
 
     interface Props {
         /** The page's full title — the bar's visually hidden h1 and the
@@ -81,23 +87,70 @@
     const coverMode = $derived(
         !leaf && leafCrumb?.avatar ? overlayContrastMode(cssDeclaration(leafCrumb.avatar.iconCss, 'background')) : null
     );
+
+    const closeModal = $derived(!leaf && openDetail.assistant ? openDetail.close : null);
 </script>
 
 <PageHeaderBar srHeading={leafCrumb?.label ?? title} overCover={leafCrumb !== null} data-cover-mode={coverMode ?? undefined}>
-    <BreadcrumbTrail mode={coverMode}>
-        {#if leafCrumb}
-            <BreadcrumbItem label={moduleLabel} icon={moduleIcon} route="assistants.dashboard.index" />
-            {#if parent}
-                <BreadcrumbItem label={parent.label} icon={parent.icon} route={parent.route} current={false} />
-            {/if}
-            <BreadcrumbItem label={leafCrumb.label} avatar={leafCrumb.avatar} current />
-        {:else if section}
-            <BreadcrumbItem label={moduleLabel} icon={moduleIcon} route="assistants.dashboard.index" />
-            <BreadcrumbItem label={title ?? section.label} icon={section.icon} />
-        {:else}
-            <!-- No section matched and no leaf yet: the module crumb is where
-                the trail ends. -->
-            <BreadcrumbItem label={moduleLabel} icon={moduleIcon} />
+    <div class="lead" data-mode={coverMode ?? undefined}>
+        {#if closeModal}
+            <ButtonWithTooltip
+                variant="ghost"
+                size="sm"
+                iconLeft={ArrowLeft01Icon}
+                tooltip={__('assistants.detail.back')}
+                class="back"
+                onclick={closeModal}
+            />
         {/if}
-    </BreadcrumbTrail>
+        <BreadcrumbTrail mode={coverMode}>
+            {#if leafCrumb}
+                <BreadcrumbItem label={moduleLabel} icon={moduleIcon} route="assistants.dashboard.index" />
+                {#if parent}
+                    <BreadcrumbItem label={parent.label} icon={parent.icon} route={parent.route} current={false} />
+                {/if}
+                <BreadcrumbItem label={leafCrumb.label} avatar={leafCrumb.avatar} current />
+            {:else if section}
+                <BreadcrumbItem label={moduleLabel} icon={moduleIcon} route="assistants.dashboard.index" />
+                <BreadcrumbItem label={title ?? section.label} icon={section.icon} />
+            {:else}
+                <!-- No section matched and no leaf yet: the module crumb is where
+                    the trail ends. -->
+                <BreadcrumbItem label={moduleLabel} icon={moduleIcon} />
+            {/if}
+        </BreadcrumbTrail>
+    </div>
 </PageHeaderBar>
+
+<style>
+    /* The trail's own gap to the nav trigger moves here, before the back button. */
+    .lead {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-left: var(--space-2);
+    }
+    .lead :global(.breadcrumb-trail) {
+        margin-left: 0;
+    }
+
+    /* A round chip in the cover's shade, matching the trail's pill. */
+    .lead[data-mode='dark'] {
+        --back-fg: oklch(100% 0 0);
+    }
+    .lead[data-mode='light'] {
+        --back-fg: oklch(24% 0 0);
+    }
+    .lead :global(.btn.back) {
+        --btn-bg: color-mix(in oklch, var(--back-fg, currentColor) 14%, transparent);
+        --btn-color: var(--back-fg, currentColor);
+        width: var(--nav-row-h);
+        height: var(--nav-row-h);
+        padding: 0;
+        border-radius: var(--corner-full);
+        pointer-events: auto;
+    }
+    .lead :global(.btn.back:not(:disabled):hover) {
+        --btn-bg: color-mix(in oklch, var(--back-fg, currentColor) 24%, transparent);
+    }
+</style>

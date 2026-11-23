@@ -91,16 +91,6 @@
         color: var(--color-text);
     }
 
-    /* Over a full-bleed cover (the assistant detail's over-cover bar) the
-       trigger drops onto the cover's own action row, so trigger, breadcrumb
-       pill and the cover's buttons share one midline. Desktop only — the
-       default 16px inset already matches the bar's default row on mobile. */
-    @media (--bp-bigger-than-sm) {
-        .content:has(:global(.page-header-bar.over-cover)) .mobile-navigation-trigger {
-            top: var(--space-6);
-        }
-    }
-
     /* On the cover the plain icon has no guaranteed contrast: the bar's cover
        mode (set by the page, see PageHeaderBar's data-cover-mode) keys the
        same treatment the breadcrumb crumbs get — mode-shaded icon on a faint

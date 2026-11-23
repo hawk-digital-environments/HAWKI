@@ -30,7 +30,6 @@
     import HashtagIcon from '$lib/components/ui/icons/iconset/HashtagIcon.svelte';
     import ViewIcon from '$lib/components/ui/icons/iconset/ViewIcon.svelte';
     import Clock01Icon from '$lib/components/ui/icons/iconset/Clock01Icon.svelte';
-    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
     import {
         ASSISTANT_DETAIL_INCLUDES,
@@ -82,11 +81,7 @@
     interface Props {
         /** Id of the assistant to show. */
         id: string;
-        /** The back button: leave the detail view (close the modal / return
-         *  to the list). Omitted by surfaces whose back navigation lives in
-         *  the header bar's breadcrumb (the list modal). */
-        onBack?: () => void;
-        /** After a successful delete. Defaults to `onBack`. */
+        /** After a successful delete. */
         onDeleted?: () => void;
         /** The assistant as already loaded elsewhere (the list's card), shown
          *  right away while the full detail — versions, tags, permissions —
@@ -101,7 +96,7 @@
         onLoaded?: (assistant: Assistant) => void;
     }
 
-    const { id, onBack, onDeleted, initial, underHeaderBar = false, onLoaded }: Props = $props();
+    const { id, onDeleted, initial, underHeaderBar = false, onLoaded }: Props = $props();
     // The handle is kept (not just `goToRoute` destructured off it) because
     // `path` is a live getter — the builder needs it read at click time.
     const router = useRouter();
@@ -290,7 +285,7 @@
             throw err;
         }
         toast.success(__('assistants.detail.deleted'));
-        (onDeleted ?? onBack)?.();
+        onDeleted?.();
     }
 
     /** The menu's publish submenu: the release stages, iconed like the
@@ -466,17 +461,6 @@
                     style={avatar.iconCss}
                 >
                     <div class="topbar">
-                        {#if onBack}
-                            <ButtonWithTooltip
-                                variant="ghost"
-                                size="sm"
-                                iconLeft={ArrowLeft01Icon}
-                                tooltip={__('assistants.detail.back')}
-                                class="back"
-                                onclick={onBack}
-                                ><span class="btn-label">{__('assistants.detail.back')}</span></ButtonWithTooltip
-                            >
-                        {/if}
                         <div class="controls">
                             <FavButton
                                 id="favBtn"
@@ -824,14 +808,13 @@
         padding-top: 0;
     }
 
-    /* Top bar, overlaid on the cover: back on the left, the assistant's
-       actions on the right. Inset like the cover's own content (name,
-       glyph). A nav-row-high, centered row puts the actions on the same
-       midline as the header bar's breadcrumb and nav trigger over cover
-       pages. */
+    /* Top bar, overlaid on the cover: the assistant's actions on the right. Inset like the cover's own content (name,
+       glyph) at the sides; at the top, a nav-row-high row at the sidebar
+       panel's inset shares the midline of the sidebar header, the header
+       bar's breadcrumb and the nav trigger. */
     .topbar {
         position: absolute;
-        top: var(--cover-inset);
+        top: var(--space-4);
         left: var(--cover-inset);
         right: var(--cover-inset);
         z-index: 1;
@@ -922,19 +905,18 @@
         align-items: center;
         gap: var(--space-2);
         flex-shrink: 0;
-        /* Without the back button this is the top bar's only child: keep it
-           on the right regardless (space-between alone would left-align it). */
+        /* The top bar's only child: keep it on the right. */
         margin-left: auto;
     }
     /* Top-bar buttons tinted in the cover's own foreground shade instead of
        white pills (same treatment as the store cards' favourite button). */
-    .topbar :global(.btn:is(.back, .btn--stroke)) {
+    .topbar :global(.btn.btn--stroke) {
         --btn-bg: color-mix(in oklch, currentColor 14%, transparent);
         --btn-color: currentColor;
         border-color: transparent;
     }
-    .topbar :global(.btn:is(.back, .btn--stroke):not(:disabled):hover),
-    .topbar :global(.btn:is(.back, .btn--stroke).btn--active) {
+    .topbar :global(.btn.btn--stroke:not(:disabled):hover),
+    .topbar :global(.btn.btn--stroke.btn--active) {
         --btn-bg: color-mix(in oklch, currentColor 24%, transparent);
         --btn-color: currentColor;
     }

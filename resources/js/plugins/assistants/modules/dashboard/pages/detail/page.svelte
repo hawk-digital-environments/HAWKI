@@ -30,8 +30,9 @@
         return (Array.isArray(rawId) ? rawId[0] : rawId) ?? '';
     });
 
-    // Entered directly, there is no list to return to: back goes to the store.
-    const goBack = () => void router.goToRoute('assistants.dashboard.store');
+    // Entered directly, there is no list to return to: no back button (the
+    // trail's store crumb covers it), and a delete lands in the store.
+    const goToStore = () => void router.goToRoute('assistants.dashboard.store');
 
     // The trail's leaf — and the bar's hidden h1: the loaded assistant.
     let assistant = $state<Assistant | null>(null);
@@ -58,7 +59,7 @@
     {#snippet body()}
         <AssistantDetail
             {id}
-            onBack={goBack}
+            onDeleted={goToStore}
             underHeaderBar
             onLoaded={(loaded) => (assistant = loaded)}
         />

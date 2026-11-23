@@ -8,8 +8,8 @@
 
   Rendered only while open (mount = open): the store→detail morph
   (morphToDetail) captures the moment it mounts or unmounts, so it carries no
-  enter/exit animation of its own. Escape and the header bar's section crumb
-  (which strips `?assistant=`) both close it via `onClose`.
+  enter/exit animation of its own. Escape and the header bar's back button
+  close it via `onClose`; the section crumb strips `?assistant=`.
 
   On the mobile layout the modal can also be pulled down to close: a
   downward drag that starts in the detail's scroll region (marked
@@ -32,7 +32,7 @@
     interface Props {
         /** Id of the assistant to show. */
         id: string;
-        /** Close request (Escape, back button). */
+        /** Close request (Escape, the header bar's back button). */
         onClose: () => void;
         /** After a successful delete. Defaults to `onClose`. */
         onDeleted?: () => void;
@@ -59,12 +59,14 @@
 
     let modal = $state<HTMLElement>();
 
-    // The breadcrumb bar shows the open detail as its leaf while the modal
-    // lives; cleared on id change and unmount, like the standalone route.
+    // The breadcrumb bar shows the open detail as its leaf, and its back
+    // button, while the modal lives; cleared on id change and unmount.
     $effect(() => {
         id;
+        openDetail.close = onClose;
         return () => {
             openDetail.assistant = null;
+            openDetail.close = null;
         };
     });
 
@@ -211,7 +213,7 @@
                     >
                     <AssistantDetail
                         {id}
-                        {onDeleted}
+                        onDeleted={onDeleted ?? onClose}
                         {initial}
                         underHeaderBar
                         onLoaded={onLoadedDetail}
