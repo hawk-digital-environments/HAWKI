@@ -86,8 +86,9 @@
     // scroll position, filters and the loaded page survive the round trip.
     const detailId = useQueryState('assistant');
     /** Whether the open modal pushed its own history entry (a card click), so
-     *  closing can step back over it instead of stacking another entry. */
-    let pushedDetail = false;
+     *  closing can step back over it instead of stacking another entry. Also
+     *  the known source that earns the back button; a shared link has none. */
+    let pushedDetail = $state(false);
 
     function openDetail(card: HTMLElement, id: string): void {
         morphToDetail(card, async () => {
@@ -308,6 +309,7 @@
         initial={list.assistants.find((item) => item.id === detailId.current)}
         onClose={closeDetail}
         onDeleted={onDetailDeleted}
+        backButton={pushedDetail}
     />
 {/if}
 

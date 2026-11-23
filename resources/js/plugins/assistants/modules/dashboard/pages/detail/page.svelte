@@ -1,8 +1,7 @@
 <!--
   Standalone detail route (`/assistants/dashboard/:id`): direct links and
   reloads. Shows the same detail modal the lists open (AssistantDetailModal),
-  so header and back button match; with no list to return to, closing it
-  lands in the store.
+  without a back button since the source is unknown; Escape lands in the store.
 -->
 <script lang="ts">
     import Page from '$lib/components/ui/page/Page.svelte';
@@ -37,6 +36,6 @@
         <DashboardHeader />
     {/snippet}
     {#snippet body()}
-        <AssistantDetailModal {id} onClose={goToStore} />
+        <AssistantDetailModal {id} onClose={goToStore} backButton={false} />
     {/snippet}
 </Page>

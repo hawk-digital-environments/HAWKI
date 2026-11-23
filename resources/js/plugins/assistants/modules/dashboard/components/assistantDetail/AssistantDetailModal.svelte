@@ -38,9 +38,12 @@
         onDeleted?: () => void;
         /** The list's copy of the assistant, shown while the detail loads. */
         initial?: Assistant;
+        /** Show the header bar's back button; off when the source is unknown
+         *  (a shared link or direct route), where there is nothing to go back to. */
+        backButton?: boolean;
     }
 
-    const { id, onClose, onDeleted, initial }: Props = $props();
+    const { id, onClose, onDeleted, initial, backButton = true }: Props = $props();
     const { __ } = useTranslator();
     const breakpoint = useBreakpoint();
     const reducedMotion = useReducedMotion();
@@ -59,14 +62,18 @@
 
     let modal = $state<HTMLElement>();
 
-    // The breadcrumb bar shows the open detail as its leaf, and its back
-    // button, while the modal lives; cleared on id change and unmount.
+    // The header bar reads the open detail and its back action while the
+    // modal lives; each is cleared when its inputs change and on unmount.
+    $effect(() => {
+        openDetail.close = backButton ? onClose : null;
+        return () => {
+            openDetail.close = null;
+        };
+    });
     $effect(() => {
         id;
-        openDetail.close = onClose;
         return () => {
             openDetail.assistant = null;
-            openDetail.close = null;
         };
     });
 
@@ -215,7 +222,6 @@
                         {id}
                         onDeleted={onDeleted ?? onClose}
                         {initial}
-                        underHeaderBar
                         onLoaded={onLoadedDetail}
                     />
                 </div>

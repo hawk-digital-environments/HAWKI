@@ -87,16 +87,12 @@
          *  right away while the full detail — versions, tags, permissions —
          *  is fetched. */
         initial?: Assistant;
-        /** Whether a page header bar owns the top zone above this view (the
-         *  standalone route; the list modal, whose bar floats over the
-         *  cover in over-cover mode). */
-        underHeaderBar?: boolean;
         /** Called once the assistant's detail resolves — the standalone route
          *  lifts the name into its header bar. */
         onLoaded?: (assistant: Assistant) => void;
     }
 
-    const { id, onDeleted, initial, underHeaderBar = false, onLoaded }: Props = $props();
+    const { id, onDeleted, initial, onLoaded }: Props = $props();
     // The handle is kept (not just `goToRoute` destructured off it) because
     // `path` is a live getter — the builder needs it read at click time.
     const router = useRouter();
@@ -398,7 +394,6 @@
 <div
     class="detail-shell"
     class:test-open={chatOpen}
-    class:under-bar={underHeaderBar}
     data-content-fade="none"
 >
     <!-- data-pull-to-close: the region AssistantDetailModal's pull gesture starts in. -->
@@ -1042,28 +1037,6 @@
         margin: 0;
     }
 
-    /* Where the nav trigger floats over the view (the modal, which has no
-       header bar above), its reserve moves into the full-bleed cover (it
-       grows by the same amount), and the top bar shares the trigger's row,
-       beside it. Under the standalone route's header bar (.under-bar) that
-       zone belongs to the bar, so the cover keeps its plain height. */
-    @media (--bp-md-and-smaller) {
-        .page-content {
-            --nav-reserve: 0rem;
-            --cover-height: calc(18rem + var(--nav-reserve));
-        }
-        .detail-shell:not(.under-bar) .page-content {
-            --nav-reserve: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
-        }
-        .detail-shell:not(.under-bar) .topbar {
-            top: var(--space-2_5);
-            left: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
-            right: var(--cover-inset);
-            min-height: var(--nav-row-h);
-            align-items: center;
-        }
-    }
-
     /* Narrow screens: reclaim horizontal space and let the header adapt instead
        of staying locked to the desktop two-column / inline-controls layout.
        (The token widens the switch from the former raw 40rem to ≤767px — the
@@ -1075,7 +1048,7 @@
             padding: var(--space-4);
         }
         .page-content {
-            --cover-height: calc(14rem + var(--nav-reserve));
+            --cover-height: 14rem;
             --cover-symbol: 4rem;
             --cover-inset: var(--space-4);
             padding-top: 0;

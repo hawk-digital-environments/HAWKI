@@ -8,7 +8,7 @@
 
   While an assistant's detail modal is open (`openDetail`, the list modal and
   the standalone route alike), the bar floats over its cover with only a back
-  button that closes it.
+  button that closes it, shown only when its source is known.
 -->
 <script lang="ts">
     import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
@@ -84,15 +84,17 @@
 
 <PageHeaderBar srHeading={detail?.name ?? title} overCover={detail !== null} data-cover-mode={coverMode ?? undefined}>
     <div class="lead" data-mode={coverMode ?? undefined}>
-        {#if closeDetail}
-            <ButtonWithTooltip
-                variant="ghost"
-                size="sm"
-                iconLeft={ArrowLeft01Icon}
-                tooltip={__('assistants.detail.back')}
-                class="back"
-                onclick={closeDetail}
-            />
+        {#if detail}
+            {#if closeDetail}
+                <ButtonWithTooltip
+                    variant="ghost"
+                    size="sm"
+                    iconLeft={ArrowLeft01Icon}
+                    tooltip={__('assistants.detail.back')}
+                    class="back"
+                    onclick={closeDetail}
+                />
+            {/if}
         {:else if section && groupEntries.length}
             <BreadcrumbTrail>
                 {@render groupCrumb()}
