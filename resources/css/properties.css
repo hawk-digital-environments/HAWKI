@@ -8,27 +8,6 @@
    Cannot be wrapped in @layer: @property is not a conditional rule.
    ========================================================================== */
 
-/* A gradient can't be interpolated, but registered color properties can — so
-   the sidebar drill-in ramp is built from three stops and the hover animates
-   those instead of swapping one background image for another. */
-@property --drill-stop-1 {
-    syntax: '<color>';
-    inherits: false;
-    initial-value: transparent;
-}
-
-@property --drill-stop-2 {
-    syntax: '<color>';
-    inherits: false;
-    initial-value: transparent;
-}
-
-@property --drill-stop-3 {
-    syntax: '<color>';
-    inherits: false;
-    initial-value: transparent;
-}
-
 /* Sidebar column widths. Registered as <length> so they animate; inherited so
    nested rows can read the track they sit in. */
 @property --nav-track {

@@ -54,12 +54,12 @@
         </div>
         <div class="actions">
             {#if !isLast}
-                <Button class="icon-end brand press" variant="accent" iconRight={ArrowRight01Icon} onclick={() => goTo(REVIEW_STEPS[index + 1])}>
+                <Button class="icon-end press" variant="accent" iconRight={ArrowRight01Icon} onclick={() => goTo(REVIEW_STEPS[index + 1])}>
                     {__('assistants.admin.steps.continue_to', {step: __(`assistants.admin.steps.${REVIEW_STEPS[index + 1]}`)})}
                 </Button>
             {:else if canDecide}
                 <Button
-                    class="icon-start brand press"
+                    class="icon-start press"
                     variant="accent"
                     iconLeft={CheckmarkBadge01Icon}
                     disabled={review.deciding || null === review.selectedDecision}

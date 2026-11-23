@@ -6,9 +6,9 @@
 
   The host positions it: a `position: relative` box that defines
   `--test-panel-w` and `--test-fab-inset` (optionally `--test-launcher-bg`
-  / `--test-launcher-fg` to tint the launcher), and (on `--bp-xl`) opens a grid
-  track of `--test-panel-w` beside its content while the dock is open (see
-  the builder layout and the store's detail page).
+  / `--test-launcher-fg` / `--test-launcher-hover-filter` to tint the launcher),
+  and (on `--bp-xl`) opens a grid track of `--test-panel-w` beside its content
+  while the dock is open (see the builder layout and the store's detail page).
 -->
 <script lang="ts">
     import type { Snippet } from 'svelte';
@@ -171,7 +171,8 @@
            corners stay continuous through the whole morph. */
         border-radius: var(--card-radius);
         background: var(--color-bg);
-        box-shadow: 0 6px 16px oklch(0% 0 0 / 0.18);
+        /* No drop shadow: the open card is set apart by a hairline only. */
+        box-shadow: 0 0 0 1px transparent;
         pointer-events: auto;
         /* Close: one smooth pull back into the circle; height leads by a
            hair so it reads as folding, not as an L-shaped wipe. */
@@ -184,9 +185,7 @@
     .test-panel.open {
         width: 100cqw;
         height: 100cqh;
-        box-shadow:
-            0 0 0 1px oklch(0% 0 0 / 0.06),
-            0 18px 40px oklch(0% 0 0 / 0.14);
+        box-shadow: 0 0 0 1px var(--color-border);
         /* Open: stiff spring with a barely-there settle; width leads height
            slightly so the circle swells out of its corner. */
         transition:
@@ -203,19 +202,16 @@
         place-items: end;
         padding: 0;
         border: none;
-        /* Brand ramp of the builder's primary step action
-           (BuilderStepFooter) and the sidebar's create button. */
-        /* Hosts may tint it with their own pair (e.g. the store detail page
-           passes the assistant's cover colours). */
-        background: var(
-            --test-launcher-bg,
-            linear-gradient(135deg, var(--gradient-brand-1), var(--gradient-brand-2) 55%, var(--gradient-brand-3))
-        );
-        color: var(--test-launcher-fg, var(--color-on-accent-fill));
+        /* Light accent tint of the action buttons; hosts may pass their own pair
+           (e.g. the store detail page passes the assistant's cover colours). */
+        --launcher-bg: var(--color-accent-100);
+        background: var(--test-launcher-bg, var(--launcher-bg));
+        color: var(--test-launcher-fg, var(--color-accent-text));
         cursor: pointer;
         /* Blue returns only as the surface nears the circle. */
         transition:
             opacity 160ms var(--settle) 190ms,
+            background-color 150ms,
             filter 150ms;
     }
 
@@ -226,8 +222,14 @@
         margin: calc((var(--fab) - var(--fab-icon)) / 2);
     }
 
+    /* The action button's (`fill`) hover; a host tint brings its own filter. */
     .launcher:hover {
-        filter: brightness(0.92) saturate(1.08);
+        --launcher-bg: color-mix(in oklab, var(--color-accent-100) 85%, var(--color-accent-text));
+        filter: var(--test-launcher-hover-filter, none);
+    }
+
+    :global(html.darkMode) .launcher:hover {
+        --launcher-bg: var(--color-accent-fill-hover);
     }
 
     .launcher:focus-visible {

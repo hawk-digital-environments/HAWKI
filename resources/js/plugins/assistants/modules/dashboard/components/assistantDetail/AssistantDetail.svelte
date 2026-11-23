@@ -726,6 +726,7 @@
             chat={testChat}
             --test-launcher-bg={coverBackground}
             --test-launcher-fg={coverForeground}
+            --test-launcher-hover-filter="brightness(0.92) saturate(1.08)"
             title={__('assistants.detail.try_out')}
         >
             <Chatbox
