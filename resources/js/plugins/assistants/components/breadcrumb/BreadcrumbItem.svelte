@@ -35,6 +35,7 @@
     import type {IconComponent} from '$lib/components/ui/icons';
     import type {AssistantAvatar} from '$plugins/assistants/types/assistant/AssistantAvatar';
     import {useBreadcrumbTrail} from './breadcrumbContext';
+    import {mergeProps} from 'bits-ui';
 
     interface Props {
         /** Accessible name; also the tooltip text. */
@@ -109,8 +110,7 @@
                 <Tooltip tooltip={label} side="bottom" sideOffset={6} delayDuration={300}>
                     {#snippet children({props: tooltipProps})}
                         <button
-                            {...props}
-                            {...tooltipProps}
+                            {...mergeProps(props, tooltipProps)}
                             type="button"
                             class="crumb link"
                             aria-current={isCurrent ? 'page' : undefined}

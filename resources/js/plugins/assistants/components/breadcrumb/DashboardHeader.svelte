@@ -1,9 +1,8 @@
 <!--
   @component Header bar for the assistants dashboard pages: the icon
-  breadcrumb trail instead of a visible title. The crumbs derive themselves
-  from the same sources the sidebar renders — the module's own icon/title
-  (what SpaceTabs shows) and the active section from the assistant menu — so
-  trail and sidebar can never drift apart. The page's full title stays in the
+  breadcrumb trail instead of a visible title. The trail starts at the
+  sidebar's main menu items and derives from the same assistant menu entries
+  the sidebar renders, so trail and sidebar can never drift apart. The page's full title stays in the
   document outline as PageHeaderBar's visually hidden h1 and doubles as the
   current crumb's tooltip.
 
@@ -22,7 +21,6 @@
     import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
     import {BreadcrumbTrail, BreadcrumbItem} from '$plugins/assistants/components/breadcrumb';
     import {useAssistantMenuEntries} from '$plugins/assistants/hooks/assistantMenuHooks.svelte';
-    import {useApp} from '$lib/app/hooks/useApp.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte';
     import type {AssistantAvatar} from '$plugins/assistants/types/assistant/AssistantAvatar';
@@ -31,6 +29,10 @@
     import {cssDeclaration, overlayContrastMode} from '$lib/utils/color.js';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import UserAiIcon from '$lib/components/ui/icons/iconset/UserAiIcon.svelte';
+    import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
+    import type {AssistantMenuEntry} from '$plugins/assistants/hooks/assistantMenuHooks.svelte';
+    import type {IconComponent} from '$lib/components/ui/icons';
 
     interface Props {
         /** The page's full title — the bar's visually hidden h1 and the
@@ -43,22 +45,9 @@
 
     const {title, leaf = null}: Props = $props();
 
-    const app = useApp();
     const router = useRouter();
-    const {__, translate} = useTranslator();
+    const {__} = useTranslator();
     const menu = useAssistantMenuEntries();
-
-    // The module's identity in the space tabs — one source of truth for its
-    // icon and label.
-    const locale = $derived(app.localization.locale);
-    const module = $derived(
-        app.modules.all.find(m => m.plugin.name === 'assistants' && m.name === 'dashboard')
-    );
-    const moduleIcon = $derived.by(() => {
-        const icon = module?.icon?.(locale);
-        return typeof icon === 'string' ? undefined : icon;
-    });
-    const moduleLabel = $derived(module?.title?.(translate, locale) ?? __('assistants.assistants'));
 
     // The sidebar's active dashboard section (same precedence as its rows).
     const section = $derived(
@@ -88,8 +77,39 @@
         !leaf && leafCrumb?.avatar ? overlayContrastMode(cssDeclaration(leafCrumb.avatar.iconCss, 'background')) : null
     );
 
+    /** The sidebar group the section sits in (My Assistants): its own crumb,
+     *  with no page of its own, so it opens a menu of the group's sections. */
+    const groupEntries = $derived(
+        parent?.group ? menu.entries.filter(entry => entry.level === 'dashboard' && entry.group === parent.group) : []
+    );
+
+    /** A lone crumb says nothing the sidebar doesn't: the trail shows from two up. */
+    const crumbCount = $derived(
+        (groupEntries.length ? 1 : 0) + (leafCrumb ? (parent ? 2 : 1) : section ? 1 : 0)
+    );
+
     const closeModal = $derived(!leaf && openDetail.assistant ? openDetail.close : null);
 </script>
+
+{#snippet groupCrumb()}
+    {#if groupEntries.length}
+        <BreadcrumbItem label={__('assistants.sidebar.my_assistants')} icon={UserAiIcon} current={false}>
+            {#snippet menu()}
+                {#each groupEntries as entry (entry.id)}
+                    {@render groupItem(entry)}
+                {/each}
+            {/snippet}
+        </BreadcrumbItem>
+    {/if}
+{/snippet}
+
+{#snippet groupItem(entry: AssistantMenuEntry)}
+    <DropdownMenuItem
+        iconLeft={entry.icon as IconComponent}
+        disabled={entry.disabled}
+        onSelect={() => (entry.route ? void router.goToRoute(entry.route) : undefined)}
+    >{entry.label}</DropdownMenuItem>
+{/snippet}
 
 <PageHeaderBar srHeading={leafCrumb?.label ?? title} overCover={leafCrumb !== null} data-cover-mode={coverMode ?? undefined}>
     <div class="lead" data-mode={coverMode ?? undefined}>
@@ -103,22 +123,20 @@
                 onclick={closeModal}
             />
         {/if}
-        <BreadcrumbTrail mode={coverMode}>
-            {#if leafCrumb}
-                <BreadcrumbItem label={moduleLabel} icon={moduleIcon} route="assistants.dashboard.index" />
-                {#if parent}
-                    <BreadcrumbItem label={parent.label} icon={parent.icon} route={parent.route} current={false} />
+        {#if crumbCount > 1}
+            <BreadcrumbTrail mode={coverMode}>
+                {#if leafCrumb}
+                    {@render groupCrumb()}
+                    {#if parent}
+                        <BreadcrumbItem label={parent.label} icon={parent.icon} route={parent.route} current={false} />
+                    {/if}
+                    <BreadcrumbItem label={leafCrumb.label} avatar={leafCrumb.avatar} current />
+                {:else if section}
+                    {@render groupCrumb()}
+                    <BreadcrumbItem label={title ?? section.label} icon={section.icon} />
                 {/if}
-                <BreadcrumbItem label={leafCrumb.label} avatar={leafCrumb.avatar} current />
-            {:else if section}
-                <BreadcrumbItem label={moduleLabel} icon={moduleIcon} route="assistants.dashboard.index" />
-                <BreadcrumbItem label={title ?? section.label} icon={section.icon} />
-            {:else}
-                <!-- No section matched and no leaf yet: the module crumb is where
-                    the trail ends. -->
-                <BreadcrumbItem label={moduleLabel} icon={moduleIcon} />
-            {/if}
-        </BreadcrumbTrail>
+            </BreadcrumbTrail>
+        {/if}
     </div>
 </PageHeaderBar>
 
