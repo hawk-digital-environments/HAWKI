@@ -123,7 +123,9 @@
 
     @media (--bp-md-and-smaller) {
         .page-header-bar {
-            padding-right: var(--space-3);
+            /* A page floating its own corner button on the right sets
+               --page-header-end-reserve to keep the bar's content clear of it. */
+            padding-right: var(--page-header-end-reserve, var(--space-3));
         }
 
         .page-title {

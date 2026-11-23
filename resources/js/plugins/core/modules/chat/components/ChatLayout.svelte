@@ -20,6 +20,9 @@
     import ChatHeader from '$plugins/core/modules/chat/components/ChatHeader.svelte';
     import Page from '$lib/components/ui/page/Page.svelte';
     import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
+    import ContentCornerButton from '$lib/components/ui/sidebar/ContentCornerButton.svelte';
+    import BubbleChatAddIcon from '$lib/components/ui/icons/iconset/BubbleChatAddIcon.svelte';
+    import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -40,7 +43,8 @@
     const store = useStore('chat');
     const router = useRouter();
     const toast = useToastContext();
-    const {getTranslationsFlat} = useTranslator();
+    const {__, getTranslationsFlat} = useTranslator();
+    const sidebar = useSidebar();
 
     const chat = useChatComposerContext();
     const layout = createChatLayoutContext();
@@ -51,6 +55,11 @@
     const isNewChat = $derived(onConversation
         ? !store.loading && !store.error && (!store.active || store.active.messages.length === 0)
         : !chat.pendingMessage);
+
+    function startNewChat() {
+        store.requestNewChat();
+        void router.goToRoute('chat.index');
+    }
 
     async function removeConversation() {
         if (!store.active) return;
@@ -105,7 +114,24 @@
     </div>
 {/snippet}
 
-<Page header={onConversation ? headerBar : undefined} body={pageBody}/>
+<!-- On mobile the header keeps clear of the new chat button, mirroring its
+     reserve for the nav toggle on the left. -->
+<Page
+    header={onConversation ? headerBar : undefined}
+    body={pageBody}
+    style={sidebar.mobile ? '--page-header-end-reserve: calc(var(--space-4) + var(--nav-row-h) + var(--space-2))' : undefined}
+/>
+
+<!-- Mobile: the sidebar's new chat row sits in the closed drawer, so the
+     action floats in the top-right corner, opposite the nav toggle. -->
+{#if sidebar.mobile}
+    <ContentCornerButton
+        corner="end"
+        icon={BubbleChatAddIcon}
+        label={__('chat.sidebar.newChat')}
+        onclick={startNewChat}
+    />
+{/if}
 
 <style>
     /* Shared canvas for the scroll region and the floating composer: the
@@ -152,6 +178,17 @@
        `SidebarRoot`, which the layout renders inside. */
     @media (--bp-md-and-smaller) {
         .empty :global(.welcome) { padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2)); }
+
+        /* Mobile: the composer stays anchored at the bottom, right above the
+           space bar, even on an empty chat; the welcome block centres in the
+           room above it instead of travelling with the composer. */
+        .chat-body.empty { padding-bottom: 0; }
+        .empty .scroll-region {
+            display: flex;
+            flex: 1 0 auto;
+            flex-direction: column;
+            justify-content: center;
+        }
     }
 
     @media print {

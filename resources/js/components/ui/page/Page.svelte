@@ -87,6 +87,10 @@
 <style>
     .page {
         display: grid;
+        /* Capped at the page's width: an implicit `auto` column would grow to
+           the header's min-content (e.g. a long chat name) and push the whole
+           page past the viewport, instead of letting the name truncate. */
+        grid-template-columns: minmax(0, 1fr);
         grid-template-rows: minmax(0, 1fr);
         grid-template-areas: 'body';
         height: 100%;

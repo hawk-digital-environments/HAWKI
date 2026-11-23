@@ -96,9 +96,12 @@
         {/snippet}
     </SidebarHeader>
     <div class="sidebar-content">
-        <div class="spaces">
-            <SpaceTabs />
-        </div>
+        <!-- On mobile the tabs move to the bottom bar (MobileSpaceBar). -->
+        {#if !sidebar.mobile}
+            <div class="spaces">
+                <SpaceTabs />
+            </div>
+        {/if}
         <div class="module-sidebar">
             {#if ModuleSidebar}
                 <ModuleSidebar />

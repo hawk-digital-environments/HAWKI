@@ -129,4 +129,10 @@ padding so the composer stays aligned with the centred message column).
 
         .composer-row { padding-inline: var(--space-1); }
     }
+
+    /* Mobile: the space bar right below brings its own padding, so the dock
+       adds none of its own under the disclaimer. */
+    @media (--bp-md-and-smaller) {
+        .composer-dock { padding-bottom: 0; }
+    }
 </style>

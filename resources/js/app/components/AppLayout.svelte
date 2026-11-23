@@ -8,6 +8,7 @@
     import type {Snippet} from 'svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import AppSidebar from '$lib/app/components/sidebar/AppSidebar.svelte';
+    import MobileSpaceBar from '$lib/app/components/sidebar/MobileSpaceBar.svelte';
     import SidebarContent from '$lib/components/ui/sidebar/SidebarContent.svelte';
     import SidebarRoot from '$lib/components/ui/sidebar/SidebarRoot.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -50,6 +51,7 @@
     <SidebarContent>
         {@render children()}
     </SidebarContent>
+    <MobileSpaceBar />
 
     <Toaster />
     <AnnouncementDialog />

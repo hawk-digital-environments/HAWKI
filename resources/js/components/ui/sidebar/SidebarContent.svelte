@@ -6,7 +6,7 @@
     import type {Snippet} from 'svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import PanelLeftIcon from '$lib/components/ui/icons/iconset/PanelLeftIcon.svelte';
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import ContentCornerButton from '$lib/components/ui/sidebar/ContentCornerButton.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
 
@@ -36,22 +36,14 @@
     tabindex="-1"
     inert={sidebar.mobile && sidebar.navOpen}
 >
-    <Tooltip tooltip={toggleLabel} side="bottom" sideOffset={4} delayDuration={300}>
-        {#snippet children({props})}
-            <button
-                {...props}
-                id="mobile-navigation-trigger"
-                class="mobile-navigation-trigger u-print-hidden"
-                type="button"
-                aria-label={toggleLabel}
-                aria-controls="app-navigation"
-                aria-expanded={sidebar.navOpen}
-                onclick={toggleNavigation}
-            >
-                <PanelLeftIcon size={18} strokeWidth={2} aria-hidden="true" />
-            </button>
-        {/snippet}
-    </Tooltip>
+    <ContentCornerButton
+        id="mobile-navigation-trigger"
+        icon={PanelLeftIcon}
+        label={toggleLabel}
+        aria-controls="app-navigation"
+        aria-expanded={sidebar.navOpen}
+        onclick={toggleNavigation}
+    />
     {@render pageContent()}
 </main>
 
@@ -64,39 +56,7 @@
         background: var(--panel-bg);
     }
 
-    .mobile-navigation-trigger {
-        position: absolute;
-        /* The same inset as the sidebar's padding. */
-        top: var(--space-4);
-        left: var(--space-4);
-        /* Floats over the page content, outside the nav it opens and closes. */
-        --mobile-navigation-trigger-z: 10;
-        z-index: var(--mobile-navigation-trigger-z);
-        display: inline-flex;
-        width: var(--nav-row-h);
-        height: var(--nav-row-h);
-        padding: 0;
-        align-items: center;
-        justify-content: center;
-        border: none;
-        border-radius: var(--corner-sm);
-        background: transparent;
-        color: var(--color-nav-icon);
-        cursor: pointer;
-        transition: color var(--duration-fast);
-    }
-
-    .mobile-navigation-trigger:hover {
-        background: var(--color-hover);
-        color: var(--color-text);
-    }
-
     @media (--bp-md-and-smaller) {
-        .mobile-navigation-trigger :global(svg) {
-            width: var(--space-5);
-            height: var(--space-5);
-        }
-
         /* Mobile: the nav toggle floats over the top-left of the content. Overlay a
            gradient of the content background so content dissolves under it as it
            scrolls up rather than cutting off at a hard edge. The overlay is pinned
