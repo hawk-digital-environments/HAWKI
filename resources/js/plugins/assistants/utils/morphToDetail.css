@@ -204,6 +204,11 @@ html[data-assistant-morph] #main-content .mobile-navigation-trigger {
 html[data-assistant-morph] #main-content .page-header-bar {
     view-transition-name: assistant-nav-bar;
 }
+/* Opening ends on the cover, where the bar has no fade band; it can switch
+   modes only after the detail loads, so drop the band for the morph. */
+html[data-assistant-morph='open'] #main-content .page-header-bar::before {
+    display: none;
+}
 html[data-assistant-morph] #main-content [data-assistant-cover] > .topbar {
     view-transition-name: assistant-nav-actions;
 }
