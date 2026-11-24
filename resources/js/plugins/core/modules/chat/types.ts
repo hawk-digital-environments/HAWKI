@@ -1,5 +1,20 @@
 import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 
+/** Display identity of the assistant that answered an AI message: shown as
+ *  the author (name + glyph in a tinted circle) instead of the model label.
+ *  Persisted in the message metadata as `metadata.assistant`, so reloaded
+ *  conversations keep showing who answered. */
+export interface ChatAssistantIdentity {
+    name: string;
+    /** The glyph its creator picked (emoji or first letter). */
+    icon: string;
+    /** One hsl() color stop from its appearance, tinting the icon circle. */
+    tint?: string;
+    /** Bare handle (no `@`) of the assistant that authored the message; lets a
+     *  regen re-run with the same assistant even after the composer switched. */
+    handle?: string;
+}
+
 export interface ChatSummary {
     name: string;
     slug: string;
@@ -37,6 +52,8 @@ export interface ChatMessage {
     model: null | string;
     updated_at: string;
     citations?: UrlCitation[];
+    /** Identity of the assistant that authored this AI message, when one did. */
+    assistant?: ChatAssistantIdentity;
     /** Client-only message that is visible before it has been persisted. */
     isPending?: boolean;
     /** Assistant response whose persisted content is still arriving from the stream. */

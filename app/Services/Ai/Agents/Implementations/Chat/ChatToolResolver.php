@@ -44,18 +44,28 @@ readonly class ChatToolResolver
     /**
      * Resolves each tool-transfer string in $toolTransferStrings into a tool instance.
      *
+     * Run-time model guard first: a model with tool calling switched off
+     * (`settings.tool_calling: false`) rejects any requested tool — the
+     * frontend's model-usage check and the regenerate menu filter the same
+     * combination client-side, this is the server-side enforcement of it.
+     *
      * Yields results lazily so the caller (typically an agent constructor) can consume them
      * without materialising the full list upfront.
      *
      * @param string[] $toolTransferStrings Serialised tool descriptors from the frontend payload.
      * @throws InvalidToolTransferStringException when an entry is not a string, has an unrecognised
-     *         type prefix, references an undeclared capability, or contains invalid JSON settings.
+     *         type prefix, references an undeclared capability, contains invalid JSON settings, or
+     *         the model does not support tool calling at all.
      */
     public function findTools(
         array               $toolTransferStrings,
         AgentRequestContext $context
     ): iterable
     {
+        if ($toolTransferStrings !== [] && !$context->model->settings->canUseTools()) {
+            throw InvalidToolTransferStringException::forModelWithoutToolCalling($context->model->model_id);
+        }
+
         foreach ($toolTransferStrings as $toolTransferString) {
             if (!is_string($toolTransferString)) {
                 throw InvalidToolTransferStringException::forNotAString();

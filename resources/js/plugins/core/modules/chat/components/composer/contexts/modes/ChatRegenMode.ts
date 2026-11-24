@@ -6,10 +6,20 @@ import type {ChatDefaultModeState} from '$plugins/core/modules/chat/components/c
 import {AbstractMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/contracts/AbstractMode.js';
 import type {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
+import type {AiAssistant} from '$plugins/core/stores/AiHandleStore.svelte.js';
 
 export interface ChatRegenModeState {
     messageId: string;
     originalMessage: string;
+    /**
+     * Participant picked for the re-run through the model picker's regenerate
+     * groups (see the `chatRegenerateGroups` hook) — e.g. an assistant row a
+     * plugin contributed. `null` keeps the plain model run; the transport
+     * hands it to the `chatSend` hook as `regenParticipant`, where a handler
+     * claims it. Mutated in place by the picker (the state lives in a
+     * `$state` proxy, so the change is reactive).
+     */
+    pickedParticipant: AiAssistant | null;
 }
 
 /**
@@ -96,7 +106,8 @@ export class ChatRegenMode extends AbstractMode<ChatMessage, ChatRegenModeState>
 
         return {
             messageId: data.message_id,
-            originalMessage: data.content.text
+            originalMessage: data.content.text,
+            pickedParticipant: null
         };
     }
 
