@@ -4,9 +4,9 @@
   sidebar's main menu items and derives from the same assistant menu entries
   the sidebar renders, so trail and sidebar can never drift apart. The page's
   full title stays in the document outline as PageHeaderBar's visually hidden
-  h1 and doubles as the current crumb's tooltip. The trail shows only with two
-  or more crumbs, and then only when the sidebar is collapsed or the trail runs
-  deeper than two levels.
+  h1 and doubles as the current crumb's tooltip. The trail shows when the
+  sidebar is collapsed or the trail runs deeper than two levels; every crumb
+  navigates.
 
   While an assistant's detail modal is open (`openDetail`, the list modal and
   the standalone route alike), the bar floats over its cover with only a back
@@ -56,10 +56,26 @@
         section?.group ? menu.entries.filter(entry => entry.level === 'dashboard' && entry.group === section.group) : []
     );
 
+    /** The sidebar's main level — ungrouped sections plus the My Assistants
+     *  group — is what the parent crumb switches between. */
+    const MY_ASSISTANTS = 'group:my-assistants';
+    const topEntries = $derived(
+        menu.entries.filter(entry => entry.level === 'dashboard' && !entry.group && !entry.component && entry.route)
+    );
+    /** The group lands on its first reachable section. */
+    const groupRoute = $derived(
+        menu.entries.find(entry => entry.level === 'dashboard' && entry.group === 'my-assistants' && entry.route && !entry.disabled)?.route
+    );
+
     /** An open sidebar already shows where you are: the trail only earns its
      *  place with the sidebar collapsed, or deeper than two levels. */
     const depth = $derived(section ? (groupEntries.length ? 2 : 1) : 0);
-    const showTrail = $derived(depth > 1 && (!sidebar.navOpen || depth > 2));
+    const showTrail = $derived(depth > 0 && (!sidebar.navOpen || depth > 2));
+
+    function openParent(id: string): void {
+        const route = id === MY_ASSISTANTS ? groupRoute : topEntries.find(entry => entry.id === id)?.route;
+        if (route) void router.goToRoute(route);
+    }
 
     function openSection(id: string): void {
         const route = groupEntries.find(entry => entry.id === id)?.route;
@@ -81,6 +97,28 @@
         };
     });
 </script>
+{#snippet parentMenu()}
+    <DropdownMenuRadioGroup value={section?.group ? MY_ASSISTANTS : section?.id} onValueChange={openParent}>
+        {#each topEntries as entry (entry.id)}
+            <DropdownMenuRadioItem
+                value={entry.id}
+                indicator="check"
+                indicatorSide="end"
+                iconLeft={entry.icon as IconComponent}
+                disabled={entry.disabled}
+            >{entry.label}</DropdownMenuRadioItem>
+        {/each}
+        {#if groupRoute}
+            <DropdownMenuRadioItem
+                value={MY_ASSISTANTS}
+                indicator="check"
+                indicatorSide="end"
+                iconLeft={UserAiIcon}
+            >{__('assistants.sidebar.my_assistants')}</DropdownMenuRadioItem>
+        {/if}
+    </DropdownMenuRadioGroup>
+{/snippet}
+
 {#snippet sectionMenu()}
     <DropdownMenuRadioGroup value={section?.id} onValueChange={openSection}>
         {#each groupEntries as entry (entry.id)}
@@ -110,8 +148,12 @@
             {/if}
         {:else if section && showTrail}
             <BreadcrumbTrail>
-                <BreadcrumbItem label={__('assistants.sidebar.my_assistants')} icon={UserAiIcon} current={false} />
-                <BreadcrumbItem label={title ?? section.label} icon={section.icon} current menu={sectionMenu} />
+                {#if groupEntries.length}
+                    <BreadcrumbItem label={__('assistants.sidebar.my_assistants')} icon={UserAiIcon} current={false} menu={parentMenu} />
+                    <BreadcrumbItem label={title ?? section.label} icon={section.icon} current menu={sectionMenu} />
+                {:else}
+                    <BreadcrumbItem label={title ?? section.label} icon={section.icon} current menu={parentMenu} />
+                {/if}
             </BreadcrumbTrail>
         {/if}
     </div>

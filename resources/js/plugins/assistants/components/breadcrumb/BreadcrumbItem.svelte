@@ -18,10 +18,10 @@
     keyed trails remount their items, so identity changes re-resolve; trails
     that change shape in place (an item appearing later) pass explicit values.
   - FR2 `menu` takes precedence over `route`/`onclick` (dev-time warning).
-  - FR3 a current crumb renders as a plain marker, never a link; a current
-    crumb with a menu keeps `aria-current` on its trigger.
-  - FR4 a crumb with no destination that is not current is a plain label:
-    not focusable, no `aria-current`.
+  - FR3 every crumb with a destination stays navigable, the current one
+    included; current crumbs carry `aria-current` on their button or trigger.
+  - FR4 a crumb with no destination is a plain label or marker: not
+    focusable.
 
   Deliberate deviations from astryx: icon-only visuals — the label is sr-only
   text plus a tooltip, never visible; destinations are named routes; a glyph
@@ -128,13 +128,14 @@
             {/snippet}
             {@render menu()}
         </DropdownMenu>
-    {:else if (route || onclick) && !isCurrent}
+    {:else if route || onclick}
         <Tooltip tooltip={label} side="bottom" sideOffset={6} delayDuration={300}>
             {#snippet children({props})}
                 <button
                     {...props}
                     type="button"
-                    class="crumb link"
+                    class={['crumb', 'link', isCurrent && 'current']}
+                    aria-current={isCurrent ? 'page' : undefined}
                     onclick={activate}
                 >
                     <span class="glyph">
