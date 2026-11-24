@@ -143,7 +143,7 @@
     .empty :global(.composer-dock) { position: static; padding-bottom: 0; }
     .empty :global(.composer-dock::before) { display: none; }
 
-    .scroll-region { height: 100%; overflow-y: auto; }
+    .scroll-region { height: 100%; overflow-y: auto; padding-top: var(--page-bar-h, 0px); }
 
     /* Mobile: the floating nav toggle overlays the content top, so the
        empty-state welcome reserves room to clear it (toggle inset +

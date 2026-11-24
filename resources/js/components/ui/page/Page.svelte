@@ -94,7 +94,10 @@
         background: var(--color-bg);
     }
 
+    /* The bar overlays the body so content scrolls all the way under it and
+       dissolves in its fade; scroll regions reserve --page-bar-h at the top. */
     .page.with-header {
+        --page-bar-h: calc(2 * var(--space-4) + var(--nav-row-h));
         grid-template-rows: auto minmax(0, 1fr);
         grid-template-areas: 'header' 'body';
     }
@@ -102,6 +105,14 @@
     .page-body {
         grid-area: body;
         min-height: 0;
+    }
+
+    .page.with-header > .page-body {
+        grid-row: 1 / -1;
+    }
+
+    .page.with-header .page-scroll {
+        padding-top: var(--page-bar-h);
     }
 
     /* The page's single scroll region (default body). */
