@@ -69,11 +69,16 @@
     const detail = $derived(openDetail.assistant);
     const closeDetail = $derived(detail ? openDetail.close : null);
 
-    /** The open detail's cover background decides the back button's shade. */
-    const coverMode = $derived.by(() => {
-        if (!detail) return null;
-        const avatar = resolveAssistantAvatar(detail.avatar, detail.name);
-        return overlayContrastMode(cssDeclaration(avatar.iconCss, 'background'));
+    const coverCss = $derived(detail ? resolveAssistantAvatar(detail.avatar, detail.name).iconCss : null);
+    /** The cover background's lightness keys the bar; the back button takes the cover's own foreground shade. */
+    const coverMode = $derived(coverCss ? overlayContrastMode(cssDeclaration(coverCss, 'background')) : null);
+    const coverForeground = $derived(coverCss ? cssDeclaration(coverCss, 'color') : null);
+
+    $effect(() => {
+        sidebar.triggerTint = coverForeground;
+        return () => {
+            sidebar.triggerTint = null;
+        };
     });
 </script>
 {#snippet sectionMenu()}
@@ -91,7 +96,7 @@
 {/snippet}
 
 <PageHeaderBar srHeading={detail?.name ?? title} overCover={detail !== null} data-cover-mode={coverMode ?? undefined}>
-    <div class="lead" data-mode={coverMode ?? undefined}>
+    <div class="lead" data-mode={coverMode ?? undefined} style:--back-fg={coverForeground ?? undefined}>
         {#if detail}
             {#if closeDetail}
                 <ButtonWithTooltip
@@ -123,6 +128,10 @@
     .lead :global(.breadcrumb-trail) {
         margin-left: 0;
     }
+    /* The back button sits the cover actions' own gap from the nav trigger. */
+    .lead:has(:global(.btn.back)) {
+        margin-left: 0;
+    }
 
     /* A round chip in the cover's shade, matching the trail's pill. */
     .lead[data-mode='dark'] {
@@ -134,10 +143,6 @@
     .lead :global(.btn.back) {
         --btn-bg: color-mix(in oklch, var(--back-fg, currentColor) 14%, transparent);
         --btn-color: var(--back-fg, currentColor);
-        width: var(--nav-row-h);
-        height: var(--nav-row-h);
-        padding: 0;
-        border-radius: var(--corner-full);
         pointer-events: auto;
     }
     .lead :global(.btn.back:not(:disabled):hover) {

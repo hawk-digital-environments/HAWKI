@@ -16,6 +16,9 @@ class SidebarState {
     /** Whether the aside panel is open. */
     asideOpen = $state(false);
 
+    /** Shade for the nav toggle while it floats over a page cover; null keeps the cover-mode default. */
+    triggerTint = $state<string | null>(null);
+
     public constructor(private readonly breakpoints: BreakpointState) {
         // Nav starts open on desktop but closed on mobile, where it is an
         // off-canvas overlay that would otherwise cover the content on first paint.
