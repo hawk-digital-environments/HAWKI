@@ -325,14 +325,16 @@
         height: var(--connector-h);
         border-radius: var(--corner-full);
         background:
-            linear-gradient(var(--color-accent-fill), var(--color-accent-fill)) top / 100% 0% no-repeat,
+            linear-gradient(var(--color-accent-100), var(--color-accent-100)) top / 100% 0% no-repeat,
             color-mix(in oklab, var(--color-text) 16%, transparent);
-        transition: background-size 320ms cubic-bezier(0.3, 0, 0.2, 1) 140ms;
+        transition: background-size 320ms cubic-bezier(0.3, 0, 0.2, 1) 140ms, background-color 0ms 460ms;
         pointer-events: none;
     }
 
+    /* The grey track drops once filled: the dark-mode tint is translucent. */
     .wizard-step.done:has(+ .wizard-step)::after {
         background-size: 100% 100%, auto;
+        background-color: transparent;
     }
 
     /* Step labels are the wizard's content, a notch above the nav rows. */
