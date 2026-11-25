@@ -14,7 +14,6 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\AssistantReviewStatus;
-use Database\Seeders\AssistantSettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\ContextualScopeStatics;
@@ -282,7 +281,7 @@ class AssistantIndexTest extends TestCase
 
     public function testCanListAssistantsWithSettingValuesAndCategory(): void
     {
-        $this->seed(AssistantSettingSeeder::class);
+        AssistantSetting::factory()->create(['key' => 'language']);
         $setting = AssistantSetting::where('key', 'language')->firstOrFail();
         $category = AssistantCategory::factory()->create(['text' => 'education']);
         $user = User::factory()->create();

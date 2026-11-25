@@ -11,7 +11,6 @@ use App\Models\Assistants\AssistantSettingValue;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Assistant\Values\AssistantReleaseStage;
-use Database\Seeders\AssistantSettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\Feature\Api\Assistant\Fixtures\Assistant as AssistantFixture;
@@ -154,7 +153,7 @@ class AssistantShowTest extends TestCase
 
     public function testCanShowAssistantWithSettingValues(): void
     {
-        $this->seed(AssistantSettingSeeder::class);
+        AssistantSetting::factory()->create(['key' => 'language']);
         $user = User::factory()->create();
         $setting = AssistantSetting::where('key', 'language')->firstOrFail();
         $assistant = Assistant::factory()->create([
@@ -178,7 +177,7 @@ class AssistantShowTest extends TestCase
 
     public function testCanShowAssistantWithNestedSettingInclude(): void
     {
-        $this->seed(AssistantSettingSeeder::class);
+        AssistantSetting::factory()->create(['key' => 'language']);
         $user = User::factory()->create();
         $setting = AssistantSetting::where('key', 'language')->firstOrFail();
         $assistant = Assistant::factory()->create([

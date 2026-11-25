@@ -15,8 +15,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserSeeder::class,
-            AssistantCategorySeeder::class,
-            AssistantSettingSeeder::class,
             AssistantSeeder::class,
             AiToolSeeder::class,
             Rag\RagToolSeeder::class,

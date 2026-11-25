@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests;
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Testing\TestResponse;
 use LaravelJsonApi\Testing\MakesJsonApiRequests;
@@ -32,6 +34,12 @@ abstract class TestCase extends BaseTestCase
 
         // Most fixtures assume org-free users; the default-org assignment has its own tests.
         config()->set('hawki.organization.default', '');
+
+        // Migrations insert default categories/settings; tests build their own (rolled back per test).
+        if (isset(class_uses_recursive(static::class)[RefreshDatabase::class])) {
+            DB::table('assistant_settings')->delete();
+            DB::table('assistant_categories')->delete();
+        }
     }
 
     protected function jsonApiRaw(string $method, string $uri, array $data = [], array $headers = []): TestResponse
