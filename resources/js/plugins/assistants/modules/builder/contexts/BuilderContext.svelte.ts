@@ -927,14 +927,15 @@ export class BuilderContext {
     }
   }
 
-  async requestRelease(){
+  /** Releases the draft at its chosen stage; resolves whether it went through. */
+  async requestRelease(): Promise<boolean> {
     try {
       // Land any edit still pending in the debounce pipeline first, so the
       // release (and its note) describes what is actually on the server.
       await this.flushSave();
       if (!(await requestAssistantRelease(this.draft))) {
         this.toast.error(this.translate("assistants.builder.publish.save_failed"));
-        return;
+        return false;
       }
       // Fetch the servers review state for the assistant.
       let review: Review | null;
@@ -965,9 +966,11 @@ export class BuilderContext {
           ? this.translate("assistants.builder.publish.saved")
           : this.translate("assistants.builder.publish.submitted"),
       );
+      return true;
     } catch (err) {
       const apiErr = ApiError.from(err);
       this.toast.error(`${this.translate("assistants.builder.publish.save_failed")} ${apiErr.userMessage}`);
+      return false;
     }
   }
 

@@ -17,6 +17,7 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useBuilderContext} from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
     import {builderProgress} from '$plugins/assistants/modules/builder/contexts/builderProgress.svelte.js';
+    import {builderReturnPath} from '$plugins/assistants/modules/builder/contexts/builderReturn.js';
     import {BUILDER_STEPS, type BuilderStep} from '$plugins/assistants/modules/builder/contexts/BuilderValidatorContext.svelte.js';
 
     const builder = useBuilderContext();
@@ -55,6 +56,13 @@
                 return __('assistants.builder.publish.keep_as_draft');
         }
     });
+
+    // A successful release ends the session: leave like the sidebar's Back does.
+    async function release() {
+        if (await builder.requestRelease()) {
+            router.goTo(builderReturnPath() ?? router.getPath('assistants.dashboard.drafts'));
+        }
+    }
 
     function goTo(step: BuilderStep) {
         void router.goToRoute(routeOf(step));
@@ -178,7 +186,7 @@
                 </span>
             </Button>
         {:else if canRelease}
-            <Button class="icon-start press" variant="fill" iconLeft={FloppyDiskIcon} onclick={() => builder.requestRelease()}>
+            <Button class="icon-start press" variant="fill" iconLeft={FloppyDiskIcon} onclick={release}>
                 {releaseText}
             </Button>
         {/if}
