@@ -208,6 +208,13 @@
         transition: color var(--duration-fast);
     }
 
+    /* Inset: rows span the full width, so an outside ring gets clipped by the sidebar. */
+    .sidebar-item:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: -2px;
+        border-radius: var(--corner-sm);
+    }
+
     /* Hover/active surfaces are provided by the sliding highlights in List. */
     .sidebar-item:hover {
         color: var(--color-nav-text-hover);

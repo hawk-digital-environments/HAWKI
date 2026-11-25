@@ -76,9 +76,8 @@
     }
 
     .select:focus-visible {
-        outline: none;
-        --select-border: var(--color-focus-ring);
-        box-shadow: 0 0 0 1px var(--color-focus-ring);
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 2px;
     }
 
     .select:disabled {
