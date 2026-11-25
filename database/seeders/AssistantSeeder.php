@@ -137,11 +137,8 @@ class AssistantSeeder extends Seeder
             ]));
         }
 
+        // Default categories are inserted by migration.
         $categories = AssistantCategory::all();
-        if ($categories->isEmpty()) {
-            $this->call(AssistantCategorySeeder::class);
-            $categories = AssistantCategory::all();
-        }
 
         // A small set of reusable tags.
         $tags = collect(['beginner', 'advanced', 'writing', 'coding', 'research'])

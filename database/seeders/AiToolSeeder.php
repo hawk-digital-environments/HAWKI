@@ -37,8 +37,7 @@ use Illuminate\Support\Facades\DB;
  * `AiTool::updateOrCreate()` unable to find its *own previously-seeded*
  * inactive row on a second run (the lookup is scoped too) and try to
  * re-insert it into a unique column. The query builder isn't scoped, so this
- * stays idempotent for every row regardless of `active`. Mirrors
- * `AssistantSettingSeeder`'s style for the same reason.
+ * stays idempotent for every row regardless of `active`.
  */
 class AiToolSeeder extends Seeder
 {

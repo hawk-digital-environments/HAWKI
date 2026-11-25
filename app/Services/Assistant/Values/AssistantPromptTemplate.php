@@ -29,8 +29,8 @@ namespace App\Services\Assistant\Values;
  *   from the assistant's answer_style setting and its max_tokens column, so the
  *   token-budget module can appear alone or combined with a style target.
  *
- * The previous home of the settings templates was the AssistantSettingSeeder;
- * they were moved here so that both the seeder and the runtime composer share
+ * The settings templates live here so that both the migration inserting the
+ * default assistant_settings rows and the runtime composer share
  * a single source of truth. When this becomes admin-editable, the constants
  * can be swapped for a model-backed registry without changing call sites.
  */
