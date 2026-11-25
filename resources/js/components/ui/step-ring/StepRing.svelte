@@ -54,7 +54,7 @@
     /* In the row's own colour, so it follows hover, active and locked rows. */
     .track {
         stroke: currentColor;
-        stroke-width: 2;
+        stroke-width: 1.5;
         opacity: 0.28;
         transition: opacity var(--duration-extra-fast);
     }
@@ -62,7 +62,7 @@
     /* The step's number, covered by the disc once the step is done. */
     .number {
         fill: currentColor;
-        font-size: 10.5px;
+        font-size: 9.5px;
         font-weight: var(--font-weight-semibold);
         font-variant-numeric: tabular-nums;
         text-anchor: middle;
@@ -80,7 +80,7 @@
     /* Starts at twelve o'clock and eases round as fields are answered. */
     .arc {
         stroke: var(--color-accent-text);
-        stroke-width: 2;
+        stroke-width: 1.5;
         stroke-linecap: round;
         stroke-dasharray: 1;
         rotate: -90deg;
