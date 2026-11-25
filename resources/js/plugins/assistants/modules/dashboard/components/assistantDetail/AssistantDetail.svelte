@@ -572,12 +572,10 @@
 
                 <p class="description">{assistant.description}</p>
 
-                <div class="availability">
-                    <AssistantAvailabilityStatus
-                        {assistant}
-                        withHint
-                    />
-                </div>
+                <AssistantAvailabilityStatus
+                    {assistant}
+                    withHint
+                />
 
                 <div
                     class="metadata"
@@ -664,10 +662,12 @@
                             />
                         </div>
                         {#if outdatedApproval}
-                            <p class="section-text outdated">
-                                <Clock01Icon size="1em" aria-hidden="true" />
-                                {__('assistants.review.outdated_hint')}
-                            </p>
+                            <Alert
+                                size="small"
+                                tone="warning"
+                                icon={Clock01Icon}
+                                description={__('assistants.review.outdated_hint')}
+                            />
                         {:else if assistant.review.status === ReviewStage.PENDING && assistant.requested_release_stage}
                             <p class="section-text">
                                 {__('assistants.detail.review_requested_hint', {
@@ -925,17 +925,6 @@
         line-height: var(--line-height-normal);
         color: var(--color-text);
     }
-    .availability {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--space-2);
-    }
-    /* A runnable assistant renders no status: drop the empty row and its gap. */
-    .availability:not(:has(*)) {
-        display: none;
-    }
-
     /* Metadata cards. */
     .metadata {
         display: grid;
@@ -1011,12 +1000,6 @@
         flex-wrap: wrap;
         align-items: center;
         gap: var(--space-3);
-    }
-    /* The outdated-approval hint: clock icon inline with the muted text. */
-    .section-text.outdated {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
     }
     .section-title {
         margin: 0;
