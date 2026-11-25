@@ -21,6 +21,7 @@ return [
     */
     'available_tools' => [
         \App\Services\Ai\Tools\Implementations\TestTool::class,
+        \App\Services\Ai\Tools\Implementations\WebSearchTool::class,
     ],
 
     /*

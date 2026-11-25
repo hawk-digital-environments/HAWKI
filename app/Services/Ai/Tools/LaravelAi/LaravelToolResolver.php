@@ -11,6 +11,7 @@ use App\Services\Ai\Tools\Exceptions\ToolNotFoundException;
 use App\Services\Ai\Tools\LaravelAi\Events\NativeToolResolvedFilterEvent;
 use App\Services\Ai\Tools\LaravelAi\Events\ToolByNameResolvedFilterEvent;
 use App\Services\Ai\Tools\LaravelAi\Events\ToolForCapabilityResolvedFilterEvent;
+use App\Services\Ai\Tools\Values\ToolType;
 use App\Services\Ai\Values\OnlineStatus;
 use Illuminate\Container\Attributes\Singleton;
 use Laravel\Ai\Contracts\Tool;
@@ -72,8 +73,8 @@ class LaravelToolResolver
     /**
      * Resolves the first active, online HAWKI tool on the current model that matches the capability key.
      *
-     * Only tools whose `server.status` is {@see OnlineStatus::ONLINE} and whose `active` flag is set
-     * are considered, preventing the agent from calling a tool whose MCP server is down.
+     * Only tools whose `active` flag is set are considered; MCP tools additionally require their
+     * `server.status` to be {@see OnlineStatus::ONLINE}. Function tools have no server and skip that check.
      *
      * @throws ToolNotFoundException when no eligible tool is found for the capability.
      */
@@ -85,7 +86,7 @@ class LaravelToolResolver
     {
         $hawkiTool = $context->model->tools->firstWhere(function (AiTool $tool) use ($capabilityKey) {
             return $tool->getEffectiveCapability() === $capabilityKey
-                && $tool->server->status === OnlineStatus::ONLINE
+                && ($tool->type !== ToolType::MCP || $tool->server?->status === OnlineStatus::ONLINE)
                 && $tool->active;
         });
 
