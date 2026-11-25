@@ -1,5 +1,6 @@
 <script lang="ts">
     import AssistantCard from './AssistantCard.svelte';
+    import { draftPresence } from '$plugins/assistants/stores/draftPresence.svelte.js';
     import PageNavigation from './PageNavigation.svelte';
     import Searchbar from '$plugins/assistants/modules/dashboard/components/searchbar/Searchbar.svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
@@ -161,6 +162,8 @@
     /** A deleted assistant has no card to morph back into: close plainly, refresh. */
     async function onDetailDeleted(): Promise<void> {
         await dismissDetail();
+        // The deleted assistant may have been the last draft (the drafts page redirects then).
+        void draftPresence.refresh();
         await list.load();
     }
 

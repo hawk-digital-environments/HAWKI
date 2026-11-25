@@ -47,20 +47,19 @@
     const canRelease = $derived(builderProgress.canRelease && builder.draft.review?.status !== ReviewStage.DENIED);
     const releaseText = $derived.by(() => {
         switch (builder.draft.releaseStage) {
-            case ReleaseMode.PRIVATE:
-                return __('assistants.builder.publish.save_as_private_assistant');
             case ReleaseMode.ORGANIZATIONAL:
             case ReleaseMode.FEDERATED:
                 return __('assistants.builder.publish.save_as_review');
             default:
-                return __('assistants.builder.publish.keep_as_draft');
+                return __('assistants.builder.publish.save_as_private_assistant');
         }
     });
 
     // A successful release ends the session: leave like the sidebar's Back does.
     async function release() {
+        if (builder.draft.releaseStage === ReleaseMode.DRAFT) builder.set('releaseStage', ReleaseMode.PRIVATE);
         if (await builder.requestRelease()) {
-            router.goTo(builderReturnPath() ?? router.getPath('assistants.dashboard.drafts'));
+            router.goTo(builderReturnPath() ?? router.getPath('assistants.dashboard.private'));
         }
     }
 

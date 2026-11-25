@@ -24,6 +24,7 @@ import ReviewBackButton from '$plugins/assistants/admin/components/ReviewBackBut
 import { DashboardModule } from '$plugins/assistants/modules/dashboard/DashboardModule';
 import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
 import { assistantHandlesStore } from '$plugins/assistants/stores/AssistantHandlesStore.svelte';
+import { draftPresence } from '$plugins/assistants/stores/draftPresence.svelte';
 import { assistantChatSend, assistantChatWelcome, assistantRegenerateGroups } from '$plugins/assistants/hooks/assistantChatHooks';
 import AssistantsSchema from '$plugins/assistants/api/schemas/resources/assistants.schema';
 import AssistantAvatarsSchema from '$plugins/assistants/api/schemas/resources/assistant-avatars.schema';
@@ -118,15 +119,16 @@ export default class AssistantsPlugin implements HawkiPlugin {
                     ctx.router.isRouteActive('assistants.dashboard.store') ||
                     ctx.router.isRouteActive('assistants.dashboard.index')
             },
-            {
+            // Only offered while the user has drafts (kept while open, so it doesn't vanish underfoot).
+            ...(draftPresence.hasDrafts || ctx.router.isRouteActive('assistants.dashboard.drafts') ? [{
                 id: 'dashboard.drafts',
-                level: 'dashboard',
-                group: 'my-assistants',
+                level: 'dashboard' as const,
+                group: 'my-assistants' as const,
                 label: ctx.translate('assistants.sidebar.drafts'),
                 icon: FileEditIcon,
                 route: 'assistants.dashboard.drafts',
                 active: ctx.router.isRouteActive('assistants.dashboard.drafts')
-            },
+            }] : []),
             {
                 id: 'dashboard.private',
                 level: 'dashboard',

@@ -69,7 +69,6 @@
     import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
-    import TaskEdit01Icon from '$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte';
     import Share01Icon from '$lib/components/ui/icons/iconset/Share01Icon.svelte';
     import ShareDialog from '$plugins/assistants/modules/dashboard/components/shareDialog/ShareDialog.svelte';
     import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
@@ -287,7 +286,6 @@
     /** The menu's publish submenu: the release stages, iconed like the
      *  builder's `ReleaseStage` picker. */
     const releaseOptions = [
-        { stage: ReleaseMode.DRAFT, icon: TaskEdit01Icon, label: __('assistants.detail.release_draft') },
         { stage: ReleaseMode.PRIVATE, icon: SquareLock02Icon, label: __('assistants.detail.release_private') },
         {
             stage: ReleaseMode.ORGANIZATIONAL,
@@ -317,6 +315,8 @@
     const releaseValueLabel = $derived(
         pendingStage ?
             __('assistants.detail.release_pending')
+        :   assistant?.releaseStage === ReleaseMode.DRAFT ?
+            __('assistants.detail.release_draft')
         :   releaseOptions.find((option) => option.stage === assistant?.releaseStage)?.label
     );
 
@@ -436,6 +436,8 @@
                         bind:open={deleteConfirmOpen}
                         title={__('assistants.detail.delete_confirm_title', { name: assistant.name })}
                         description={__('assistants.detail.delete_confirm_description')}
+                        okLabel={__('assistants.detail.delete')}
+                        confirmVariant="delete"
                         onConfirm={onDeleteConfirm}
                     />
                 {/if}

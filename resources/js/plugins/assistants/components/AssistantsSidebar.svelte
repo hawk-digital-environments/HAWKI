@@ -27,6 +27,7 @@
     import {useAssistantMenuEntries} from '$plugins/assistants/hooks/assistantMenuHooks.svelte.js';
     import {useSidebarContext} from '$lib/app/ui/useSidebarHooks.svelte.js';
     import {assistantHandlesStore} from '$plugins/assistants/stores/AssistantHandlesStore.svelte.js';
+    import {draftPresence} from '$plugins/assistants/stores/draftPresence.svelte.js';
     import {drillTransition} from '$lib/utils/transitions/drillTransition';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
@@ -102,6 +103,11 @@
      * itself drives the level swap.
      */
     const inBuilder = $derived(router.isRouteActive(builderGroup));
+
+    // Re-check on every return to the dashboard: a builder session may have left a new draft.
+    $effect(() => {
+        if (!inBuilder) void draftPresence.refresh();
+    });
 
     /** True while the nav is mid drill-down slide — suppresses the sliding
         highlights (see SidebarItems' `disabled`) so they don't chase the
