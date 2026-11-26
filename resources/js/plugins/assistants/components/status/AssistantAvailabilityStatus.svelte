@@ -1,6 +1,7 @@
 <!--
   @component Shows why an assistant cannot run right now (see `assistantUnavailability`):
-  a status pill, plus an optional explanation. Renders nothing while the assistant can run.
+  a status pill, or with `withHint` a notice that also explains it. Renders nothing while the
+  assistant can run.
 
   ## Usage
   ```svelte
@@ -11,6 +12,7 @@
 <script lang="ts">
     import type {Assistant} from '$plugins/assistants/types/assistant';
     import StatusPill from '$plugins/assistants/components/status/StatusPill.svelte';
+    import Alert from '$lib/components/ui/alert/Alert.svelte';
     import CancelCircleIcon from '$lib/components/ui/icons/iconset/CancelCircleIcon.svelte';
     import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -32,25 +34,29 @@
 </script>
 
 {#if unavailability === 'deactivated'}
-    <StatusPill label={__('assistants.availability.deactivated')} icon={CancelCircleIcon} tone="error"/>
     {#if withHint}
-        <p class="availability-hint">
-            {__(canEdit ? 'assistants.availability.deactivatedHintEditor' : 'assistants.availability.deactivatedHint')}
-        </p>
+        <Alert
+            size="small"
+            tintText
+            tone="error"
+            icon={CancelCircleIcon}
+            title={__('assistants.availability.deactivated')}
+            description={__(canEdit ? 'assistants.availability.deactivatedHintEditor' : 'assistants.availability.deactivatedHint')}
+        />
+    {:else}
+        <StatusPill label={__('assistants.availability.deactivated')} icon={CancelCircleIcon} tone="error"/>
     {/if}
 {:else if unavailability === 'offline'}
-    <StatusPill label={__('assistants.availability.offline')} icon={AlertCircleIcon} tone="warning"/>
     {#if withHint}
-        <p class="availability-hint">{__('assistants.availability.offlineHint')}</p>
+        <Alert
+            size="small"
+            tintText
+            tone="warning"
+            icon={AlertCircleIcon}
+            title={__('assistants.availability.offline')}
+            description={__('assistants.availability.offlineHint')}
+        />
+    {:else}
+        <StatusPill label={__('assistants.availability.offline')} icon={AlertCircleIcon} tone="warning"/>
     {/if}
 {/if}
-
-<style>
-    .availability-hint {
-        /* In a wrapping badge row the explanation takes its own line under the pill. */
-        flex-basis: 100%;
-        margin: 0;
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-    }
-</style>

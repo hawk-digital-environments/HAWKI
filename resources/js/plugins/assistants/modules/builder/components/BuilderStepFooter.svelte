@@ -17,6 +17,7 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useBuilderContext} from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
     import {builderProgress} from '$plugins/assistants/modules/builder/contexts/builderProgress.svelte.js';
+    import {builderReturnPath} from '$plugins/assistants/modules/builder/contexts/builderReturn.js';
     import {BUILDER_STEPS, type BuilderStep} from '$plugins/assistants/modules/builder/contexts/BuilderValidatorContext.svelte.js';
 
     const builder = useBuilderContext();
@@ -46,15 +47,21 @@
     const canRelease = $derived(builderProgress.canRelease && builder.draft.review?.status !== ReviewStage.DENIED);
     const releaseText = $derived.by(() => {
         switch (builder.draft.releaseStage) {
-            case ReleaseMode.PRIVATE:
-                return __('assistants.builder.publish.save_as_private_assistant');
             case ReleaseMode.ORGANIZATIONAL:
             case ReleaseMode.FEDERATED:
                 return __('assistants.builder.publish.save_as_review');
             default:
-                return __('assistants.builder.publish.keep_as_draft');
+                return __('assistants.builder.publish.save_as_private_assistant');
         }
     });
+
+    // A successful release ends the session: leave like the sidebar's Back does.
+    async function release() {
+        if (builder.draft.releaseStage === ReleaseMode.DRAFT) builder.set('releaseStage', ReleaseMode.PRIVATE);
+        if (await builder.requestRelease()) {
+            router.goTo(builderReturnPath() ?? router.getPath('assistants.dashboard.private'));
+        }
+    }
 
     function goTo(step: BuilderStep) {
         void router.goToRoute(routeOf(step));
@@ -169,7 +176,7 @@
 
     <div class="actions">
         {#if !isLast}
-            <Button class="icon-end brand press" variant="accent" iconRight={ArrowRight01Icon} onclick={next}>
+            <Button class="icon-end press" variant="fill" iconRight={ArrowRight01Icon} onclick={next}>
                 <!-- The slot eases to the new label's width; the keyed label fades in. -->
                 <span class="continue-label" style:width={continueWidth === undefined ? undefined : `${continueWidth}px`}>
                     {#key continueText}
@@ -178,7 +185,7 @@
                 </span>
             </Button>
         {:else if canRelease}
-            <Button class="icon-start brand press" variant="accent" iconLeft={FloppyDiskIcon} onclick={() => builder.requestRelease()}>
+            <Button class="icon-start press" variant="fill" iconLeft={FloppyDiskIcon} onclick={release}>
                 {releaseText}
             </Button>
         {/if}
@@ -257,7 +264,7 @@
 
     /* A short press-down gives the step buttons a tactile click. */
     .bar :global(.btn.press) {
-        transition: filter var(--duration-fast), background-color var(--duration-fast), scale var(--duration-extra-fast) var(--easing-out);
+        transition: background-color var(--duration-fast), scale var(--duration-extra-fast) var(--easing-out);
     }
     .bar :global(.btn.press:active) {
         scale: 0.96;
@@ -273,24 +280,6 @@
     }
     .actions :global(.btn.icon-end) {
         padding-right: var(--space-3);
-    }
-
-    /* Primary step action: the brand ramp of the sidebar's create button
-       (SidebarButton), deepening on hover instead of a flat overlay. */
-    .actions :global(.btn.brand) {
-        background: linear-gradient(
-            135deg,
-            var(--gradient-brand-1),
-            var(--gradient-brand-2) 55%,
-            var(--gradient-brand-3)
-        );
-        /* Paint under the button's transparent border too; otherwise the ramp
-           tiles into the 1px border and shows a seam at the edges. */
-        background-origin: border-box;
-        color: var(--color-on-accent-fill);
-    }
-    .actions :global(.btn.brand:hover) {
-        filter: brightness(0.92) saturate(1.08);
     }
 
     .continue-label {

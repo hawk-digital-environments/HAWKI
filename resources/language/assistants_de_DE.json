@@ -383,8 +383,6 @@
                 "not_allowed": "Nur die Erstellerin bzw. der Ersteller darf diesen Assistenten veröffentlichen.",
                 "release_stage": {
                     "title": "Veröffentlichungspfad wählen",
-                    "draft_label": "Als Entwurf behalten",
-                    "draft_description": "Später weiterbearbeiten, nichts wird veröffentlicht.",
                     "private_label": "Als privaten Assistenten speichern",
                     "private_description": "Nur für dich sichtbar, keine Genehmigung nötig.",
                     "organizational_label": "Hochschulintern freigeben",
@@ -446,7 +444,6 @@
                 "input_version_note_placeholder": "Was hat sich geändert?",
                 "save_as_private_assistant": "Als privaten Assistenten speichern",
                 "save_as_review": "Zur Prüfung einreichen",
-                "keep_as_draft": "Als Entwurf behalten",
                 "saved": "Assistent gespeichert.",
                 "submitted": "Assistent zur Prüfung eingereicht.",
                 "save_failed": "Speichern fehlgeschlagen."

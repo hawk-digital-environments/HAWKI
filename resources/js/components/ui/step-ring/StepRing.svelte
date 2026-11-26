@@ -2,7 +2,7 @@
   @component The wizard step's numbered ring (see the sidebars' step lists):
   a track circle with the step number, an optional progress arc that fills as
   the step's required fields are answered, and — once the step is done — an
-  accent disc that grows over the number while a tick draws itself in.
+  accent-tint disc (the `fill` button colours) that grows over the number while a tick draws itself in.
 
   Sized through the `--step-ring-size` custom property (falls back to
   `--nav-icon-size`, then 1.25rem). The size is set via an inline style on
@@ -54,24 +54,33 @@
     /* In the row's own colour, so it follows hover, active and locked rows. */
     .track {
         stroke: currentColor;
-        stroke-width: 2;
+        stroke-width: 1.5;
         opacity: 0.28;
+        transition: opacity var(--duration-extra-fast);
     }
 
     /* The step's number, covered by the disc once the step is done. */
     .number {
         fill: currentColor;
-        font-size: 10.5px;
+        font-size: 9.5px;
         font-weight: var(--font-weight-semibold);
         font-variant-numeric: tabular-nums;
         text-anchor: middle;
         dominant-baseline: central;
+        transition: opacity var(--duration-extra-fast);
+    }
+
+    /* The dark-mode disc is translucent, so what it covers has to go. */
+    .done .track,
+    .done .number,
+    .done .arc {
+        opacity: 0;
     }
 
     /* Starts at twelve o'clock and eases round as fields are answered. */
     .arc {
-        stroke: var(--color-accent-fill);
-        stroke-width: 2;
+        stroke: var(--color-accent-text);
+        stroke-width: 1.5;
         stroke-linecap: round;
         stroke-dasharray: 1;
         rotate: -90deg;
@@ -86,14 +95,14 @@
     /* Done: the disc grows out of the ring's centre with a small overshoot,
        then the tick draws itself in. */
     .disc {
-        fill: var(--color-accent-fill);
+        fill: var(--color-accent-100);
         transform-origin: center;
         scale: 0;
         transition: scale var(--duration-extra-fast) var(--easing-out);
     }
 
     .tick {
-        stroke: var(--color-on-accent-fill);
+        stroke: var(--color-accent-text);
         stroke-width: 2;
         stroke-linecap: round;
         stroke-linejoin: round;

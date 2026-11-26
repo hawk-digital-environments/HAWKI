@@ -46,6 +46,7 @@
                 aria-label={toggleLabel}
                 aria-controls="app-navigation"
                 aria-expanded={sidebar.navOpen}
+                style:--nav-trigger-tint={sidebar.triggerTint ?? undefined}
                 onclick={toggleNavigation}
             >
                 <PanelLeftIcon size={18} strokeWidth={2} aria-hidden="true" />
@@ -91,32 +92,20 @@
         color: var(--color-text);
     }
 
-    /* Over a full-bleed cover (the assistant detail's over-cover bar) the
-       trigger drops onto the cover's own action row, so trigger, breadcrumb
-       pill and the cover's buttons share one midline. Desktop only — the
-       default 16px inset already matches the bar's default row on mobile. */
-    @media (--bp-bigger-than-sm) {
-        .content:has(:global(.page-header-bar.over-cover)) .mobile-navigation-trigger {
-            top: var(--space-6);
-        }
-    }
-
     /* On the cover the plain icon has no guaranteed contrast: the bar's cover
        mode (set by the page, see PageHeaderBar's data-cover-mode) keys the
-       same treatment the breadcrumb crumbs get — mode-shaded icon on a faint
-       self-tinted pill. */
+       same treatment the breadcrumb crumbs get — mode-shaded icon, no fill
+       at rest. */
     .content:has(:global(.page-header-bar[data-cover-mode='dark'])) .mobile-navigation-trigger {
-        color: oklch(100% 0 0);
         --nav-trigger-tint: oklch(100% 0 0);
     }
 
     .content:has(:global(.page-header-bar[data-cover-mode='light'])) .mobile-navigation-trigger {
-        color: oklch(24% 0 0);
         --nav-trigger-tint: oklch(24% 0 0);
     }
 
     .content:has(:global(.page-header-bar[data-cover-mode])) .mobile-navigation-trigger {
-        background: color-mix(in oklch, var(--nav-trigger-tint) 14%, transparent);
+        color: var(--nav-trigger-tint);
     }
 
     .content:has(:global(.page-header-bar[data-cover-mode])) .mobile-navigation-trigger:hover {

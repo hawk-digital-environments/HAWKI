@@ -105,9 +105,9 @@
                 if (store.active?.slug !== conversationSlug || layout.scrollRegion !== region) return;
                 const turn = messages.lastElementChild;
                 if (!(turn instanceof HTMLElement)) return;
-                // Leave room for the header fade that overhangs the scroll
-                // region so the sent message is not covered by it.
-                const offset = parseFloat(getComputedStyle(messages).getPropertyValue('--new-turn-scroll-offset')) || 0;
+                // Clear the header bar overlaying the region, plus a gap.
+                const offset = parseFloat(getComputedStyle(region).paddingTop)
+                    + (parseFloat(getComputedStyle(messages).getPropertyValue('--new-turn-scroll-offset')) || 0);
                 const top = turn.getBoundingClientRect().top - region.getBoundingClientRect().top + region.scrollTop - offset;
                 region.scrollTo({top, behavior: 'smooth'});
             });
@@ -228,10 +228,8 @@
 
 <style>
     .messages {
-        /* Pixel value, read by the send-scroll: the header fade overhangs the
-           scroll region by 3rem, so the sent message stops that far below the
-           top edge instead of flush against it. */
-        --new-turn-scroll-offset: 42px;
+        /* Pixel gap below the header bar, read by the send-scroll. */
+        --new-turn-scroll-offset: 16px;
         display: flex;
         width: min(100%, 52rem);
         margin: 0 auto;
@@ -246,7 +244,7 @@
        and the response streams into the reserved space without further
        scrolling. */
     .messages.new-turn > :global(:last-child) {
-        min-height: calc(var(--scroll-region-height, 100dvh) - var(--composer-dock-height, 0px) - var(--space-8) - var(--new-turn-scroll-offset));
+        min-height: calc(var(--scroll-region-height, 100dvh) - var(--composer-dock-height, 0px) - var(--space-8) - var(--page-bar-h, 0px) - var(--new-turn-scroll-offset));
     }
 
     .state {

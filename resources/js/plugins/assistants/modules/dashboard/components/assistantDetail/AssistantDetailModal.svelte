@@ -8,8 +8,8 @@
 
   Rendered only while open (mount = open): the store→detail morph
   (morphToDetail) captures the moment it mounts or unmounts, so it carries no
-  enter/exit animation of its own. Escape and the header bar's section crumb
-  (which strips `?assistant=`) both close it via `onClose`.
+  enter/exit animation of its own. Escape and the header bar's back button
+  close it via `onClose`; the section crumb strips `?assistant=`.
 
   On the mobile layout the modal can also be pulled down to close: a
   downward drag that starts in the detail's scroll region (marked
@@ -32,15 +32,18 @@
     interface Props {
         /** Id of the assistant to show. */
         id: string;
-        /** Close request (Escape, back button). */
+        /** Close request (Escape, the header bar's back button). */
         onClose: () => void;
         /** After a successful delete. Defaults to `onClose`. */
         onDeleted?: () => void;
         /** The list's copy of the assistant, shown while the detail loads. */
         initial?: Assistant;
+        /** Show the header bar's back button; off when the source is unknown
+         *  (a shared link or direct route), where there is nothing to go back to. */
+        backButton?: boolean;
     }
 
-    const { id, onClose, onDeleted, initial }: Props = $props();
+    const { id, onClose, onDeleted, initial, backButton = true }: Props = $props();
     const { __ } = useTranslator();
     const breakpoint = useBreakpoint();
     const reducedMotion = useReducedMotion();
@@ -59,8 +62,14 @@
 
     let modal = $state<HTMLElement>();
 
-    // The breadcrumb bar shows the open detail as its leaf while the modal
-    // lives; cleared on id change and unmount, like the standalone route.
+    // The header bar reads the open detail and its back action while the
+    // modal lives; each is cleared when its inputs change and on unmount.
+    $effect(() => {
+        openDetail.close = backButton ? onClose : null;
+        return () => {
+            openDetail.close = null;
+        };
+    });
     $effect(() => {
         id;
         return () => {
@@ -211,9 +220,8 @@
                     >
                     <AssistantDetail
                         {id}
-                        {onDeleted}
+                        onDeleted={onDeleted ?? onClose}
                         {initial}
-                        underHeaderBar
                         onLoaded={onLoadedDetail}
                     />
                 </div>

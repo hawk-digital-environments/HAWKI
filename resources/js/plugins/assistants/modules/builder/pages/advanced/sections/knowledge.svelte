@@ -63,39 +63,49 @@
             <h3 class="page-title">{__('assistants.builder.knowledge.title')}</h3>
             <p class="page-description">{__('assistants.builder.knowledge.description')}</p>
         </div>
-        <Alert
-                size="small"
-                description={__('assistants.builder.knowledge.warning_knowledge_sources')}
-                icon={AlertCircleIcon}
-                tone="neutral"
-        />
-
-        {#if ragEnabled && currentModel === null}
+        <div class="alerts">
             <Alert
                     size="small"
-                    description={__('assistants.builder.knowledge.no_model_selected')}
+                    description={__('assistants.builder.knowledge.warning_knowledge_sources')}
                     icon={AlertCircleIcon}
-                    tone="warning"
+                    tone="neutral"
             />
-        {/if}
-        {#if ragEnabled && knowledgeToolAvailable}
-            <Alert
-                    size="small"
-                    description={__('rag.mode_active')}
-                    icon={Database01Icon}
-                    tone="info"
-            />
-        {:else}
-            <Alert
-                    size="small"
-                    description={__('assistants.builder.knowledge.load_files_in_context')}
-                    icon={Database01Icon}
-                    tone="info"
-            />
-        {/if}
+
+            {#if ragEnabled && currentModel === null}
+                <Alert
+                        size="small"
+                        description={__('assistants.builder.knowledge.no_model_selected')}
+                        icon={AlertCircleIcon}
+                        tone="warning"
+                />
+            {/if}
+            {#if ragEnabled && knowledgeToolAvailable}
+                <Alert
+                        size="small"
+                        description={__('rag.mode_active')}
+                        icon={Database01Icon}
+                        tone="info"
+                />
+            {:else}
+                <Alert
+                        size="small"
+                        description={__('assistants.builder.knowledge.load_files_in_context')}
+                        icon={Database01Icon}
+                        tone="info"
+                />
+            {/if}
+        </div>
         <FileUpload/>
         {#if attachableKnowledgeTools.length > 0}
             <KnowledgeBases tools={attachableKnowledgeTools}/>
         {/if}
     </div>
 </div>
+
+<style>
+    .alerts {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+</style>

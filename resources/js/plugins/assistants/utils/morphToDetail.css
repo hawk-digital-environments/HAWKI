@@ -196,6 +196,45 @@ html[data-assistant-morph] :is(.test-panel, .test-panel.open, .launcher .test-pa
     z-index: 4;
 }
 
+/* The nav row (trigger, header bar, cover actions, dock header) doesn't
+   morph: each part leaves the page snapshot and swaps to its end state at once. */
+html[data-assistant-morph] #main-content .mobile-navigation-trigger {
+    view-transition-name: assistant-nav-trigger;
+}
+html[data-assistant-morph] #main-content .page-header-bar {
+    view-transition-name: assistant-nav-bar;
+}
+/* Opening ends on the cover, where the bar has no fade band; it can switch
+   modes only after the detail loads, so drop the band for the morph. */
+html[data-assistant-morph='open'] #main-content .page-header-bar::before {
+    display: none;
+}
+html[data-assistant-morph] #main-content [data-assistant-cover] > .topbar {
+    view-transition-name: assistant-nav-actions;
+}
+html[data-assistant-morph] #main-content .test-panel.open .panel-header {
+    view-transition-name: assistant-nav-dock;
+}
+::view-transition-group(assistant-nav-trigger),
+::view-transition-group(assistant-nav-bar),
+::view-transition-group(assistant-nav-actions),
+::view-transition-group(assistant-nav-dock) {
+    z-index: 5;
+    animation: none;
+}
+::view-transition-new(assistant-nav-trigger),
+::view-transition-new(assistant-nav-bar),
+::view-transition-new(assistant-nav-actions),
+::view-transition-new(assistant-nav-dock) {
+    animation: none;
+}
+::view-transition-old(assistant-nav-trigger),
+::view-transition-old(assistant-nav-bar),
+::view-transition-old(assistant-nav-actions),
+::view-transition-old(assistant-nav-dock) {
+    display: none;
+}
+
 /* The modal's own surface (everything of the detail view outside the
    morphing container: its background, the test-chat dock). Exists on one
    end only, so it simply fades. */

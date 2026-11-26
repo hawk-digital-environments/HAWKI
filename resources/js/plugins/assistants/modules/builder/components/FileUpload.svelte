@@ -1,7 +1,7 @@
 <script lang="ts">
     import FileUploadIcon from '$lib/components/ui/icons/iconset/FileUploadIcon.svelte';
     import File01Icon from '$lib/components/ui/icons/iconset/File01Icon.svelte';
-    import Database01Icon from '$lib/components/ui/icons/iconset/Database01Icon.svelte';
+    import StatusDot from '$lib/components/ui/status-dot/StatusDot.svelte';
     import FileDropHint from '$lib/components/ui/file-drop/FileDropHint.svelte';
     import { useBuilderContext } from '$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js';
     import type { UploadFile } from '$plugins/assistants/types/UploadFile';
@@ -28,8 +28,7 @@
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
-    import MoreVerticalSquare02Icon from '$lib/components/ui/icons/iconset/MoreVerticalSquare02Icon.svelte';
-    import ArchiveOff04Icon from '$lib/components/ui/icons/iconset/ArchiveOff04Icon.svelte';
+    import MoreHorizontalIcon from '$lib/components/ui/icons/iconset/MoreHorizontalIcon.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import { mergeProps } from 'bits-ui';
     import { onDestroy } from 'svelte';
@@ -289,7 +288,7 @@
     interface RagIndicator {
         /** Tooltip status word, combined as "RAG status: {label}". */
         label: string;
-        /** Semantic color class for the knowledge-database icon. */
+        /** Semantic color class for the status dot. */
         cls: 'success' | 'pending' | 'failed';
         /** Resolved user-facing failure reason, shown below the status line in the tooltip. */
         error?: string;
@@ -297,7 +296,7 @@
 
     /**
      * Maps a file's server-side `ragStatus` to the per-row indicator: a
-     * knowledge-database icon colored by state (green = ingested, yellow =
+     * status dot colored by state (green = ingested, yellow =
      * running, red = failed). Only applies to persisted files in RAG mode;
      * returns `undefined` otherwise (non-rag files carry no ingestion state).
      */
@@ -550,90 +549,69 @@
         </div>
     {/if}
 
+    {#if currentFiles.length > 0}
     <div class="attachments-container">
         <div class="attachments-list">
             <GenericItemList label={__('assistants.builder.knowledge.attached_files')}>
                 {#snippet actions()}
-                    {#if currentFiles.length === 0}
-                        <!-- Nothing to manage — a disabled placeholder keeps the
-                         header slot aligned with the rows' delete icons. -->
-                        <Tooltip
-                            focusable={false}
-                            hiddenLabel={__('assistants.builder.knowledge.no_files')}
-                        >
-                            {#snippet children({ props })}
-                                <ActionIcon
-                                    {...props}
-                                    icon={ArchiveOff04Icon}
-                                    label={__('assistants.builder.knowledge.no_files')}
-                                    size="md"
-                                    disabled
-                                />
-                            {/snippet}
-                            {#snippet tooltip()}
-                                {__('assistants.builder.knowledge.no_files')}
-                            {/snippet}
-                        </Tooltip>
-                    {:else}
+                    <ConfirmDialog
+                        bind:open={deleteAllOpen}
+                        title={__('assistants.builder.knowledge.delete_all_confirm_title')}
+                        description={__('assistants.builder.knowledge.delete_all_confirm_description')}
+                        okLabel={__('assistants.builder.knowledge.delete_all_files')}
+                        onConfirm={() => {
+                            void deleteFiles(persistedFiles);
+                        }}
+                    />
+                    {#if hasFailedFiles}
                         <ConfirmDialog
-                            bind:open={deleteAllOpen}
-                            title={__('assistants.builder.knowledge.delete_all_confirm_title')}
-                            description={__('assistants.builder.knowledge.delete_all_confirm_description')}
-                            okLabel={__('assistants.builder.knowledge.delete_all_files')}
+                            bind:open={deleteFailedOpen}
+                            title={__('rag.delete_failed_confirm_title')}
+                            description={__('rag.delete_failed_confirm_description')}
+                            okLabel={__('rag.delete_failed_files')}
                             onConfirm={() => {
-                                void deleteFiles(persistedFiles);
+                                void deleteFiles(currentFiles.filter(isRagFailed));
                             }}
                         />
+                    {/if}
+                    <DropdownMenu
+                        align="end"
+                        disabled={batchDeleting}
+                    >
+                        {#snippet trigger({ props })}
+                            <Tooltip
+                                focusable={false}
+                                hiddenLabel={__('assistants.builder.knowledge.manage_files')}
+                            >
+                                {#snippet children({ props: tooltipProps })}
+                                    <ActionIcon
+                                        {...mergeProps(props, tooltipProps)}
+                                        icon={MoreHorizontalIcon}
+                                        label={__('assistants.builder.knowledge.manage_files')}
+                                        size="md"
+                                    />
+                                {/snippet}
+                            </Tooltip>
+                        {/snippet}
                         {#if hasFailedFiles}
-                            <ConfirmDialog
-                                bind:open={deleteFailedOpen}
-                                title={__('rag.delete_failed_confirm_title')}
-                                description={__('rag.delete_failed_confirm_description')}
-                                okLabel={__('rag.delete_failed_files')}
-                                onConfirm={() => {
-                                    void deleteFiles(currentFiles.filter(isRagFailed));
-                                }}
-                            />
-                        {/if}
-                        <DropdownMenu
-                            align="end"
-                            disabled={batchDeleting}
-                        >
-                            {#snippet trigger({ props })}
-                                <Tooltip
-                                    focusable={false}
-                                    hiddenLabel={__('assistants.builder.knowledge.manage_files')}
-                                >
-                                    {#snippet children({ props: tooltipProps })}
-                                        <ActionIcon
-                                            {...mergeProps(props, tooltipProps)}
-                                            icon={MoreVerticalSquare02Icon}
-                                            label={__('assistants.builder.knowledge.manage_files')}
-                                            size="md"
-                                        />
-                                    {/snippet}
-                                </Tooltip>
-                            {/snippet}
-                            {#if hasFailedFiles}
-                                <DropdownMenuItem
-                                    variant="destructive"
-                                    iconLeft={Delete02Icon}
-                                    disabled={uploadProgress !== undefined}
-                                    onclick={() => (deleteFailedOpen = true)}
-                                >
-                                    {__('rag.delete_failed_files')}
-                                </DropdownMenuItem>
-                            {/if}
                             <DropdownMenuItem
                                 variant="destructive"
                                 iconLeft={Delete02Icon}
                                 disabled={uploadProgress !== undefined}
-                                onclick={() => (deleteAllOpen = true)}
+                                onclick={() => (deleteFailedOpen = true)}
                             >
-                                {__('assistants.builder.knowledge.delete_all_files')}
+                                {__('rag.delete_failed_files')}
                             </DropdownMenuItem>
-                        </DropdownMenu>
-                    {/if}
+                        {/if}
+                        <DropdownMenuItem
+                            variant="destructive"
+                            iconLeft={Delete02Icon}
+                            disabled={uploadProgress !== undefined}
+                            onclick={() => (deleteAllOpen = true)}
+                        >
+                            {__('assistants.builder.knowledge.delete_all_files')}
+                        </DropdownMenuItem>
+                    </DropdownMenu>
                 {/snippet}
                 {#each visibleFiles as file (keyOf(file))}
                     {@const isConfirming = confirming.has(keyOf(file))}
@@ -659,33 +637,26 @@
                         >
                             {#snippet trailing()}
                                 {#if indicator}
-                                    <Tooltip
-                                        focusable={false}
-                                        hiddenLabel={indicatorTooltip}
-                                    >
-                                        {#snippet children({ props })}
-                                            <StatusIcon
-                                                {...props}
-                                                icon={Database01Icon}
-                                                tone={indicator.cls === 'pending' ? 'warning'
-                                                : indicator.cls === 'failed' ? 'error'
-                                                : 'success'}
-                                                size="md"
-                                                class="rag-status"
+                                    {#snippet ragTooltip()}
+                                        <div>{indicatorTooltip}</div>
+                                        {#if indicator.error}
+                                            <div
+                                                class="restriction-divider"
                                                 aria-hidden="true"
-                                            />
-                                        {/snippet}
-                                        {#snippet tooltip()}
-                                            <div>{indicatorTooltip}</div>
-                                            {#if indicator.error}
-                                                <div
-                                                    class="restriction-divider"
-                                                    aria-hidden="true"
-                                                ></div>
-                                                <div class="rag-error">{indicator.error}</div>
-                                            {/if}
-                                        {/snippet}
-                                    </Tooltip>
+                                            ></div>
+                                            <div class="rag-error">{indicator.error}</div>
+                                        {/if}
+                                    {/snippet}
+                                    <StatusDot
+                                        status={indicator.cls === 'pending' ? 'unknown'
+                                        : indicator.cls === 'failed' ? 'offline'
+                                        : 'online'}
+                                        size="md"
+                                        focusable={false}
+                                        tooltipOnline={ragTooltip}
+                                        tooltipUnknown={ragTooltip}
+                                        tooltipOffline={ragTooltip}
+                                    />
                                 {/if}
                             {/snippet}
                         </Item>
@@ -694,6 +665,7 @@
             </GenericItemList>
         </div>
     </div>
+    {/if}
 </div>
 
 <style>
@@ -810,9 +782,6 @@
         color: var(--color-text-muted);
         cursor: help;
         line-height: 0;
-    }
-    :global(.rag-status) {
-        cursor: help;
     }
     .rag-error {
         color: var(--color-text-muted);

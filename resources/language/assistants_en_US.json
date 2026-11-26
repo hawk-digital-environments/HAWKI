@@ -383,8 +383,6 @@
                 "not_allowed": "Only the creator may publish this assistant.",
                 "release_stage": {
                     "title": "Choose the publishing path",
-                    "draft_label": "Keep as draft",
-                    "draft_description": "Continue editing later; nothing gets published.",
                     "private_label": "Save as private assistant",
                     "private_description": "Visible only to you, no approval needed.",
                     "organizational_label": "Share within your university",
@@ -446,7 +444,6 @@
                 "input_version_note_placeholder": "What has changed?",
                 "save_as_private_assistant": "Save as private assistant",
                 "save_as_review": "Submit for review",
-                "keep_as_draft": "Keep as draft",
                 "saved": "Assistant saved.",
                 "submitted": "Assistant submitted for review.",
                 "save_failed": "Could not save the assistant."

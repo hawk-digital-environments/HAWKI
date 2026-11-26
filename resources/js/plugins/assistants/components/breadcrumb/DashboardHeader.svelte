@@ -1,58 +1,46 @@
 <!--
   @component Header bar for the assistants dashboard pages: the icon
-  breadcrumb trail instead of a visible title. The crumbs derive themselves
-  from the same sources the sidebar renders — the module's own icon/title
-  (what SpaceTabs shows) and the active section from the assistant menu — so
-  trail and sidebar can never drift apart. The page's full title stays in the
-  document outline as PageHeaderBar's visually hidden h1 and doubles as the
-  current crumb's tooltip.
+  breadcrumb trail instead of a visible title. The trail starts at the
+  sidebar's main menu items and derives from the same assistant menu entries
+  the sidebar renders, so trail and sidebar can never drift apart. The page's
+  full title stays in the document outline as PageHeaderBar's visually hidden
+  h1 and doubles as the current crumb's tooltip. The trail shows when the
+  sidebar is collapsed or the trail runs deeper than two levels; every crumb
+  navigates.
 
-  Without a `leaf`, the active section ends the trail as its current crumb
-  (the list pages). With a leaf — the detail route's assistant, or the one
-  open in a list's detail modal (`openDetail`) — the section stays navigable
-  (falling back to the store, the detail's back target; opted out of current
-  while the leaf is missing, since the trail then changes shape in place) and
-  the leaf becomes the current crumb, shown as the assistant's avatar disc.
+  While an assistant's detail modal is open (`openDetail`, the list modal and
+  the standalone route alike), the bar floats over its cover with only a back
+  button that closes it, shown only when its source is known.
 -->
 <script lang="ts">
     import PageHeaderBar from '$lib/components/ui/page/PageHeaderBar.svelte';
     import {BreadcrumbTrail, BreadcrumbItem} from '$plugins/assistants/components/breadcrumb';
     import {useAssistantMenuEntries} from '$plugins/assistants/hooks/assistantMenuHooks.svelte';
-    import {useApp} from '$lib/app/hooks/useApp.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte';
-    import type {AssistantAvatar} from '$plugins/assistants/types/assistant/AssistantAvatar';
     import {openDetail} from '$plugins/assistants/components/breadcrumb/openDetail.svelte';
     import {resolveAssistantAvatar} from '$plugins/assistants/utils/resolveAssistantAvatar';
     import {cssDeclaration, overlayContrastMode} from '$lib/utils/color.js';
+    import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
+    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import UserAiIcon from '$lib/components/ui/icons/iconset/UserAiIcon.svelte';
+    import DropdownMenuRadioGroup from '$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte';
+    import DropdownMenuRadioItem from '$lib/components/ui/dropdown-menu/DropdownMenuRadioItem.svelte';
+    import type {IconComponent} from '$lib/components/ui/icons';
+    import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
 
     interface Props {
         /** The page's full title — the bar's visually hidden h1 and the
          *  current crumb's tooltip. */
         title?: string;
-        /** Deepest crumb for a page below the sections (the detail route's
-         *  assistant). */
-        leaf?: {label: string; avatar?: AssistantAvatar} | null;
     }
 
-    const {title, leaf = null}: Props = $props();
+    const {title}: Props = $props();
 
-    const app = useApp();
     const router = useRouter();
-    const {__, translate} = useTranslator();
+    const {__} = useTranslator();
     const menu = useAssistantMenuEntries();
-
-    // The module's identity in the space tabs — one source of truth for its
-    // icon and label.
-    const locale = $derived(app.localization.locale);
-    const module = $derived(
-        app.modules.all.find(m => m.plugin.name === 'assistants' && m.name === 'dashboard')
-    );
-    const moduleIcon = $derived.by(() => {
-        const icon = module?.icon?.(locale);
-        return typeof icon === 'string' ? undefined : icon;
-    });
-    const moduleLabel = $derived(module?.title?.(translate, locale) ?? __('assistants.assistants'));
+    const sidebar = useSidebar();
 
     // The sidebar's active dashboard section (same precedence as its rows).
     const section = $derived(
@@ -62,42 +50,144 @@
         ) ?? null
     );
 
-    /** Without an active section (the detail route): the store, the back target. */
-    const parent = $derived(section ?? menu.entries.find(entry => entry.id === 'dashboard.store') ?? null);
-
-    /** The trail's leaf: the explicit one (the detail route), else the
-     *  assistant open in a list's detail modal (its breadcrumb counterpart). */
-    const leafCrumb = $derived(
-        leaf
-        ?? (openDetail.assistant ? {
-            label: openDetail.assistant.name,
-            avatar: resolveAssistantAvatar(openDetail.assistant.avatar, openDetail.assistant.name)
-        } : null)
+    /** The sidebar group the section sits in (My Assistants): a plain label
+     *  crumb, while the section crumb switches between the group's sections. */
+    const groupEntries = $derived(
+        section?.group ? menu.entries.filter(entry => entry.level === 'dashboard' && entry.group === section.group) : []
     );
 
-    /** The leaf's cover background decides the chips' shade — but only where
-     *  the bar actually floats over the cover (the list modal's leaf, not
-     *  the standalone route's, whose bar sits on the page background). */
-    const coverMode = $derived(
-        !leaf && leafCrumb?.avatar ? overlayContrastMode(cssDeclaration(leafCrumb.avatar.iconCss, 'background')) : null
+    /** The sidebar's main level — ungrouped sections plus the My Assistants
+     *  group — is what the parent crumb switches between. */
+    const MY_ASSISTANTS = 'group:my-assistants';
+    const topEntries = $derived(
+        menu.entries.filter(entry => entry.level === 'dashboard' && !entry.group && !entry.component && entry.route)
     );
+    /** The group lands on its first reachable section. */
+    const groupRoute = $derived(
+        menu.entries.find(entry => entry.level === 'dashboard' && entry.group === 'my-assistants' && entry.route && !entry.disabled)?.route
+    );
+
+    /** An open sidebar already shows where you are: the trail only earns its
+     *  place with the sidebar collapsed, or deeper than two levels. */
+    const depth = $derived(section ? (groupEntries.length ? 2 : 1) : 0);
+    const showTrail = $derived(depth > 0 && (!sidebar.navOpen || depth > 2));
+
+    function openParent(id: string): void {
+        const route = id === MY_ASSISTANTS ? groupRoute : topEntries.find(entry => entry.id === id)?.route;
+        if (route) void router.goToRoute(route);
+    }
+
+    function openSection(id: string): void {
+        const route = groupEntries.find(entry => entry.id === id)?.route;
+        if (route) void router.goToRoute(route);
+    }
+
+    const detail = $derived(openDetail.assistant);
+    const closeDetail = $derived(detail ? openDetail.close : null);
+
+    const coverCss = $derived(detail ? resolveAssistantAvatar(detail.avatar, detail.name).iconCss : null);
+    /** The cover background's lightness keys the bar; the back button takes the cover's own foreground shade. */
+    const coverMode = $derived(coverCss ? overlayContrastMode(cssDeclaration(coverCss, 'background')) : null);
+    const coverForeground = $derived(coverCss ? cssDeclaration(coverCss, 'color') : null);
+
+    $effect(() => {
+        sidebar.triggerTint = coverForeground;
+        return () => {
+            sidebar.triggerTint = null;
+        };
+    });
 </script>
-
-<PageHeaderBar srHeading={leafCrumb?.label ?? title} overCover={leafCrumb !== null} data-cover-mode={coverMode ?? undefined}>
-    <BreadcrumbTrail mode={coverMode}>
-        {#if leafCrumb}
-            <BreadcrumbItem label={moduleLabel} icon={moduleIcon} route="assistants.dashboard.index" />
-            {#if parent}
-                <BreadcrumbItem label={parent.label} icon={parent.icon} route={parent.route} current={false} />
-            {/if}
-            <BreadcrumbItem label={leafCrumb.label} avatar={leafCrumb.avatar} current />
-        {:else if section}
-            <BreadcrumbItem label={moduleLabel} icon={moduleIcon} route="assistants.dashboard.index" />
-            <BreadcrumbItem label={title ?? section.label} icon={section.icon} />
-        {:else}
-            <!-- No section matched and no leaf yet: the module crumb is where
-                the trail ends. -->
-            <BreadcrumbItem label={moduleLabel} icon={moduleIcon} />
+{#snippet parentMenu()}
+    <DropdownMenuRadioGroup value={section?.group ? MY_ASSISTANTS : section?.id} onValueChange={openParent}>
+        {#each topEntries as entry (entry.id)}
+            <DropdownMenuRadioItem
+                value={entry.id}
+                indicator="check"
+                indicatorSide="end"
+                iconLeft={entry.icon as IconComponent}
+                disabled={entry.disabled}
+            >{entry.label}</DropdownMenuRadioItem>
+        {/each}
+        {#if groupRoute}
+            <DropdownMenuRadioItem
+                value={MY_ASSISTANTS}
+                indicator="check"
+                indicatorSide="end"
+                iconLeft={UserAiIcon}
+            >{__('assistants.sidebar.my_assistants')}</DropdownMenuRadioItem>
         {/if}
-    </BreadcrumbTrail>
+    </DropdownMenuRadioGroup>
+{/snippet}
+
+{#snippet sectionMenu()}
+    <DropdownMenuRadioGroup value={section?.id} onValueChange={openSection}>
+        {#each groupEntries as entry (entry.id)}
+            <DropdownMenuRadioItem
+                value={entry.id}
+                indicator="check"
+                indicatorSide="end"
+                iconLeft={entry.icon as IconComponent}
+                disabled={entry.disabled}
+            >{entry.label}</DropdownMenuRadioItem>
+        {/each}
+    </DropdownMenuRadioGroup>
+{/snippet}
+
+<PageHeaderBar srHeading={detail?.name ?? title} overCover={detail !== null} data-cover-mode={coverMode ?? undefined}>
+    <div class="lead" data-mode={coverMode ?? undefined} style:--back-fg={coverForeground ?? undefined}>
+        {#if detail}
+            {#if closeDetail}
+                <ButtonWithTooltip
+                    variant="ghost"
+                    size="sm"
+                    iconLeft={ArrowLeft01Icon}
+                    tooltip={__('assistants.detail.back')}
+                    class="back"
+                    onclick={closeDetail}
+                />
+            {/if}
+        {:else if section && showTrail}
+            <BreadcrumbTrail>
+                {#if groupEntries.length}
+                    <BreadcrumbItem label={__('assistants.sidebar.my_assistants')} icon={UserAiIcon} current={false} menu={parentMenu} />
+                    <BreadcrumbItem label={title ?? section.label} icon={section.icon} current menu={sectionMenu} />
+                {:else}
+                    <BreadcrumbItem label={title ?? section.label} icon={section.icon} current menu={parentMenu} />
+                {/if}
+            </BreadcrumbTrail>
+        {/if}
+    </div>
 </PageHeaderBar>
+
+<style>
+    /* The trail's own gap to the nav trigger moves here, before the back button. */
+    .lead {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-left: var(--space-2);
+    }
+    .lead :global(.breadcrumb-trail) {
+        margin-left: 0;
+    }
+    /* The back button sits the cover actions' own gap from the nav trigger. */
+    .lead:has(:global(.btn.back)) {
+        margin-left: 0;
+    }
+
+    /* A round chip in the cover's shade, matching the trail's pill. */
+    .lead[data-mode='dark'] {
+        --back-fg: oklch(100% 0 0);
+    }
+    .lead[data-mode='light'] {
+        --back-fg: oklch(24% 0 0);
+    }
+    .lead :global(.btn.back) {
+        --btn-bg: color-mix(in oklch, var(--back-fg, currentColor) 14%, transparent);
+        --btn-color: var(--back-fg, currentColor);
+        pointer-events: auto;
+    }
+    .lead :global(.btn.back:not(:disabled):hover) {
+        --btn-bg: color-mix(in oklch, var(--back-fg, currentColor) 24%, transparent);
+    }
+</style>

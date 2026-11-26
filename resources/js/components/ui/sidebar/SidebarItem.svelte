@@ -208,6 +208,13 @@
         transition: color var(--duration-fast);
     }
 
+    /* Inset: rows span the full width, so an outside ring gets clipped by the sidebar. */
+    .sidebar-item:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: -2px;
+        border-radius: var(--corner-sm);
+    }
+
     /* Hover/active surfaces are provided by the sliding highlights in List. */
     .sidebar-item:hover {
         color: var(--color-nav-text-hover);
@@ -217,44 +224,13 @@
         color: var(--color-active-text);
     }
 
-    /* The --drill-stop-* properties are registered in resources/css/properties.css;
-       a gradient can't be interpolated, but registered color properties can. */
-
-    /* Drill-ins lead somewhere new rather than switching the current view, so
-       they read as an action — the one row in the sidebar carrying the brand
-       gradient, which sets it apart from every translucent nav highlight. */
-    .sidebar-item.drill {
-        --drill-stop-1: var(--gradient-brand-1);
-        --drill-stop-2: var(--gradient-brand-2);
-        --drill-stop-3: var(--gradient-brand-3);
-        background: linear-gradient(
-            135deg,
-            var(--drill-stop-1),
-            var(--drill-stop-2) 55%,
-            var(--drill-stop-3)
-        );
-        color: var(--color-on-accent-fill);
-        transition:
-            --drill-stop-1 var(--duration-fast),
-            --drill-stop-2 var(--duration-fast),
-            --drill-stop-3 var(--duration-fast);
-    }
-
     /* Rows outside a list container have no sliding highlight behind them —
        they paint hover, and their active state, themselves. A standalone row is
        marked active while the surface it opens is showing, so the surface has
        to persist once the pointer moves off the row and onto that menu. */
-    .sidebar-item.standalone:not(.drill):hover,
-    .sidebar-item.standalone.active:not(.drill) {
+    .sidebar-item.standalone:hover,
+    .sidebar-item.standalone.active {
         background: var(--color-hover);
-    }
-
-    /* Drill rows keep their gradient on hover — the ramp deepens instead of
-       being washed out, which is why the plain hover surface skips them. */
-    .sidebar-item.drill:hover {
-        --drill-stop-1: var(--gradient-brand-hover-1);
-        --drill-stop-2: var(--gradient-brand-hover-2);
-        --drill-stop-3: var(--gradient-brand-hover-3);
     }
 
     /* Child rows sit indented under their parent, aligning with the label. */
@@ -305,14 +281,11 @@
     }
 
     /* Icons recede at rest and come forward on hover or while the row is active
-       — same treatment as the section switcher's chevron. Drill rows sit on the
-       brand gradient, so their icons always take the row's color. */
+       — same treatment as the section switcher's chevron. */
     .sidebar-item:hover .icon-wrap,
     .sidebar-item.active .icon-wrap,
-    .sidebar-item.drill .icon-wrap,
     .sidebar-item:hover .caret,
-    .sidebar-item.active .caret,
-    .sidebar-item.drill .caret {
+    .sidebar-item.active .caret {
         color: inherit;
     }
 

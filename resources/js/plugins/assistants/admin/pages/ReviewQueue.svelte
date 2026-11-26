@@ -124,6 +124,7 @@
                 <BreadcrumbItem
                     label={section ? __(section.labelKey) : __('assistants.admin.queue.title')}
                     icon={section?.icon}
+                    route={section?.route}
                 />
             </BreadcrumbTrail>
         </PageHeaderBar>

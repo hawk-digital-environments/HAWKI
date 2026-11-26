@@ -11,7 +11,8 @@
   contextual caveat above a form section (e.g. "changes here affect the review"): compact
   type on a lighter fill.
 
-  `tone` colors the icon; the colored tones (info, warning, error) also tint the fill.
+  `tone` colors the icon; the colored tones (info, warning, error) also tint the fill, and
+  with `tintText` the text.
 -->
 <script lang="ts">
     import type { IconComponent } from '$lib/components/ui/icons';
@@ -35,9 +36,11 @@
         surface?: "surface" | "surface-light" | "surface-raised" | "surface-inverted"
         /** Colors the icon; info/warning/error also tint the fill. The text keeps its color. */
         tone?: "neutral" | "info" | "warning" | "error";
+        /** Also color the text in the tone, for a notice whose title is a status. */
+        tintText?: boolean;
     }
 
-    const { title, description, icon: Icon, size = "default", surface, tone }: Props = $props();
+    const { title, description, icon: Icon, size = "default", surface, tone, tintText = false }: Props = $props();
 
     const sizeMapping = {
         "small": ["sm", "xs"],
@@ -57,6 +60,7 @@
 
 <div
     class="alert-card size-{size}"
+    class:tint-text={tintText}
     data-tone={tone}
     style="--bg-color: var(--color-{fill}); --first-line-size: var(--font-size-{sizeMapping[size][title ? 0 : 1]})"
     role={tone === 'error' ? 'alert' : 'status'}
@@ -79,6 +83,7 @@
 
 <style>
     .alert-card {
+        --text-l: 45%;
         gap: var(--space-1_5);
         border-radius: var(--corner-md);
         display: flex;
@@ -87,8 +92,8 @@
     }
 
     .alert-card.size-small {
-        gap: var(--space-2);
-        padding: var(--space-2_5) var(--space-4);
+        gap: var(--space-2_5);
+        padding: var(--space-3) var(--space-4);
     }
 
     .alert-icon {
@@ -102,7 +107,7 @@
     .alert-content {
         display: flex;
         flex-direction: column;
-        gap: var(--space-0_5, 0.125rem);
+        gap: 0;
     }
 
     [data-tone='neutral'] .alert-icon { color: var(--color-text-muted); }
@@ -125,8 +130,14 @@
         background-color: oklch(from var(--tone-color) var(--tint-l) 0.03 h);
     }
 
+    /* The tone's hue at a readable lightness: the pure warning amber fails contrast on its tint. */
+    .tint-text:is([data-tone='info'], [data-tone='warning'], [data-tone='error']) .alert-content {
+        color: oklch(from var(--tone-color) var(--text-l) c h);
+    }
+
     :global(html.darkMode) .alert-card {
         --tint-l: 28%;
+        --text-l: 82%;
     }
 </style>
 

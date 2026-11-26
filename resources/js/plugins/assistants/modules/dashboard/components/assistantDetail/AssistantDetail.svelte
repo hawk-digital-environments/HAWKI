@@ -30,7 +30,6 @@
     import HashtagIcon from '$lib/components/ui/icons/iconset/HashtagIcon.svelte';
     import ViewIcon from '$lib/components/ui/icons/iconset/ViewIcon.svelte';
     import Clock01Icon from '$lib/components/ui/icons/iconset/Clock01Icon.svelte';
-    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte';
     import {
         ASSISTANT_DETAIL_INCLUDES,
@@ -70,7 +69,6 @@
     import Edit02Icon from '$lib/components/ui/icons/iconset/Edit02Icon.svelte';
     import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
     import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
-    import TaskEdit01Icon from '$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte';
     import Share01Icon from '$lib/components/ui/icons/iconset/Share01Icon.svelte';
     import ShareDialog from '$plugins/assistants/modules/dashboard/components/shareDialog/ShareDialog.svelte';
     import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
@@ -82,26 +80,18 @@
     interface Props {
         /** Id of the assistant to show. */
         id: string;
-        /** The back button: leave the detail view (close the modal / return
-         *  to the list). Omitted by surfaces whose back navigation lives in
-         *  the header bar's breadcrumb (the list modal). */
-        onBack?: () => void;
-        /** After a successful delete. Defaults to `onBack`. */
+        /** After a successful delete. */
         onDeleted?: () => void;
         /** The assistant as already loaded elsewhere (the list's card), shown
          *  right away while the full detail — versions, tags, permissions —
          *  is fetched. */
         initial?: Assistant;
-        /** Whether a page header bar owns the top zone above this view (the
-         *  standalone route; the list modal, whose bar floats over the
-         *  cover in over-cover mode). */
-        underHeaderBar?: boolean;
         /** Called once the assistant's detail resolves — the standalone route
          *  lifts the name into its header bar. */
         onLoaded?: (assistant: Assistant) => void;
     }
 
-    const { id, onBack, onDeleted, initial, underHeaderBar = false, onLoaded }: Props = $props();
+    const { id, onDeleted, initial, onLoaded }: Props = $props();
     // The handle is kept (not just `goToRoute` destructured off it) because
     // `path` is a live getter — the builder needs it read at click time.
     const router = useRouter();
@@ -290,13 +280,12 @@
             throw err;
         }
         toast.success(__('assistants.detail.deleted'));
-        (onDeleted ?? onBack)?.();
+        onDeleted?.();
     }
 
     /** The menu's publish submenu: the release stages, iconed like the
      *  builder's `ReleaseStage` picker. */
     const releaseOptions = [
-        { stage: ReleaseMode.DRAFT, icon: TaskEdit01Icon, label: __('assistants.detail.release_draft') },
         { stage: ReleaseMode.PRIVATE, icon: SquareLock02Icon, label: __('assistants.detail.release_private') },
         {
             stage: ReleaseMode.ORGANIZATIONAL,
@@ -326,6 +315,8 @@
     const releaseValueLabel = $derived(
         pendingStage ?
             __('assistants.detail.release_pending')
+        :   assistant?.releaseStage === ReleaseMode.DRAFT ?
+            __('assistants.detail.release_draft')
         :   releaseOptions.find((option) => option.stage === assistant?.releaseStage)?.label
     );
 
@@ -403,7 +394,6 @@
 <div
     class="detail-shell"
     class:test-open={chatOpen}
-    class:under-bar={underHeaderBar}
     data-content-fade="none"
 >
     <!-- data-pull-to-close: the region AssistantDetailModal's pull gesture starts in. -->
@@ -446,6 +436,8 @@
                         bind:open={deleteConfirmOpen}
                         title={__('assistants.detail.delete_confirm_title', { name: assistant.name })}
                         description={__('assistants.detail.delete_confirm_description')}
+                        okLabel={__('assistants.detail.delete')}
+                        confirmVariant="delete"
                         onConfirm={onDeleteConfirm}
                     />
                 {/if}
@@ -466,17 +458,6 @@
                     style={avatar.iconCss}
                 >
                     <div class="topbar">
-                        {#if onBack}
-                            <ButtonWithTooltip
-                                variant="ghost"
-                                size="sm"
-                                iconLeft={ArrowLeft01Icon}
-                                tooltip={__('assistants.detail.back')}
-                                class="back"
-                                onclick={onBack}
-                                ><span class="btn-label">{__('assistants.detail.back')}</span></ButtonWithTooltip
-                            >
-                        {/if}
                         <div class="controls">
                             <FavButton
                                 id="favBtn"
@@ -591,12 +572,10 @@
 
                 <p class="description">{assistant.description}</p>
 
-                <div class="availability">
-                    <AssistantAvailabilityStatus
-                        {assistant}
-                        withHint
-                    />
-                </div>
+                <AssistantAvailabilityStatus
+                    {assistant}
+                    withHint
+                />
 
                 <div
                     class="metadata"
@@ -683,10 +662,12 @@
                             />
                         </div>
                         {#if outdatedApproval}
-                            <p class="section-text outdated">
-                                <Clock01Icon size="1em" aria-hidden="true" />
-                                {__('assistants.review.outdated_hint')}
-                            </p>
+                            <Alert
+                                size="small"
+                                tone="warning"
+                                icon={Clock01Icon}
+                                description={__('assistants.review.outdated_hint')}
+                            />
                         {:else if assistant.review.status === ReviewStage.PENDING && assistant.requested_release_stage}
                             <p class="section-text">
                                 {__('assistants.detail.review_requested_hint', {
@@ -747,6 +728,7 @@
             chat={testChat}
             --test-launcher-bg={coverBackground}
             --test-launcher-fg={coverForeground}
+            --test-launcher-hover-filter="brightness(0.92) saturate(1.08)"
             title={__('assistants.detail.try_out')}
         >
             <Chatbox
@@ -824,14 +806,13 @@
         padding-top: 0;
     }
 
-    /* Top bar, overlaid on the cover: back on the left, the assistant's
-       actions on the right. Inset like the cover's own content (name,
-       glyph). A nav-row-high, centered row puts the actions on the same
-       midline as the header bar's breadcrumb and nav trigger over cover
-       pages. */
+    /* Top bar, overlaid on the cover: the assistant's actions on the right. Inset like the cover's own content (name,
+       glyph) at the sides; at the top, a nav-row-high row at the sidebar
+       panel's inset shares the midline of the sidebar header, the header
+       bar's breadcrumb and the nav trigger. */
     .topbar {
         position: absolute;
-        top: var(--cover-inset);
+        top: var(--space-4);
         left: var(--cover-inset);
         right: var(--cover-inset);
         z-index: 1;
@@ -922,19 +903,18 @@
         align-items: center;
         gap: var(--space-2);
         flex-shrink: 0;
-        /* Without the back button this is the top bar's only child: keep it
-           on the right regardless (space-between alone would left-align it). */
+        /* The top bar's only child: keep it on the right. */
         margin-left: auto;
     }
     /* Top-bar buttons tinted in the cover's own foreground shade instead of
        white pills (same treatment as the store cards' favourite button). */
-    .topbar :global(.btn:is(.back, .btn--stroke)) {
+    .topbar :global(.btn.btn--stroke) {
         --btn-bg: color-mix(in oklch, currentColor 14%, transparent);
         --btn-color: currentColor;
         border-color: transparent;
     }
-    .topbar :global(.btn:is(.back, .btn--stroke):not(:disabled):hover),
-    .topbar :global(.btn:is(.back, .btn--stroke).btn--active) {
+    .topbar :global(.btn.btn--stroke:not(:disabled):hover),
+    .topbar :global(.btn.btn--stroke.btn--active) {
         --btn-bg: color-mix(in oklch, currentColor 24%, transparent);
         --btn-color: currentColor;
     }
@@ -945,17 +925,6 @@
         line-height: var(--line-height-normal);
         color: var(--color-text);
     }
-    .availability {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--space-2);
-    }
-    /* A runnable assistant renders no status: drop the empty row and its gap. */
-    .availability:not(:has(*)) {
-        display: none;
-    }
-
     /* Metadata cards. */
     .metadata {
         display: grid;
@@ -1032,12 +1001,6 @@
         align-items: center;
         gap: var(--space-3);
     }
-    /* The outdated-approval hint: clock icon inline with the muted text. */
-    .section-text.outdated {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
-    }
     .section-title {
         margin: 0;
         font-size: var(--font-size-lg);
@@ -1060,28 +1023,6 @@
         margin: 0;
     }
 
-    /* Where the nav trigger floats over the view (the modal, which has no
-       header bar above), its reserve moves into the full-bleed cover (it
-       grows by the same amount), and the top bar shares the trigger's row,
-       beside it. Under the standalone route's header bar (.under-bar) that
-       zone belongs to the bar, so the cover keeps its plain height. */
-    @media (--bp-md-and-smaller) {
-        .page-content {
-            --nav-reserve: 0rem;
-            --cover-height: calc(18rem + var(--nav-reserve));
-        }
-        .detail-shell:not(.under-bar) .page-content {
-            --nav-reserve: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
-        }
-        .detail-shell:not(.under-bar) .topbar {
-            top: var(--space-2_5);
-            left: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2));
-            right: var(--cover-inset);
-            min-height: var(--nav-row-h);
-            align-items: center;
-        }
-    }
-
     /* Narrow screens: reclaim horizontal space and let the header adapt instead
        of staying locked to the desktop two-column / inline-controls layout.
        (The token widens the switch from the former raw 40rem to ≤767px — the
@@ -1093,7 +1034,7 @@
             padding: var(--space-4);
         }
         .page-content {
-            --cover-height: calc(14rem + var(--nav-reserve));
+            --cover-height: 14rem;
             --cover-symbol: 4rem;
             --cover-inset: var(--space-4);
             padding-top: 0;

@@ -9,6 +9,9 @@
     import { assistantOptionsStore } from '$plugins/assistants/stores/AssistantOptionsStore.svelte';
     import Page from '$lib/components/ui/page/Page.svelte';
     import DashboardHeader from '$plugins/assistants/components/breadcrumb/DashboardHeader.svelte';
+    import { untrack } from 'svelte';
+    import { useRouter } from '$lib/components/ui/routing/index.js';
+    import { draftPresence } from '$plugins/assistants/stores/draftPresence.svelte.js';
 
     /**
      * The kernel's route renderer instantiates page components without passing
@@ -55,6 +58,13 @@
     }
 
     applyFilter();
+
+    // No drafts (left), e.g. after deleting the last one: move on to the private assistants.
+    const router = useRouter();
+    $effect(() => {
+        // Untracked: goTo reads the location it writes, which would re-run this effect and supersede its own navigation.
+        if (draftPresence.hasDrafts === false) untrack(() => void router.goToRoute('assistants.dashboard.private', undefined, {replace: true}));
+    });
 </script>
 
 <Page>

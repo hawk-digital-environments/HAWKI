@@ -1,5 +1,6 @@
 <script lang="ts">
     import AssistantCard from './AssistantCard.svelte';
+    import { draftPresence } from '$plugins/assistants/stores/draftPresence.svelte.js';
     import PageNavigation from './PageNavigation.svelte';
     import Searchbar from '$plugins/assistants/modules/dashboard/components/searchbar/Searchbar.svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
@@ -86,8 +87,9 @@
     // scroll position, filters and the loaded page survive the round trip.
     const detailId = useQueryState('assistant');
     /** Whether the open modal pushed its own history entry (a card click), so
-     *  closing can step back over it instead of stacking another entry. */
-    let pushedDetail = false;
+     *  closing can step back over it instead of stacking another entry. Also
+     *  the known source that earns the back button; a shared link has none. */
+    let pushedDetail = $state(false);
 
     function openDetail(card: HTMLElement, id: string): void {
         morphToDetail(card, async () => {
@@ -160,6 +162,8 @@
     /** A deleted assistant has no card to morph back into: close plainly, refresh. */
     async function onDetailDeleted(): Promise<void> {
         await dismissDetail();
+        // The deleted assistant may have been the last draft (the drafts page redirects then).
+        void draftPresence.refresh();
         await list.load();
     }
 
@@ -308,6 +312,7 @@
         initial={list.assistants.find((item) => item.id === detailId.current)}
         onClose={closeDetail}
         onDeleted={onDetailDeleted}
+        backButton={pushedDetail}
     />
 {/if}
 

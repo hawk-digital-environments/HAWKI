@@ -40,6 +40,8 @@
         width: fit-content;
         max-width: 100%;
         padding: var(--space-1) var(--space-2);
+        /* As tall as a pill with an icon, so pills with and without one line up. */
+        min-height: calc(var(--font-size-xs) + 2 * var(--space-1));
         border: none;
         border-radius: var(--corner-full);
         font-size: var(--font-size-xxs);

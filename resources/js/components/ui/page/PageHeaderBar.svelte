@@ -78,29 +78,31 @@
         padding: var(--space-2) var(--space-5) var(--space-2) calc(var(--space-4) + var(--nav-row-h) + var(--space-2));
     }
 
-    /* Soft fade instead of a hard divider: the blurred panel backdrop is drawn
-       on a pseudo-element that extends past the bar and fades out, so content
-       scrolling underneath dissolves rather than hitting a line. */
+    /* Soft fade instead of a hard divider: content scrolls under the bar and
+       dissolves. Blur and tint ride one smootherstep mask that is solid only
+       behind the bar row and reaches zero a short way below it. */
     .page-header-bar::before {
         content: '';
         position: absolute;
         /* Behind the bar's content (see isolation above), above the page. */
         z-index: -1;
-        inset: 0 0 -3rem;
+        inset: 0 0 calc(-1 * var(--space-6));
         pointer-events: none;
-        background: color-mix(in oklch, var(--panel-bg) 88%, transparent);
-        backdrop-filter: blur(12px);
-        /* Eased ramp (rather than one linear stop) so neither the start nor
-           the end of the fade shows a visible edge. */
+        background: color-mix(in oklch, var(--panel-bg) 92%, transparent);
+        backdrop-filter: blur(8px);
         --header-fade: linear-gradient(
             to bottom,
-            black 0,
-            black 45%,
-            rgba(0, 0, 0, 0.86) 60%,
-            rgba(0, 0, 0, 0.55) 72%,
-            rgba(0, 0, 0, 0.25) 84%,
-            rgba(0, 0, 0, 0.08) 92%,
-            transparent 100%
+            black 0%,
+            black 50%,
+            rgba(0, 0, 0, 0.97) 55%,
+            rgba(0, 0, 0, 0.89) 60%,
+            rgba(0, 0, 0, 0.74) 65%,
+            rgba(0, 0, 0, 0.55) 70%,
+            rgba(0, 0, 0, 0.35) 75%,
+            rgba(0, 0, 0, 0.19) 80%,
+            rgba(0, 0, 0, 0.08) 85%,
+            rgba(0, 0, 0, 0.02) 90%,
+            transparent 95%
         );
         mask-image: var(--header-fade);
         -webkit-mask-image: var(--header-fade);
@@ -129,16 +131,6 @@
 
     .page-header-bar.over-cover::before {
         display: none;
-    }
-
-    /* The row centers on the cover's own top-bar actions (fav/menu at
-       --cover-inset = --space-6): same centre, so the trail and the heart
-       button share a midline. Below sm the cover insets by --space-4, which
-       the default row formula already matches. */
-    @media (--bp-bigger-than-sm) {
-        .page-header-bar.over-cover {
-            min-height: calc(2 * var(--space-6) + var(--nav-row-h));
-        }
     }
 
     /* Single-line title. */

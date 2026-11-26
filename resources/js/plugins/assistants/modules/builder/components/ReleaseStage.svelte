@@ -3,7 +3,6 @@
     import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
     import RadioSwitch from "$plugins/assistants/components/radioSwitch/RadioSwitch.svelte";
     import RadioOption from "$plugins/assistants/components/radioSwitch/RadioOption.svelte";
-    import TaskEdit01Icon from "$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte";
     import SquareLock02Icon from "$lib/components/ui/icons/iconset/SquareLock02Icon.svelte";
     import CheckmarkBadge01Icon from "$lib/components/ui/icons/iconset/CheckmarkBadge01Icon.svelte";
     import GlobeIcon from "$lib/components/ui/icons/iconset/GlobeIcon.svelte";
@@ -13,7 +12,8 @@
     const {__} = useTranslator()
     const builder = useBuilderContext();
 
-    let currentValue = $derived(builder.draft.releaseStage);
+    // Drafts aren't a release target: an unreleased assistant defaults to private.
+    let currentValue = $derived(builder.draft.releaseStage === ReleaseMode.DRAFT ? ReleaseMode.PRIVATE : builder.draft.releaseStage);
 
     function update(value: string) {
         builder.set('releaseStage', value as ReleaseMode);
@@ -25,11 +25,6 @@
     <p class="u-label">{__('assistants.builder.publish.release_stage.title')}</p>
 
     <RadioSwitch value={currentValue} onchange={update} name="release-stage">
-        <RadioOption value={ReleaseMode.DRAFT}
-                     icon={TaskEdit01Icon}
-                     label={__('assistants.builder.publish.release_stage.draft_label')}
-                     description={__('assistants.builder.publish.release_stage.draft_description')} />
-
         <RadioOption value={ReleaseMode.PRIVATE}
                      icon={SquareLock02Icon}
                      label={__('assistants.builder.publish.release_stage.private_label')}

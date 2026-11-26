@@ -98,8 +98,11 @@
     .info-button {
         display: inline-block;
         line-height: 0;
-        padding: 0;
+        /* Room so the focus ring frames the round icon instead of hugging it. */
+        padding: var(--space-0_5);
+        margin: calc(-1 * var(--space-0_5));
         border: none;
+        border-radius: 50%;
         background: none;
         color: var(--color-text-muted);
         cursor: help;

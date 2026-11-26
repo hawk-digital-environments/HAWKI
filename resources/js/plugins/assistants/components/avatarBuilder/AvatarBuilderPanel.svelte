@@ -318,10 +318,11 @@ let locked = $derived(suggesting || builder.isAiBusy('avatar'));
                         aria-checked={i === activeIndex}
                         aria-label={bg.label}
                         title={bg.label}
-                        style={bg.value}
-                        style:transform="translateX({swatchShift[i].current}px) scale({swatchScales[i].current})"
+                        style:transform="translateX({swatchShift[i].current}px)"
+                        style:--swatch-scale={swatchScales[i].current}
                         onclick={() => { aiError = undefined; setAvatar({iconCss: bg.value}); }}
-                    ></button>
+                    ><span class="swatch-dot" style={bg.value}
+                           style:transform="scale({swatchScales[i].current})"></span></button>
                 {/each}
             </div>
             <ActionIcon
@@ -441,9 +442,13 @@ let locked = $derived(suggesting || builder.isAiBusy('avatar'));
     .avatar-tile :global(.custom-trigger:active) {
         transform: scale(0.96);
     }
+    /* The tile clips its contents, so it draws the trigger's ring itself. */
     .avatar-tile :global(.custom-trigger:focus-visible) {
+        outline: none;
+    }
+    .avatar-tile:has(:global(.custom-trigger:focus-visible)) {
         outline: 2px solid var(--color-focus-ring);
-        outline-offset: -4px;
+        outline-offset: 2px;
     }
 
     .emoji {
@@ -488,7 +493,7 @@ let locked = $derived(suggesting || builder.isAiBusy('avatar'));
         display: flex;
         align-items: center;
         min-width: 0;
-        padding-inline: 0;
+        padding: 0;
     }
 
     /* The arrows only appear when the row overflows. */
@@ -523,7 +528,7 @@ let locked = $derived(suggesting || builder.isAiBusy('avatar'));
         display: flex;
         gap: var(--space-2);
         width: 100%;
-        padding: var(--space-2) var(--space-3);
+        padding: calc(var(--space-3) + var(--space-2)) var(--space-3);
         overflow-x: auto;
         overscroll-behavior-x: contain;
         scroll-snap-type: x proximity;
@@ -549,8 +554,8 @@ let locked = $derived(suggesting || builder.isAiBusy('avatar'));
         margin-inline-end: auto;
     }
 
-    /* `transform` carries the selection spring; hover and press use the
-       separate `scale` property so they stack on top of it. */
+    /* The button only shifts; its dot carries the selection spring in
+       `transform`, and hover and press stack on top via `scale`. */
     .swatch {
         flex: 0 0 auto;
         width: 2rem;
@@ -559,18 +564,26 @@ let locked = $derived(suggesting || builder.isAiBusy('avatar'));
         padding: 0;
         border: none;
         border-radius: var(--corner-full);
+        background: none;
         cursor: pointer;
+    }
+    .swatch-dot {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: inherit;
         transition: scale var(--duration-fast) var(--easing-spring);
     }
-    .swatch:hover {
+    .swatch:hover .swatch-dot {
         scale: 1.1;
     }
-    .swatch:active {
+    .swatch:active .swatch-dot {
         scale: 0.88;
     }
+    /* The button stays unscaled, so the ring keeps its 2px; the offset clears the grown dot. */
     .swatch:focus-visible {
         outline: 2px solid var(--color-focus-ring);
-        outline-offset: 2px;
+        outline-offset: calc(2px + 1rem * (var(--swatch-scale, 1) - 1));
     }
 
     /* ── Actions ─────────────────────────────────────────────────────── */
