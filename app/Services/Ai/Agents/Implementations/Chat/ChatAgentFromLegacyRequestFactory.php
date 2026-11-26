@@ -6,6 +6,8 @@ namespace App\Services\Ai\Agents\Implementations\Chat;
 
 
 use App\Models\Ai\AiModel;
+use App\Models\Room;
+use App\Models\User;
 use App\Services\Ai\Agents\Contracts\AgentInterface;
 use App\Services\Ai\Agents\Exceptions\InvalidLegacyRequestPayloadException;
 use App\Services\Ai\Agents\Implementations\AbstractAgentFactory;
@@ -15,10 +17,14 @@ use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Exceptions\ModelNotInPayloadException;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
 use App\Services\Ai\Models\Identifiers\ModelFinder;
+use App\Services\Chat\Attachment\AttachmentAccessGuard;
+use App\Services\Chat\Room\Repositories\RoomRepository;
 use App\Services\Storage\FileStorageService;
+use App\Services\Storage\Values\StoredFile;
 use App\Services\Storage\Values\StoredFileCategory;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Container\Attributes\Singleton;
+use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Laravel\Ai\Messages\MessageRole;
 use Psr\Log\LoggerInterface;
 
@@ -48,8 +54,10 @@ use Psr\Log\LoggerInterface;
  *
  * Consecutive messages with the same role are merged by {@see AlternatingMessageHistory} before
  * being passed to the agent. File attachments referenced by UUID are fetched from
- * {@see FileStorageService}; missing files are logged and reported to the model as a metadata
- * error block rather than aborting the request.
+ * {@see FileStorageService}; missing files, and files the current user may not access (see
+ * {@see AttachmentAccessGuard}), are logged and reported to the model as a metadata error block
+ * rather than aborting the request. Group attachments must belong to the room named by the
+ * top-level `slug` of the request.
  */
 #[Singleton]
 class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
@@ -58,7 +66,10 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
         private readonly FileStorageService $fileStorageService,
         private readonly ModelFinder        $modelFinder,
         private readonly ChatToolResolver   $toolResolver,
-        private readonly LoggerInterface    $logger
+        private readonly LoggerInterface    $logger,
+        private readonly AttachmentAccessGuard $attachmentAccessGuard,
+        private readonly RoomRepository     $roomRepository,
+        private readonly AuthFactory        $auth
     )
     {
     }
@@ -85,7 +96,7 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
         );
 
         $instructions = $this->getInstructionsFromPayload($payload);
-        $messages = $this->getMessagesFromPayload($payload, $context);
+        $messages = $this->getMessagesFromPayload($payload, $context, $request['slug'] ?? null);
 
         return new ChatAgent(
             context: $context,
@@ -158,9 +169,14 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
      * The `broadcast` flag controls which storage category (group vs. private) is used when
      * resolving attachment UUIDs.
      */
-    private function getMessagesFromPayload(array $payload, AgentRequestContext $context): array
+    private function getMessagesFromPayload(array $payload, AgentRequestContext $context, mixed $roomSlug): array
     {
         $storageCategory = ($payload['broadcast'] ?? null) === true ? StoredFileCategory::GROUP : StoredFileCategory::PRIVATE;
+        $user = $this->auth->guard()->user();
+        $user = $user instanceof User ? $user : null;
+        $room = $storageCategory === StoredFileCategory::GROUP && is_string($roomSlug)
+            ? $this->roomRepository->findOneBySlug($roomSlug)
+            : null;
 
         $history = new AlternatingMessageHistory();
         foreach ($payload['messages'] ?? [] as $payloadMessage) {
@@ -181,10 +197,10 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
                 $attachments = new UserMessageAttachments($context);
                 if (!empty($payloadMessage['content']['attachments']) && is_array($payloadMessage['content']['attachments'])) {
                     foreach ($payloadMessage['content']['attachments'] as $uuid) {
-                        $file = $this->fileStorageService->retrieve(StoredFileIdentifier::fromCategoryAndUuid($storageCategory, $uuid));
+                        $file = $this->retrieveAccessibleAttachment($storageCategory, $uuid, $user, $room);
                         if ($file === null) {
                             $attachments->addError('One or more attachment were not found in storage.');
-                            $this->logger->warning(sprintf('Attachment with UUID "%s" not found in storage category "%s".', $uuid, $storageCategory->value));
+                            $this->logger->warning(sprintf('Attachment with UUID "%s" not found or not accessible in storage category "%s".', is_string($uuid) ? $uuid : get_debug_type($uuid), $storageCategory->value));
                             continue;
                         }
                         $attachments->register($file);
@@ -199,5 +215,33 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
         }
 
         return [...$history->build()];
+    }
+
+    /**
+     * Resolves an attachment only if the user may access it; an inaccessible file is reported exactly
+     * like a missing one, so the response does not reveal whether a foreign UUID exists.
+     * Group attachments are only resolved within the request's room, never "any room the user is in".
+     */
+    private function retrieveAccessibleAttachment(
+        StoredFileCategory $category,
+        mixed              $uuid,
+        User|null          $user,
+        Room|null          $room
+    ): StoredFile|null
+    {
+        if (!is_string($uuid) || $user === null) {
+            return null;
+        }
+
+        if ($category === StoredFileCategory::GROUP && $room === null) {
+            return null;
+        }
+
+        $identifier = StoredFileIdentifier::fromCategoryAndUuid($category, $uuid);
+        if (!$this->attachmentAccessGuard->canAccess($user, $identifier, $room)) {
+            return null;
+        }
+
+        return $this->fileStorageService->retrieve($identifier);
     }
 }
