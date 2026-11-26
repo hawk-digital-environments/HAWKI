@@ -62,10 +62,13 @@
     }
 
     function openSearch() {
-        // The dialog shouldn't open over a drawer that would still cover the page
-        // once it closes.
-        if (sidebar.mobile) sidebar.navOpen = false;
         searchOpen = true;
+    }
+
+    // The drawer stays open behind the search, so dismissing the search returns
+    // to it; only a picked result, which leads to the page, collapses it.
+    function collapseAfterSearch() {
+        if (sidebar.mobile) sidebar.navOpen = false;
     }
 
     function openSettings(section: SettingsSection | null = null) {
@@ -96,9 +99,12 @@
         {/snippet}
     </SidebarHeader>
     <div class="sidebar-content">
-        <div class="spaces">
-            <SpaceTabs />
-        </div>
+        <!-- On mobile the tabs move to the bottom bar (MobileSpaceBar). -->
+        {#if !sidebar.mobile}
+            <div class="spaces">
+                <SpaceTabs />
+            </div>
+        {/if}
         <div class="module-sidebar">
             {#if ModuleSidebar}
                 <ModuleSidebar />
@@ -110,7 +116,7 @@
     </div>
 </Sidebar>
 
-<SearchDialog bind:open={searchOpen} />
+<SearchDialog bind:open={searchOpen} onSelect={collapseAfterSearch} />
 <SettingsDialog bind:open={settingsOpen} section={settingsSection}/>
 
 <style>

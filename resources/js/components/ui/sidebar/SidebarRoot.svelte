@@ -110,8 +110,12 @@
 
         .sidebar-layout {
             --nav-w: 13rem;
+            /* The visible viewport, so a bar in the `bottom` row isn't hidden
+               behind the mobile browser's toolbar. */
+            height: 100dvh;
             grid-template-columns: minmax(0, 1fr);
-            grid-template-areas: 'main';
+            grid-template-rows: minmax(0, 1fr) auto;
+            grid-template-areas: 'main' 'bottom';
             --nav-text-inset: calc(var(--nav-item-pad-x) + 0.67px);
         }
     }
