@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AiConvMsg;
-use App\Models\Message;
 use App\Models\User;
-use App\Services\Chat\Attachment\Repositories\AttachmentRepository;
+use App\Services\Chat\Attachment\AttachmentAccessGuard;
 use App\Services\Routing\CacheBusting\CacheBusterGenerator;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Exception\InvalidStorageFileIdentifierStringGivenException;
@@ -23,7 +21,7 @@ class StorageProxyController extends Controller
     public function __construct(
         private readonly CacheBusterGenerator $cacheBusterGenerator,
         private readonly AvatarStorageService $avatarStorage,
-        private readonly AttachmentRepository $attachmentService,
+        private readonly AttachmentAccessGuard $attachmentAccessGuard,
         private readonly FileStorageService   $fileStorageService,
         #[CurrentUser]
         private readonly User                 $currentUser
@@ -41,8 +39,7 @@ class StorageProxyController extends Controller
 
         return match ($identifier->category) {
             StoredFileCategory::ROOM_AVATAR, StoredFileCategory::PROFILE_AVATAR => $this->streamAvatar($request, $identifier),
-            StoredFileCategory::GROUP => $this->streamGroupFile($request, $identifier),
-            StoredFileCategory::PRIVATE => $this->streamPrivateFile($request, $identifier),
+            StoredFileCategory::GROUP, StoredFileCategory::PRIVATE => $this->streamChatAttachment($request, $identifier),
         };
     }
 
@@ -54,43 +51,16 @@ class StorageProxyController extends Controller
         );
     }
 
-    private function streamGroupFile(Request $request, StoredFileIdentifier $identifier): StreamedResponse
+    private function streamChatAttachment(Request $request, StoredFileIdentifier $identifier): StreamedResponse
     {
-        $file = $this->getFileOrFail($this->fileStorageService, $identifier);
-
-        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
-        if (!$attachable instanceof Message) {
-            abort(400, 'Invalid request, attachment is not linked to a message');
-        }
-
-        $room = $attachable->room;
-
-        if (!$room->isMember($this->currentUser->id)) {
-            abort(403, 'You are not a member of the room this attachment belongs to');
+        if (!$this->attachmentAccessGuard->canAccess($this->currentUser, $identifier)) {
+            abort(403, 'You do not have access to this attachment');
         }
 
         return $this->createStreamResponse(
             $request,
-            $file
-        );
-    }
-
-    private function streamPrivateFile(Request $request, StoredFileIdentifier $identifier): StreamedResponse
-    {
-        $file = $this->getFileOrFail($this->fileStorageService, $identifier);
-
-        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
-        if (!$attachable instanceof AiConvMsg) {
-            abort(400, 'Invalid request, attachment is not linked to a private ai conversation');
-        }
-
-        if ($attachable->user_id !== $this->currentUser->id) {
-            abort(403, 'You do not have access to the private conversation this attachment belongs to');
-        }
-
-        return $this->createStreamResponse(
-            $request,
-            $file
+            $this->getFileOrFail($this->fileStorageService, $identifier),
+            cacheControl: 'private, max-age=3600'
         );
     }
 
@@ -105,7 +75,8 @@ class StorageProxyController extends Controller
 
     private function createStreamResponse(
         Request    $request,
-        StoredFile $file
+        StoredFile $file,
+        string     $cacheControl = 'public, max-age=3600'
     ): StreamedResponse
     {
         $etag = $this->cacheBusterGenerator->getEtag($file->getEtag());
@@ -126,7 +97,7 @@ class StorageProxyController extends Controller
             name: $file->getOriginalFilename(),
             headers: [
                 'Content-Type' => $file->getMimeType(),
-                'Cache-Control' => 'public, max-age=3600',
+                'Cache-Control' => $cacheControl,
                 'ETag' => $etag
             ]
         );

@@ -59,6 +59,10 @@ class GroupMessageHandler extends AbstractMessageHandler
         if (is_array($data['content']['attachments'] ?? null)) {
             foreach ($data['content']['attachments'] as $uuid) {
                 $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::GROUP, $uuid);
+                // Only fresh uploads may be linked; re-linking a known UUID would grant access to it.
+                if ($this->attachmentService->findOneByStoredFileIdentifier($identifier)) {
+                    continue;
+                }
                 $this->storageService->persistTemporaryFile($identifier);
                 $storedFile = $this->storageService->retrieve($identifier);
                 if ($storedFile) {
