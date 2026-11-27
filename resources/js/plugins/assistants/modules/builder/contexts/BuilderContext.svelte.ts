@@ -43,7 +43,7 @@
 import { createStableContext } from '$lib/utils/stableContext.js';
 import type { Assistant } from "$plugins/assistants/types/assistant/Assistant";
 import type { Review } from "$plugins/assistants/types/assistant/Review";
-import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
+import { ReleaseMode, releaseRequiresReview } from "$plugins/assistants/types/assistant/ReleaseMode";
 import { ReviewStage } from "$plugins/assistants/types/assistant/ReviewStage";
 import {
   assistantToApi,
@@ -941,8 +941,7 @@ export class BuilderContext {
       try {
         review = await getAssistantReview(this.draft.id);
       } catch {
-        review = this.draft.releaseStage === ReleaseMode.ORGANIZATIONAL
-          || this.draft.releaseStage === ReleaseMode.FEDERATED
+        review = releaseRequiresReview(this.draft.releaseStage)
           ? { status: ReviewStage.PENDING, reason: null, reviewedAt: null }
           : null;
       }

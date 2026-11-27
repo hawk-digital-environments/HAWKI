@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Assistant\Values;
 
 /**
- * One entry of an assistant's share list: the user it is shared with, and
- * whether they may edit on top of using it. Read model for the share
- * actions' relationship document (see AssistantController::shareDocument).
+ * One entry of an assistant's audience or co-author list. Read model for
+ * the share actions' relationship document (see AssistantController::shareDocument).
  */
 final readonly class AssistantShare
 {
@@ -15,7 +14,6 @@ final readonly class AssistantShare
         public int $userId,
         public string $displayName,
         public string $username,
-        public bool $canEdit,
         public string|null $avatar,
     ) {
     }

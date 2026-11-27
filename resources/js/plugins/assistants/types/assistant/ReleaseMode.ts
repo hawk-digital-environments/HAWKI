@@ -13,6 +13,8 @@ export enum ReleaseMode {
     DRAFT = 'draft',
     /** Usable by the creator only, but complete/saved rather than in-progress. */
     PRIVATE = 'private',
+    /** Usable by a hand-picked audience only; never listed in the store. */
+    EXCLUSIVE = 'exclusive',
     /** Shared inside the creator's own organization. */
     ORGANIZATIONAL = 'organizational',
     /** Shared across all federated organizations. */
@@ -20,3 +22,10 @@ export enum ReleaseMode {
 }
 
 export const ReleaseModeSchema = z.enum(ReleaseMode);
+
+/** Whether entering `stage` needs an admin review first (mirrors `AssistantReleaseStage::requiresReview`). */
+export function releaseRequiresReview(stage: ReleaseMode | null | undefined): boolean {
+    return stage === ReleaseMode.EXCLUSIVE
+        || stage === ReleaseMode.ORGANIZATIONAL
+        || stage === ReleaseMode.FEDERATED;
+}

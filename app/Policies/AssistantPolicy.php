@@ -51,9 +51,8 @@ class AssistantPolicy implements DefinesSensitiveIncludes
     }
 
     /**
-     * Editing an assistant sits with its creator or with users the
-     * assistant is shared with under the edit grant. Org admins stay out:
-     * their tier decides reviews and rollbacks, not content edits.
+     * Editing an assistant sits with its creator and its co-authors. Org
+     * admins stay out: their tier decides reviews and rollbacks, not content edits.
      */
     public function update(User $user, Assistant $assistant): bool
     {
@@ -100,34 +99,32 @@ class AssistantPolicy implements DefinesSensitiveIncludes
     }
 
     /**
-     * Managing the share list is a creator-only concern: sharees use (or
-     * edit) the assistant but never re-distribute it.
+     * Managing the audience and co-author lists is a creator-only concern:
+     * co-authors edit the assistant but never re-distribute it.
      */
-    public function listShares(User $user, Assistant $assistant): bool
+    public function manageShares(User $user, Assistant $assistant): bool
     {
         return $user->id === $assistant->creator_id;
     }
 
-    public function syncShares(User $user, Assistant $assistant): bool
+    public function listAudience(User $user, Assistant $assistant): bool
     {
-        return $user->id === $assistant->creator_id;
+        return $this->manageShares($user, $assistant);
     }
 
-    /**
-     * Share links grant the same access as the share list, so minting one
-     * sits with the same creator-only tier.
-     */
-    public function createShareLink(User $user, Assistant $assistant): bool
+    public function syncAudience(User $user, Assistant $assistant): bool
     {
-        return $this->syncShares($user, $assistant);
+        return $this->manageShares($user, $assistant);
     }
 
-    /**
-     * Revoking sits with minting: creator-only, same tier as the share list.
-     */
-    public function invalidateShareLinks(User $user, Assistant $assistant): bool
+    public function listCoAuthors(User $user, Assistant $assistant): bool
     {
-        return $this->syncShares($user, $assistant);
+        return $this->manageShares($user, $assistant);
+    }
+
+    public function syncCoAuthors(User $user, Assistant $assistant): bool
+    {
+        return $this->manageShares($user, $assistant);
     }
 
     /**

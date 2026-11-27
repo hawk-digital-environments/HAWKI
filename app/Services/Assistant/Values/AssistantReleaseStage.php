@@ -8,6 +8,7 @@ enum AssistantReleaseStage: string
 {
     case DRAFT = 'draft';
     case PRIVATE = 'private';
+    case EXCLUSIVE = 'exclusive';
     case ORGANIZATIONAL = 'organizational';
     case FEDERATED = 'federated';
 
@@ -36,7 +37,7 @@ enum AssistantReleaseStage: string
     }
 
     /**
-     * Visibility ladder ordering: draft < private < organizational < federated.
+     * Visibility ladder ordering: draft < private < exclusive < organizational < federated.
      *
      * A higher value means broader visibility. Used to classify release
      * transitions as upward (requires review approval) or downward (free).
@@ -46,17 +47,19 @@ enum AssistantReleaseStage: string
         return match ($this) {
             self::DRAFT => 0,
             self::PRIVATE => 1,
-            self::ORGANIZATIONAL => 2,
-            self::FEDERATED => 3,
+            self::EXCLUSIVE => 2,
+            self::ORGANIZATIONAL => 3,
+            self::FEDERATED => 4,
         };
     }
 
     /**
-     * Stages whose visibility is broad enough to require a review approval
-     * before an assistant may actually enter them.
+     * Stages that reach people beyond the creator and co-authors, and
+     * therefore need a review approval before an assistant may enter them.
+     * Exclusive reaches only its audience, yet is reviewed all the same.
      */
-    public function isPublic(): bool
+    public function requiresReview(): bool
     {
-        return self::ORGANIZATIONAL === $this || self::FEDERATED === $this;
+        return self::EXCLUSIVE === $this || self::ORGANIZATIONAL === $this || self::FEDERATED === $this;
     }
 }

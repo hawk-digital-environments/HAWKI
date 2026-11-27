@@ -11,8 +11,8 @@ use LaravelJsonApi\Eloquent\Filters\Concerns\DeserializesValue;
 use LaravelJsonApi\Eloquent\Filters\Concerns\IsSingular;
 
 /**
- * Filters down to assistants shared with the current user via the
- * `sharedUsers` pivot, independent of their release stage.
+ * Filters down to assistants shared with the current user: co-authored
+ * ones, and approved exclusive ones whose audience they are in.
  */
 class AssistantSharedWithUserFilter implements Filter
 {

@@ -393,26 +393,24 @@ export async function toggleAssistantFavorite(assistant: Assistant, active: bool
 
 // ─── Sharing ────────────────────────────────────────────────────────────────
 
-/** One entry of the assistant's share list, as answered by `actions/share`. */
+/**
+ * The two people lists of an assistant, each with its own action: the
+ * exclusive-stage audience (use only) and the co-authors (edit).
+ */
+export type AssistantShareList = 'audience' | 'co-authors';
+
+/** One person on a share list. */
 export interface AssistantShareEntry {
     userId: number;
     displayName: string;
     username: string;
-    canEdit: boolean;
     avatar: string | null;
 }
 
-// The share action answers a JSON:API relationship document: linkage with
-// the per-member `can_edit` meta, plus `included` user stubs. Joining them
-// yields the dialog's flat share entries.
+// The share actions answer a JSON:API relationship document: linkage plus
+// `included` user stubs. Joining them yields flat share entries.
 const SharesResponseSchema = z.object({
-    data: z.array(
-        z.object({
-            type: z.literal('users'),
-            id: z.string(),
-            meta: z.object({can_edit: z.boolean()})
-        })
-    ),
+    data: z.array(z.object({type: z.literal('users'), id: z.string()})),
     included: z.array(
         z.object({
             type: z.literal('users'),
@@ -436,119 +434,48 @@ const SharesResponseSchema = z.object({
                 userId: Number(identifier.id),
                 displayName: attributes.display_name,
                 username: attributes.username,
-                canEdit: identifier.meta.can_edit,
                 avatar: attributes.avatar
             }];
         })
     };
 });
 
-/**
- * The assistant's current share list — creator-only (`listShares` gate, see
- * `actionPermissions.listShares` on the assistant resource).
- */
-export async function listAssistantShares(id: string, signal?: AbortSignal): Promise<AssistantShareEntry[]> {
+/** One share list of the assistant — creator-only (`actionPermissions.listAudience` / `listCoAuthors`). */
+export async function listAssistantShares(
+    id: string,
+    list: AssistantShareList,
+    signal?: AbortSignal
+): Promise<AssistantShareEntry[]> {
     try {
-        const response = await useApp().restApi.getFromResourceAction(ASSISTANTS, `${id}/actions/share`, {
+        const response = await useApp().restApi.getFromResourceAction(ASSISTANTS, `${id}/actions/${list}`, {
             schema: SharesResponseSchema,
             signal
         });
         return response.data;
     } catch (err) {
-        throw logApiError('listAssistantShares', err, { id });
+        throw logApiError('listAssistantShares', err, { id, list });
     }
 }
 
 /**
- * Replaces the share list wholesale: attach new, update `canEdit` flags,
- * detach absent. Sends a JSON:API relationship document (linkage with the
- * per-member `can_edit` meta) and answers with the resulting list, so the
- * caller can adopt the server's state without a follow-up fetch.
+ * Replaces one share list wholesale and answers with the resulting list.
+ * The other list is left alone; co-authors never land in the audience.
  */
 export async function syncAssistantShares(
     id: string,
-    shares: ReadonlyArray<{ userId: number; canEdit: boolean }>
+    list: AssistantShareList,
+    userIds: ReadonlyArray<number>
 ): Promise<AssistantShareEntry[]> {
     try {
         const response = await useApp().restApi.postToResourceAction(
             ASSISTANTS,
-            `${id}/actions/share`,
-            {
-                data: shares.map((share) => ({
-                    type: 'users',
-                    id: String(share.userId),
-                    meta: {can_edit: share.canEdit}
-                }))
-            },
+            `${id}/actions/${list}`,
+            { data: userIds.map((userId) => ({ type: 'users', id: String(userId) })) },
             { schema: SharesResponseSchema }
         );
         return response.data;
     } catch (err) {
-        throw logApiError('syncAssistantShares', err, { id, count: shares.length });
-    }
-}
-
-/** A freshly minted share link; the plain token is only ever answered once. */
-export interface AssistantShareLink {
-    token: string;
-    canEdit: boolean;
-    expiresAt: string;
-}
-
-const ShareLinkResponseSchema = z.object({
-    data: z.object({
-        token: z.string(),
-        can_edit: z.boolean(),
-        expires_at: z.string()
-    })
-}).transform((wire): AssistantShareLink => ({
-    token: wire.data.token,
-    canEdit: wire.data.can_edit,
-    expiresAt: wire.data.expires_at
-}));
-
-/**
- * Mints a new multi-use, expiring share link — creator-only. Whoever redeems
- * it joins the share list with the link's `canEdit` grant.
- */
-export async function createAssistantShareLink(id: string, canEdit: boolean): Promise<AssistantShareLink> {
-    try {
-        return await useApp().restApi.postToResourceAction(
-            ASSISTANTS,
-            `${id}/actions/share-link`,
-            { data: { can_edit: canEdit } },
-            { schema: ShareLinkResponseSchema }
-        );
-    } catch (err) {
-        throw logApiError('createAssistantShareLink', err, { id });
-    }
-}
-
-/**
- * Redeems a share link token: the signed-in user joins the link's assistant's
- * share list. Resolves with the assistant's id.
- */
-export async function redeemAssistantShareLink(token: string): Promise<string> {
-    try {
-        const response = await useApp().restApi.postToResourceAction(
-            ASSISTANTS,
-            'actions/redeem-share-link',
-            { data: { token } },
-            { schema: z.object({ data: z.object({ id: z.string() }) }) }
-        );
-        return response.data.id;
-    } catch (err) {
-        throw logApiError('redeemAssistantShareLink', err, {});
-    }
-}
-
-/** Revokes every outstanding share link of the assistant, creator-only. */
-export async function invalidateAssistantShareLink(id: string): Promise<void> {
-    if (!id) return;
-    try {
-        await useApp().restApi.deleteFromResourceAction(ASSISTANTS, `${id}/actions/share-link`);
-    } catch (err) {
-        throw logApiError('invalidateAssistantShareLink', err, { id });
+        throw logApiError('syncAssistantShares', err, { id, list, count: userIds.length });
     }
 }
 

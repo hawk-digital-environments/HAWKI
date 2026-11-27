@@ -30,15 +30,11 @@ final class AssistantConfig extends AbstractConfig
      */
     public readonly string $builderGuideModel;
 
-    /** How long a generated share link stays redeemable. */
-    public readonly int $shareLinkTtlHours;
-
     public static function make(Repository $repo): static
     {
         return self::fromArray([
             'assistantVersionsDebounceSeconds' => (int) $repo->get('assistant.assistant_versions.debounce_seconds', 10),
             'builderGuideModel' => (string) $repo->get('assistant.builder.guide_model', 'gpt-5.6-luna'),
-            'shareLinkTtlHours' => (int) $repo->get('assistant.share_links.ttl_hours', 24),
         ]);
     }
 }

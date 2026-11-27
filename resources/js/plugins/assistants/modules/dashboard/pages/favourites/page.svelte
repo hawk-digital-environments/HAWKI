@@ -39,7 +39,7 @@
             name: searchQuery,
             assistant_category: [...activeFilters],
             is_favorite: true,
-            release_stage: [ReleaseMode.DRAFT, ReleaseMode.PRIVATE, ReleaseMode.ORGANIZATIONAL, ReleaseMode.FEDERATED]
+            release_stage: [ReleaseMode.DRAFT, ReleaseMode.PRIVATE, ReleaseMode.EXCLUSIVE, ReleaseMode.ORGANIZATIONAL, ReleaseMode.FEDERATED]
         });
     }
 

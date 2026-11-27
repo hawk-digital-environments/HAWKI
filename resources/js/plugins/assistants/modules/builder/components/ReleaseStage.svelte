@@ -7,6 +7,8 @@
     import SquareLock02Icon from "$lib/components/ui/icons/iconset/SquareLock02Icon.svelte";
     import CheckmarkBadge01Icon from "$lib/components/ui/icons/iconset/CheckmarkBadge01Icon.svelte";
     import GlobeIcon from "$lib/components/ui/icons/iconset/GlobeIcon.svelte";
+    import UserGroupIcon from "$lib/components/ui/icons/iconset/UserGroupIcon.svelte";
+    import SharePanel from "$plugins/assistants/modules/builder/components/SharePanel.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
 
 
@@ -14,6 +16,7 @@
     const builder = useBuilderContext();
 
     let currentValue = $derived(builder.draft.releaseStage);
+    const canManageAudience = $derived(builder.draft.actionPermissions?.listAudience === true);
 
     function update(value: string) {
         builder.set('releaseStage', value as ReleaseMode);
@@ -35,6 +38,11 @@
                      label={__('assistants.builder.publish.release_stage.private_label')}
                      description={__('assistants.builder.publish.release_stage.private_description')} />
 
+        <RadioOption value={ReleaseMode.EXCLUSIVE}
+                     icon={UserGroupIcon}
+                     label={__('assistants.builder.publish.release_stage.exclusive_label')}
+                     description={__('assistants.builder.publish.release_stage.exclusive_description')} />
+
         <RadioOption value={ReleaseMode.ORGANIZATIONAL}
                      icon={CheckmarkBadge01Icon}
                      label={__('assistants.builder.publish.release_stage.organizational_label')}
@@ -45,6 +53,15 @@
                      label={__('assistants.builder.publish.release_stage.federated_label')}
                      description={__('assistants.builder.publish.release_stage.federated_description')} />
     </RadioSwitch>
+
+    {#if currentValue === ReleaseMode.EXCLUSIVE && canManageAudience}
+        <SharePanel
+            list="audience"
+            title={__('assistants.share.audience_title')}
+            hint={__('assistants.share.audience_hint')}
+            emptyText={__('assistants.share.audience_empty')}
+        />
+    {/if}
 </div>
 
 

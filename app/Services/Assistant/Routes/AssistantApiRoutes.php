@@ -80,14 +80,10 @@ final class AssistantApiRoutes
                 $actions->withId()->post('actions/rollback', 'rollback');
                 $actions->withId()->post('actions/favorite', 'addFavorite');
                 $actions->withId()->delete('actions/favorite', 'removeFavorite');
-                $actions->withId()->get('actions/share', 'listShares');
-                $actions->withId()->post('actions/share', 'syncShares');
-                $actions->withId()->post('actions/share-link', 'createShareLink');
-                $actions->withId()->delete('actions/share-link', 'invalidateShareLink');
-                // Collection-level: the token names the assistant, and the
-                // redeemer cannot see it before redeeming.
-                $actions->post('actions/redeem-share-link', 'redeemShareLink')
-                    ->middleware('throttle:20,1');
+                $actions->withId()->get('actions/audience', 'listAudience');
+                $actions->withId()->post('actions/audience', 'syncAudience');
+                $actions->withId()->get('actions/co-authors', 'listCoAuthors');
+                $actions->withId()->post('actions/co-authors', 'syncCoAuthors');
                 $actions->withId()->post('actions/attachment', 'uploadAttachment');
                 $actions->withId()->delete('actions/attachment', 'deleteAttachment');
             });

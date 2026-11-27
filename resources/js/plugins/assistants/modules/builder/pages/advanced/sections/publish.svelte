@@ -4,7 +4,7 @@ import Alert from "$lib/components/ui/alert/Alert.svelte";
 import BuilderInput from "$plugins/assistants/modules/builder/components/BuilderInput.svelte";
 import PublishSummary from "$plugins/assistants/modules/builder/components/PublishSummary.svelte";
 import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
-import { ReleaseMode } from "$plugins/assistants/types/assistant/ReleaseMode";
+import { releaseRequiresReview } from "$plugins/assistants/types/assistant/ReleaseMode";
 import { ReviewStage } from "$plugins/assistants/types/assistant/ReviewStage";
 import TaskEdit01Icon from "$lib/components/ui/icons/iconset/TaskEdit01Icon.svelte";
 import CheckListIcon from "$lib/components/ui/icons/iconset/CheckListIcon.svelte";
@@ -34,11 +34,8 @@ let denialReason = $derived(
 );
 
 // The review triggers and the "start review" hint only apply to release paths
-// that actually kick off a review (organisational / federated).
-let requiresReview = $derived(
-    assistant.releaseStage === ReleaseMode.ORGANIZATIONAL ||
-    assistant.releaseStage === ReleaseMode.FEDERATED
-);
+// that actually kick off a review (exclusive / organisational / federated).
+let requiresReview = $derived(releaseRequiresReview(assistant.releaseStage));
 
 </script>
 

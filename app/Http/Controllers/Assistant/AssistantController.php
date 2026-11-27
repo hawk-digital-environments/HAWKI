@@ -7,11 +7,8 @@ namespace App\Http\Controllers\Assistant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Assistant\AddFavoriteAssistantRequest;
 use App\Http\Requests\Assistant\AssistantHandlesRequest;
-use App\Http\Requests\Assistant\CreateShareLinkAssistantRequest;
 use App\Http\Requests\Assistant\DeleteAssistantAttachmentRequest;
-use App\Http\Requests\Assistant\InvalidateShareLinkAssistantRequest;
 use App\Http\Requests\Assistant\ListSharesAssistantRequest;
-use App\Http\Requests\Assistant\RedeemShareLinkAssistantRequest;
 use App\Http\Requests\Assistant\RemixAssistantRequest;
 use App\Http\Requests\Assistant\RemoveFavoriteAssistantRequest;
 use App\Http\Requests\Assistant\SyncSharesAssistantRequest;
@@ -29,6 +26,7 @@ use App\Services\Assistant\Events\AssistantUpdatedEvent;
 use App\Services\Assistant\Repositories\AssistantRepository;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\AssistantShare;
+use App\Services\Assistant\Values\AssistantShareRole;
 use App\Services\Storage\Values\FileReference;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
@@ -192,71 +190,41 @@ class AssistantController extends Controller
     }
 
     /**
-     * The assistant's current share list (`actions/share`), creator-only.
+     * The exclusive audience (`actions/audience`), creator-only.
      */
-    public function listShares(
-        ListSharesAssistantRequest $request,
-        Assistant $assistant,
-    ): JsonResponse {
-        return $this->shareDocument($this->assistantService->listShares($assistant));
+    public function listAudience(ListSharesAssistantRequest $request, Assistant $assistant): JsonResponse
+    {
+        return $this->shareDocument($this->assistantService->listShares($assistant, AssistantShareRole::AUDIENCE));
     }
 
     /**
-     * Replaces the share list with the request's set — attach new, update
-     * edit grants, detach absent — and answers with the resulting list, so
-     * the client needs no follow-up fetch.
+     * Replaces the exclusive audience with the request's set and answers with
+     * the resulting list, so the client needs no follow-up fetch.
      */
-    public function syncShares(
-        SyncSharesAssistantRequest $request,
-        Assistant $assistant,
-    ): JsonResponse {
-        return $this->shareDocument($this->assistantService->syncShares($assistant, $request->shares()));
+    public function syncAudience(SyncSharesAssistantRequest $request, Assistant $assistant): JsonResponse
+    {
+        return $this->shareDocument($this->assistantService->syncShares($assistant, AssistantShareRole::AUDIENCE, $request->userIds()));
     }
 
     /**
-     * Mints a new share link (`actions/share-link`), creator-only. The plain
-     * token is answered exactly once; the client builds the URL from it.
+     * The co-authors (`actions/co-authors`), creator-only.
      */
-    public function createShareLink(
-        CreateShareLinkAssistantRequest $request,
-        Assistant $assistant,
-    ): JsonResponse {
-        $link = $this->assistantService->createShareLink($assistant, $request->user(), $request->canEdit());
-
-        return response()->json(['data' => $link->toArray()]);
+    public function listCoAuthors(ListSharesAssistantRequest $request, Assistant $assistant): JsonResponse
+    {
+        return $this->shareDocument($this->assistantService->listShares($assistant, AssistantShareRole::CO_AUTHOR));
     }
 
     /**
-     * Revokes every outstanding share link of the assistant (`DELETE
-     * actions/share-link`), creator-only. Tokens already sent stop working
-     * immediately; minting a fresh link is unaffected.
+     * Replaces the co-authors with the request's set, like {@see syncAudience()}.
      */
-    public function invalidateShareLink(
-        InvalidateShareLinkAssistantRequest $request,
-        Assistant $assistant,
-    ): Response {
-        $this->assistantService->invalidateShareLink($assistant);
-
-        return response()->noContent();
+    public function syncCoAuthors(SyncSharesAssistantRequest $request, Assistant $assistant): JsonResponse
+    {
+        return $this->shareDocument($this->assistantService->syncShares($assistant, AssistantShareRole::CO_AUTHOR, $request->userIds()));
     }
 
     /**
-     * Redeems a share link (`actions/redeem-share-link`): adds the caller to
-     * the link's assistant like a share would, then answers with the assistant.
-     */
-    public function redeemShareLink(
-        RedeemShareLinkAssistantRequest $request,
-        Route $route,
-        StoreContract $store,
-    ): Responsable {
-        $assistant = $this->assistantService->redeemShareLink($request->user(), $request->token());
-
-        return $this->refetchedResponse($route, $store, $assistant);
-    }
-
-    /**
-     * Renders shares as a JSON:API relationship document: linkage `meta`
-     * carries the per-member edit grant, `included` carries the user stubs.
+     * Renders a share list as a JSON:API relationship document: linkage in
+     * `data`, the user stubs in `included`.
      *
      * @param list<AssistantShare> $shares
      */
@@ -266,7 +234,6 @@ class AssistantController extends Controller
             'data' => array_map(static fn (AssistantShare $share): array => [
                 'type' => 'users',
                 'id' => (string) $share->userId,
-                'meta' => ['can_edit' => $share->canEdit],
             ], $shares),
             'included' => array_map(static fn (AssistantShare $share): array => [
                 'type' => 'users',

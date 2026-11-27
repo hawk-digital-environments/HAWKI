@@ -88,6 +88,7 @@ class AssistantHandlesStore implements DataStore {
                         // Note: Drafts are excluded from the menu
                         release_stage: [
                             ReleaseMode.PRIVATE,
+                            ReleaseMode.EXCLUSIVE,
                             ReleaseMode.ORGANIZATIONAL,
                             ReleaseMode.FEDERATED,
                         ].join(','),

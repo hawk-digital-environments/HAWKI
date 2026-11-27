@@ -25,6 +25,7 @@
     import SquareLock02Icon from '$lib/components/ui/icons/iconset/SquareLock02Icon.svelte';
     import CheckmarkBadge01Icon from '$lib/components/ui/icons/iconset/CheckmarkBadge01Icon.svelte';
     import GlobeIcon from '$lib/components/ui/icons/iconset/GlobeIcon.svelte';
+    import UserGroupIcon from '$lib/components/ui/icons/iconset/UserGroupIcon.svelte';
     import ShieldCheckIcon from '$lib/components/ui/icons/iconset/ShieldCheckIcon.svelte';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
     import Alert01Icon from '$lib/components/ui/icons/iconset/Alert01Icon.svelte';
@@ -46,6 +47,7 @@
     const releaseIcons: Record<ReleaseMode, IconComponent> = {
         [ReleaseMode.DRAFT]: TaskEdit01Icon,
         [ReleaseMode.PRIVATE]: SquareLock02Icon,
+        [ReleaseMode.EXCLUSIVE]: UserGroupIcon,
         [ReleaseMode.ORGANIZATIONAL]: CheckmarkBadge01Icon,
         [ReleaseMode.FEDERATED]: GlobeIcon,
     };

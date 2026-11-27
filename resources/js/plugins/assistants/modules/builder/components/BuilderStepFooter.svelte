@@ -48,6 +48,7 @@
         switch (builder.draft.releaseStage) {
             case ReleaseMode.PRIVATE:
                 return __('assistants.builder.publish.save_as_private_assistant');
+            case ReleaseMode.EXCLUSIVE:
             case ReleaseMode.ORGANIZATIONAL:
             case ReleaseMode.FEDERATED:
                 return __('assistants.builder.publish.save_as_review');

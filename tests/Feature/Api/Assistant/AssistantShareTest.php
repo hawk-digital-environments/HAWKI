@@ -7,10 +7,14 @@ namespace Tests\Feature\Api\Assistant;
 use App\Models\Assistants\Assistant;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Assistant\AssistantService;
 use App\Services\Assistant\Events\AssistantCreatedEvent;
+use App\Services\Assistant\Values\AssistantReleaseStage;
+use App\Services\Assistant\Values\AssistantReviewStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use Tests\TestCase;
 
@@ -50,7 +54,7 @@ class AssistantShareTest extends TestCase
     }
 
     /**
-     * Share writes live on actions/share alone: POST/PATCH/DELETE on the
+     * Share writes live on the audience and co-author actions alone: POST/PATCH/DELETE on the
      * relationship are not routes (only the read-only GETs remain).
      */
     public function testSharedUsersRelationshipWritesHaveNoRoutes(): void
@@ -74,284 +78,183 @@ class AssistantShareTest extends TestCase
         ]);
     }
 
-    public function testSharedUserCanListPrivateAssistant(): void
+    // --- visibility: co-authors always, audience only while exclusive ---
+
+    public function testCoAuthorCanListAndShowPrivateAssistant(): void
     {
         $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'private',
-        ]);
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id, 'release_stage' => 'private']);
 
-        $viewer = User::factory()->create();
-        $assistant->sharedUsers()->sync([$viewer->id]);
+        $coAuthor = User::factory()->create();
+        $assistant->sharedUsers()->sync([$coAuthor->id => ['can_edit' => true]]);
 
-        $this->actingAsUser($viewer);
+        $this->actingAsUser($coAuthor);
 
         $this->jsonApiRaw('get', '/api/hawki/v1/assistants')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', (string) $assistant->id);
+
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
+            ->assertOk();
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?filter[shared_with_user]=true')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
     }
 
-    public function testSharedUserCanShowPrivateAssistant(): void
+    public function testCoAuthorCanShowDraftAssistant(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id, 'release_stage' => 'draft']);
+
+        $coAuthor = User::factory()->create();
+        $assistant->sharedUsers()->sync([$coAuthor->id => ['can_edit' => true]]);
+
+        $this->actingAsUser($coAuthor);
+
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
+            ->assertOk();
+    }
+
+    /**
+     * Until the exclusive stage is approved the assistant waits as private,
+     * and its audience must not reach it yet.
+     */
+    public function testAudienceCannotSeePrivateAssistant(): void
     {
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $owner->id,
             'release_stage' => 'private',
+            'requested_release_stage' => 'exclusive',
         ]);
 
-        $viewer = User::factory()->create();
-        $assistant->sharedUsers()->sync([$viewer->id]);
+        $member = User::factory()->create();
+        $assistant->sharedUsers()->sync([$member->id => ['can_edit' => false]]);
 
-        $this->actingAsUser($viewer);
-
-        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
-            ->assertOk()
-            ->assertJsonPath('data.id', (string) $assistant->id);
-    }
-
-    public function testNonSharedUserCannotListPrivateAssistant(): void
-    {
-        $owner = User::factory()->create();
-        Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'private',
-        ]);
-
-        $other = User::factory()->create();
-
-        $this->actingAsUser($other);
+        $this->actingAsUser($member);
 
         $this->jsonApiRaw('get', '/api/hawki/v1/assistants')
             ->assertOk()
             ->assertJsonCount(0, 'data');
-    }
-
-    public function testNonSharedUserCannotShowPrivateAssistant(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'private',
-        ]);
-
-        $other = User::factory()->create();
-
-        $this->actingAsUser($other);
 
         $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
             ->assertForbidden();
     }
 
-    public function testSharedUserCanListDraftAssistant(): void
+    public function testAudienceSeesExclusiveAssistant(): void
     {
         $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'draft',
-        ]);
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id, 'release_stage' => 'exclusive']);
 
-        $viewer = User::factory()->create();
-        $assistant->sharedUsers()->sync([$viewer->id]);
+        $member = User::factory()->create();
+        $assistant->sharedUsers()->sync([$member->id => ['can_edit' => false]]);
 
-        $this->actingAsUser($viewer);
+        $this->actingAsUser($member);
 
-        $this->jsonApiRaw('get', '/api/hawki/v1/assistants')
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
+            ->assertOk()
+            ->assertJsonPath('data.links.update.meta.message', 'DENIED');
+
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants?filter[shared_with_user]=true')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', (string) $assistant->id);
     }
 
-    public function testSharedUserCanShowDraftAssistant(): void
+    public function testExclusiveAssistantIsHiddenFromEveryoneElse(): void
     {
         $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'draft',
-        ]);
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id, 'release_stage' => 'exclusive']);
+        $assistant->sharedUsers()->sync([User::factory()->create()->id => ['can_edit' => false]]);
 
-        $viewer = User::factory()->create();
-        $assistant->sharedUsers()->sync([$viewer->id]);
+        $this->actingAsUser(User::factory()->create());
 
-        $this->actingAsUser($viewer);
+        $this->jsonApiRaw('get', '/api/hawki/v1/assistants')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
 
         $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
-            ->assertOk()
-            ->assertJsonPath('data.id', (string) $assistant->id);
+            ->assertForbidden();
     }
 
-    public function testDetachingRevokesVisibility(): void
+    public function testRemovingCoAuthorRevokesVisibility(): void
     {
         $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'private',
-        ]);
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id, 'release_stage' => 'private']);
 
-        $viewer = User::factory()->create();
-        $assistant->sharedUsers()->sync([$viewer->id]);
+        $coAuthor = User::factory()->create();
+        $assistant->sharedUsers()->sync([$coAuthor->id => ['can_edit' => true]]);
 
         $this->actingAsUser($owner);
 
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => [],
-        ])->assertSuccessful();
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/co-authors", ['data' => []])
+            ->assertSuccessful();
 
-        $this->actingAsUser($viewer);
-
-        $this->jsonApiRaw('get', '/api/hawki/v1/assistants')
-            ->assertOk()
-            ->assertJsonCount(0, 'data');
+        $this->actingAsUser($coAuthor);
 
         $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}")
             ->assertForbidden();
     }
 
-    // --- actions/share: list + sync ---
+    // --- actions/audience + actions/co-authors: list + sync ---
 
-    public function testCreatorCanListShares(): void
+    public function testCreatorListsEachShareListSeparately(): void
     {
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
 
         $alice = User::factory()->create(['name' => 'Alice']);
-        $assistant->sharedUsers()->sync([$alice->id => ['can_edit' => true]]);
+        $bob = User::factory()->create();
+        $assistant->sharedUsers()->sync([
+            $alice->id => ['can_edit' => false],
+            $bob->id => ['can_edit' => true],
+        ]);
 
         $this->actingAsUser($owner);
 
-        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}/actions/share")
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}/actions/audience")
             ->assertOk()
+            ->assertJsonCount(1, 'data')
             ->assertJson([
-                'data' => [
-                    [
-                        'type' => 'users',
-                        'id' => (string) $alice->id,
-                        'meta' => ['can_edit' => true],
+                'data' => [['type' => 'users', 'id' => (string) $alice->id]],
+                'included' => [[
+                    'type' => 'users',
+                    'id' => (string) $alice->id,
+                    'attributes' => [
+                        'display_name' => 'Alice',
+                        'username' => $alice->username,
+                        'avatar' => null,
                     ],
-                ],
-                'included' => [
-                    [
-                        'type' => 'users',
-                        'id' => (string) $alice->id,
-                        'attributes' => [
-                            'display_name' => 'Alice',
-                            'username' => $alice->username,
-                            'avatar' => null,
-                        ],
-                    ],
-                ],
+                ]],
             ]);
-    }
 
-    public function testNonCreatorCannotListShares(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
-        $assistant->sharedUsers()->sync([User::factory()->create()->id]);
-
-        $this->actingAsUser(User::factory()->create());
-
-        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}/actions/share")
-            ->assertForbidden();
-    }
-
-    public function testSyncAttachesUpdatesAndDetachesInOneCall(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
-
-        $alice = User::factory()->create();
-        $bob = User::factory()->create();
-        $assistant->sharedUsers()->sync([$alice->id => ['can_edit' => false]]);
-
-        $this->actingAsUser($owner);
-
-        $response = $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => [
-                ['type' => 'users', 'id' => (string) $alice->id, 'meta' => ['can_edit' => true]],
-                ['type' => 'users', 'id' => (string) $bob->id],
-            ],
-        ])
+        $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}/actions/co-authors")
             ->assertOk()
-            ->assertJsonCount(2, 'data')
-            ->assertJsonCount(2, 'included');
-
-        // Absent meta means the use-only grant on the wire too.
-        $canEditById = collect($response->json('data'))->pluck('meta.can_edit', 'id');
-        self::assertTrue($canEditById[(string) $alice->id]);
-        self::assertFalse($canEditById[(string) $bob->id]);
-
-        $this->assertDatabaseHas('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $alice->id,
-            'can_edit' => true,
-        ]);
-        $this->assertDatabaseHas('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $bob->id,
-            'can_edit' => false,
-        ]);
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', (string) $bob->id);
     }
 
-    public function testSyncWithEmptyListDetachesEveryone(): void
+    public function testOnlyTheCreatorManagesShareLists(): void
     {
         $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
-        $assistant->sharedUsers()->sync([User::factory()->create()->id]);
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id, 'release_stage' => 'organizational']);
 
-        $this->actingAsUser($owner);
+        $coAuthor = User::factory()->create();
+        $assistant->sharedUsers()->sync([$coAuthor->id => ['can_edit' => true]]);
 
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => [],
-        ])
-            ->assertOk()
-            ->assertJsonCount(0, 'data')
-            ->assertJsonCount(0, 'included');
+        foreach ([$coAuthor, User::factory()->create()] as $user) {
+            $this->actingAsUser($user);
 
-        self::assertSame(0, $assistant->sharedUsers()->count());
-    }
-
-    public function testSyncDetachesAbsentUsers(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
-
-        $alice = User::factory()->create();
-        $bob = User::factory()->create();
-        $assistant->sharedUsers()->sync([$alice->id, $bob->id]);
-
-        $this->actingAsUser($owner);
-
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => [['type' => 'users', 'id' => (string) $bob->id]],
-        ])
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
-
-        $this->assertDatabaseMissing('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $alice->id,
-        ]);
-        $this->assertDatabaseHas('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $bob->id,
-        ]);
-    }
-
-    public function testNonCreatorCannotSyncShares(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'organizational',
-        ]);
-
-        $this->actingAsUser(User::factory()->create());
-
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
-            'data' => [['type' => 'users', 'id' => (string) User::factory()->create()->id]],
-        ])->assertForbidden();
+            foreach (['audience', 'co-authors'] as $action) {
+                $uri = "/api/hawki/v1/assistants/{$assistant->id}/actions/{$action}";
+                $this->jsonApiRaw('get', $uri)->assertForbidden();
+                $this->jsonApiRaw('post', $uri, [
+                    'data' => [['type' => 'users', 'id' => (string) User::factory()->create()->id]],
+                ])->assertForbidden();
+            }
+        }
     }
 
     public function testGuestCannotSyncShares(): void
@@ -360,9 +263,102 @@ class AssistantShareTest extends TestCase
         $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
 
         // The FormRequest gate answers before auth middleware: 403, not 401.
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/audience", [
             'data' => [['type' => 'users', 'id' => '1']],
         ])->assertForbidden();
+    }
+
+    public function testSyncAudienceReplacesTheAudienceOnly(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+
+        $alice = User::factory()->create();
+        $bob = User::factory()->create();
+        $carol = User::factory()->create();
+        $assistant->sharedUsers()->sync([
+            $alice->id => ['can_edit' => false],
+            $bob->id => ['can_edit' => true],
+        ]);
+
+        $this->actingAsUser($owner);
+
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/audience", [
+            'data' => [['type' => 'users', 'id' => (string) $carol->id]],
+        ])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', (string) $carol->id);
+
+        $this->assertDatabaseMissing('assistant_shared_users', ['assistant_id' => $assistant->id, 'user_id' => $alice->id]);
+        $this->assertDatabaseHas('assistant_shared_users', ['assistant_id' => $assistant->id, 'user_id' => $carol->id, 'can_edit' => false]);
+        $this->assertDatabaseHas('assistant_shared_users', ['assistant_id' => $assistant->id, 'user_id' => $bob->id, 'can_edit' => true]);
+    }
+
+    /**
+     * A co-author already has every right the audience grants: listing them
+     * in the audience neither demotes them nor duplicates the row.
+     */
+    public function testSyncAudienceSkipsCoAuthors(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+
+        $bob = User::factory()->create();
+        $assistant->sharedUsers()->sync([$bob->id => ['can_edit' => true]]);
+
+        $this->actingAsUser($owner);
+
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/audience", [
+            'data' => [['type' => 'users', 'id' => (string) $bob->id]],
+        ])
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->assertDatabaseHas('assistant_shared_users', ['assistant_id' => $assistant->id, 'user_id' => $bob->id, 'can_edit' => true]);
+    }
+
+    public function testSyncCoAuthorsPromotesAudienceMembers(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+
+        $alice = User::factory()->create();
+        $assistant->sharedUsers()->sync([$alice->id => ['can_edit' => false]]);
+
+        $this->actingAsUser($owner);
+
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/co-authors", [
+            'data' => [['type' => 'users', 'id' => (string) $alice->id]],
+        ])
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        self::assertSame(1, $assistant->sharedUsers()->count());
+        $this->assertDatabaseHas('assistant_shared_users', ['assistant_id' => $assistant->id, 'user_id' => $alice->id, 'can_edit' => true]);
+    }
+
+    public function testSyncWithEmptyListDetachesOnlyThatList(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+
+        $alice = User::factory()->create();
+        $bob = User::factory()->create();
+        $assistant->sharedUsers()->sync([
+            $alice->id => ['can_edit' => false],
+            $bob->id => ['can_edit' => true],
+        ]);
+
+        $this->actingAsUser($owner);
+
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/co-authors", ['data' => []])
+            ->assertOk()
+            ->assertJsonCount(0, 'data')
+            ->assertJsonCount(0, 'included');
+
+        $this->assertDatabaseMissing('assistant_shared_users', ['assistant_id' => $assistant->id, 'user_id' => $bob->id]);
+        $this->assertDatabaseHas('assistant_shared_users', ['assistant_id' => $assistant->id, 'user_id' => $alice->id]);
     }
 
     /**
@@ -376,7 +372,7 @@ class AssistantShareTest extends TestCase
 
         $this->actingAsUser($owner);
 
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/audience", [
             'data' => ['type' => 'users', 'id' => '1'],
         ])->assertStatus(422);
     }
@@ -388,7 +384,7 @@ class AssistantShareTest extends TestCase
 
         $this->actingAsUser($owner);
 
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/co-authors", [
             'data' => [['type' => 'users', 'id' => (string) $owner->id]],
         ])->assertStatus(422);
 
@@ -407,7 +403,7 @@ class AssistantShareTest extends TestCase
 
         $this->actingAsUser($owner);
 
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/audience", [
             'data' => [['type' => 'users', 'id' => (string) $removed->id]],
         ])->assertStatus(422);
     }
@@ -421,7 +417,7 @@ class AssistantShareTest extends TestCase
 
         $this->actingAsUser($owner);
 
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/audience", [
             'data' => [['type' => 'users', 'id' => (string) $app->id]],
         ])->assertStatus(422);
     }
@@ -435,10 +431,10 @@ class AssistantShareTest extends TestCase
 
         $this->actingAsUser($owner);
 
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", [
+        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/audience", [
             'data' => [
-                ['type' => 'users', 'id' => (string) $alice->id, 'meta' => ['can_edit' => false]],
-                ['type' => 'users', 'id' => (string) $alice->id, 'meta' => ['can_edit' => true]],
+                ['type' => 'users', 'id' => (string) $alice->id],
+                ['type' => 'users', 'id' => (string) $alice->id],
             ],
         ])->assertStatus(422);
 
@@ -478,27 +474,19 @@ class AssistantShareTest extends TestCase
         try {
             $this->actingAsUser($owner);
 
-            $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}/actions/share")
+            $this->jsonApiRaw('get', "/api/hawki/v1/assistants/{$assistant->id}/actions/audience")
                 ->assertOk()
                 ->assertJson([
-                    'data' => [
-                        [
-                            'type' => 'users',
-                            'id' => (string) $stranger->id,
-                            'meta' => ['can_edit' => false],
+                    'data' => [['type' => 'users', 'id' => (string) $stranger->id]],
+                    'included' => [[
+                        'type' => 'users',
+                        'id' => (string) $stranger->id,
+                        'attributes' => [
+                            'display_name' => 'Stranger',
+                            'username' => $stranger->username,
+                            'avatar' => null,
                         ],
-                    ],
-                    'included' => [
-                        [
-                            'type' => 'users',
-                            'id' => (string) $stranger->id,
-                            'attributes' => [
-                                'display_name' => 'Stranger',
-                                'username' => $stranger->username,
-                                'avatar' => null,
-                            ],
-                        ],
-                    ],
+                    ]],
                 ]);
         } finally {
             $state['armed'] = false;
@@ -516,30 +504,92 @@ class AssistantShareTest extends TestCase
         $this->actingAsUser($owner);
 
         $payload = ['data' => [
-            ['type' => 'users', 'id' => (string) $alice->id, 'meta' => ['can_edit' => true]],
-            ['type' => 'users', 'id' => (string) $bob->id, 'meta' => ['can_edit' => false]],
+            ['type' => 'users', 'id' => (string) $alice->id],
+            ['type' => 'users', 'id' => (string) $bob->id],
         ]];
 
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", $payload)
-            ->assertOk()
-            ->assertJsonCount(2, 'data');
-
-        // The very same list again: sync replaces, it never compounds —
-        // one row per user, grants unchanged.
-        $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/share", $payload)
-            ->assertOk()
-            ->assertJsonCount(2, 'data');
+        // The very same list twice: sync replaces, it never compounds.
+        foreach ([1, 2] as $_) {
+            $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/co-authors", $payload)
+                ->assertOk()
+                ->assertJsonCount(2, 'data');
+        }
 
         self::assertSame(2, $assistant->sharedUsers()->count());
-        $this->assertDatabaseHas('assistant_shared_users', [
+    }
+
+    // --- exclusive release ---
+
+    public function testExclusiveReleaseNeedsAnAudience(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id, 'release_stage' => 'private']);
+
+        $this->actingAsUser($owner);
+
+        $this->releaseAs($assistant, 'exclusive')->assertStatus(422);
+
+        self::assertNull($assistant->refresh()->requested_release_stage);
+    }
+
+    public function testExclusiveReleaseWaitsForReviewAsPrivate(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id, 'release_stage' => 'draft']);
+        $assistant->sharedUsers()->sync([User::factory()->create()->id => ['can_edit' => false]]);
+
+        $this->actingAsUser($owner);
+
+        $this->releaseAs($assistant, 'exclusive')->assertOk();
+
+        $assistant->refresh();
+        self::assertSame(AssistantReleaseStage::PRIVATE, $assistant->release_stage);
+        self::assertSame(AssistantReleaseStage::EXCLUSIVE, $assistant->requested_release_stage);
+        $this->assertDatabaseHas('assistant_reviews', [
             'assistant_id' => $assistant->id,
-            'user_id' => $alice->id,
-            'can_edit' => true,
+            'status' => AssistantReviewStatus::PENDING->value,
         ]);
-        $this->assertDatabaseHas('assistant_shared_users', [
-            'assistant_id' => $assistant->id,
-            'user_id' => $bob->id,
-            'can_edit' => false,
+    }
+
+    public function testApprovalPromotesToExclusive(): void
+    {
+        $assistant = Assistant::factory()->create([
+            'release_stage' => 'private',
+            'requested_release_stage' => 'exclusive',
+        ]);
+
+        app(AssistantService::class)->promoteRequested($assistant);
+
+        $assistant->refresh();
+        self::assertSame(AssistantReleaseStage::EXCLUSIVE, $assistant->release_stage);
+        self::assertNull($assistant->requested_release_stage);
+    }
+
+    /**
+     * Exclusive reaches fewer people than the organization: stepping down
+     * from organizational needs no fresh review.
+     */
+    public function testMovingFromOrganizationalToExclusiveIsFree(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id, 'release_stage' => 'organizational']);
+        $assistant->sharedUsers()->sync([User::factory()->create()->id => ['can_edit' => false]]);
+
+        $this->actingAsUser($owner);
+
+        $this->releaseAs($assistant, 'exclusive')->assertOk();
+
+        self::assertSame(AssistantReleaseStage::EXCLUSIVE, $assistant->refresh()->release_stage);
+    }
+
+    private function releaseAs(Assistant $assistant, string $stage): TestResponse
+    {
+        return $this->jsonApiRaw('post', "/api/hawki/v1/assistants/{$assistant->id}/actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => ['release_stage' => $stage],
+            ],
         ]);
     }
 
@@ -612,7 +662,7 @@ class AssistantShareTest extends TestCase
         $this->assertDatabaseMissing('assistant_shared_users', ['user_id' => $alice->id]);
     }
 
-    // --- edit grant policy tier ---
+    // --- co-author policy tier ---
 
     public function testShareeWithEditGrantCanUpdate(): void
     {

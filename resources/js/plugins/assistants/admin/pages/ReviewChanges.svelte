@@ -122,7 +122,8 @@
      * own predicate, so dialog text and toast match what actually happens.
      */
     const rollbackSubmitsReview = $derived(
-        target?.release_stage === 'organizational'
+        target?.release_stage === 'exclusive'
+        || target?.release_stage === 'organizational'
         || target?.release_stage === 'federated'
         || target?.assistant_review?.status === 'pending'
     );

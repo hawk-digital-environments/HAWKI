@@ -711,10 +711,16 @@ class AssistantIndexTest extends TestCase
 
         $shared = Assistant::factory()->create([
             'creator_id' => $owner->id,
-            'release_stage' => AssistantReleaseStage::PRIVATE,
+            'release_stage' => AssistantReleaseStage::EXCLUSIVE,
             'name' => 'Shared with me',
         ]);
         $shared->sharedUsers()->sync([$user->id]);
+
+        // A private assistant's audience waits for the exclusive approval.
+        Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => AssistantReleaseStage::PRIVATE,
+        ])->sharedUsers()->sync([$user->id]);
 
         Assistant::factory()->create([
             'creator_id' => $user->id,

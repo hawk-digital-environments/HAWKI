@@ -7,7 +7,8 @@ namespace App\Models\Assistants;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * One row of the assistant_shared_users pivot. Exists so edit-grant checks
+ * One row of the assistant_shared_users pivot: an exclusive-audience member
+ * (`can_edit` false) or a co-author (`can_edit` true). Exists so share checks
  * can eager-load the pivot directly (see AssistantSchema::with()), without
  * the User model's access scope filtering stranger sharees out.
  */

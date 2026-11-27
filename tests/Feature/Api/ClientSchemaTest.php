@@ -262,7 +262,7 @@ class ClientSchemaTest extends TestCase
 
         // Enum constraint
         self::assertSame(
-            ['draft', 'private', 'organizational', 'federated'],
+            ['draft', 'private', 'exclusive', 'organizational', 'federated'],
             $attrs['release_stage']['constraints']['values'],
         );
 
@@ -293,7 +293,7 @@ class ClientSchemaTest extends TestCase
 
         self::assertSame('string', $properties['release_stage']['type']);
         self::assertSame(
-            ['draft', 'private', 'organizational', 'federated'],
+            ['draft', 'private', 'exclusive', 'organizational', 'federated'],
             $properties['release_stage']['enum'],
         );
 

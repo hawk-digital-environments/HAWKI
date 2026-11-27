@@ -28,7 +28,7 @@ class UnpublishReleasedAssistantOnEdit
 
         $assistant = $event->assistant;
 
-        if (!$assistant->release_stage->isPublic()) {
+        if (!$assistant->release_stage->requiresReview()) {
             return;
         }
 

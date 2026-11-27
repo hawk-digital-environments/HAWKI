@@ -8,7 +8,6 @@
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import autoAnimate, { type AutoAnimationPlugin } from '@formkit/auto-animate';
     import { tick, untrack, type Snippet } from 'svelte';
-    import Loader from '$lib/components/ui/loader/Loader.svelte';
     import { useReducedMotion } from '$lib/utils/transitions/reducedMotion.svelte';
     import { useTranslator } from '$lib/app/hooks/useTranslator.svelte.js';
     import { useAssistantListContext } from '$plugins/assistants/modules/dashboard/contexts/AssistantListContext.svelte.js';
@@ -17,12 +16,8 @@
     import { useQueryState } from '$lib/components/ui/routing/hooks/useQueryState.svelte';
     import AssistantDetailModal from '$plugins/assistants/modules/dashboard/components/assistantDetail/AssistantDetailModal.svelte';
     import CategoryBar from '$plugins/assistants/modules/dashboard/components/categoryBar/CategoryBar.svelte';
-    import { useToastContext } from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import { redeemAssistantShareLink } from '$plugins/assistants/api/resources/assistantsClient';
-    import { ApiError } from '$plugins/assistants/api/errors';
 
     const { __ } = useTranslator();
-    const toast = useToastContext();
 
     // Read the list published by the page that owns it. No props to thread
     // through, and nothing is retained once that page unmounts.
@@ -130,33 +125,6 @@
         });
     }
 
-    // --- Share link -----------------------------------------------------
-    // `?invite=<token>` joins the link's assistant before its detail opens;
-    // the modal waits, as it could not load the assistant before that.
-    const invite = useQueryState('invite');
-    let redeeming = $state(Boolean(invite.current));
-
-    $effect(() => {
-        const token = invite.current;
-        if (token) untrack(() => void redeemInvite(token));
-    });
-
-    async function redeemInvite(token: string): Promise<void> {
-        redeeming = true;
-        try {
-            const id = await redeemAssistantShareLink(token);
-            router.setQuery({ invite: null, assistant: id }, { replace: true });
-            toast.success(__('assistants.detail.share_link_redeemed'));
-            void list.load();
-        } catch (err) {
-            const error = ApiError.from(err);
-            router.setQuery({ invite: null, assistant: null }, { replace: true });
-            toast.error(error.status === 403 ? __('assistants.detail.share_link_invalid') : error.userMessage);
-        } finally {
-            redeeming = false;
-        }
-    }
-
     /** A deleted assistant has no card to morph back into: close plainly, refresh. */
     async function onDetailDeleted(): Promise<void> {
         await dismissDetail();
@@ -234,23 +202,19 @@
 {/if}
 
 <div class="wrapper">
-    <!-- While an ?invite= token is redeemed the assistant cannot be shown
-         yet; the spinner stands in for the grid until it is. -->
-    <Loader active={redeeming} label={__('ui.loading')}>
-        <div
-            class="grid-responsive"
-            use:autoAnimate={gridMotion}
-        >
-            {#each list.assistants as assistant (assistant.id)}
-                <AssistantCard
-                    {assistant}
-                    onOpen={(card) => {
-                        if (assistant.id) openDetail(card, assistant.id);
-                    }}
-                />
-            {/each}
-        </div>
-    </Loader>
+    <div
+        class="grid-responsive"
+        use:autoAnimate={gridMotion}
+    >
+        {#each list.assistants as assistant (assistant.id)}
+            <AssistantCard
+                {assistant}
+                onOpen={(card) => {
+                    if (assistant.id) openDetail(card, assistant.id);
+                }}
+            />
+        {/each}
+    </div>
 
     <PageNavigation
         currentPage={list.currentPage}
@@ -302,7 +266,7 @@
     </div>
 {/if}
 
-{#if detailId.current && !redeeming}
+{#if detailId.current}
     <AssistantDetailModal
         id={detailId.current}
         initial={list.assistants.find((item) => item.id === detailId.current)}

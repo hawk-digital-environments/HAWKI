@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Assistant;
 
-use App\Services\Assistant\Values\AssistantShareGrant;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 
@@ -12,7 +11,7 @@ class SyncSharesAssistantRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        Gate::authorize('syncShares', $this->route('assistant'));
+        Gate::authorize('manageShares', $this->route('assistant'));
 
         return true;
     }
@@ -23,18 +22,17 @@ class SyncSharesAssistantRequest extends FormRequest
             'data' => ['present', 'array'],
             'data.*.type' => ['required', 'string', 'in:users'],
             'data.*.id' => ['required', 'integer', 'distinct'],
-            'data.*.meta.can_edit' => ['sometimes', 'boolean'],
         ];
     }
 
     /**
-     * @return list<AssistantShareGrant>
+     * @return list<int>
      */
-    public function shares(): array
+    public function userIds(): array
     {
-        /** @var array<int, array{type: string, id: int|string, meta?: array{can_edit?: bool}}> $identifiers */
+        /** @var array<int, array{type: string, id: int|string}> $identifiers */
         $identifiers = $this->validated('data', []);
 
-        return array_values(array_map(AssistantShareGrant::fromArray(...), $identifiers));
+        return array_values(array_map(static fn (array $identifier): int => (int) $identifier['id'], $identifiers));
     }
 }

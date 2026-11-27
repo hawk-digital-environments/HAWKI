@@ -11,7 +11,7 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
-    import {ReleaseMode} from "$plugins/assistants/types/assistant/ReleaseMode";
+    import {releaseRequiresReview} from "$plugins/assistants/types/assistant/ReleaseMode";
     import BuilderStepFooter from "$plugins/assistants/modules/builder/components/BuilderStepFooter.svelte";
     import ConfirmBuilderExit from "$plugins/assistants/modules/builder/components/ConfirmBuilderExit.svelte";
     import {breakpointsQueries} from '$lib/components/util/breakpoints/breakpoints.js';
@@ -48,8 +48,7 @@
         acknowledgedAssistantId = id;
         const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
         if (navigation?.type === 'reload') return;
-        if (releaseStage === ReleaseMode.ORGANIZATIONAL
-            || releaseStage === ReleaseMode.FEDERATED) {
+        if (releaseRequiresReview(releaseStage)) {
             releasedEditOpen = true;
         }
     });

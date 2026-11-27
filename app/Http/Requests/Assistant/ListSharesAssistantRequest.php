@@ -11,7 +11,7 @@ class ListSharesAssistantRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        Gate::authorize('listShares', $this->route('assistant'));
+        Gate::authorize('manageShares', $this->route('assistant'));
 
         return true;
     }

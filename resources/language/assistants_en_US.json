@@ -116,6 +116,7 @@
         },
         "release_stage": {
             "private": "Private",
+            "exclusive": "Exclusive",
             "organizational": "University-internal",
             "federated": "Federated",
             "draft": "Draft"
@@ -154,6 +155,7 @@
             "publish": "Publish",
             "release_draft": "Draft",
             "release_private": "Private",
+            "release_exclusive": "Exclusive",
             "release_organizational": "University-wide",
             "release_federated": "Federated",
             "release_pending": "In review",
@@ -162,34 +164,7 @@
             "release_failed": "The release status could not be changed.",
             "review_title": "Review",
             "review_requested_hint": "Awaiting review — the assistant is released as “:stage” once approved.",
-            "review_decided_on": "Decided on :date",
-            "share": "Share",
-            "share_title": "Share assistant",
-            "share_description": "Decide who may use or edit this assistant.",
-            "share_search_ph": "Search name, username or email…",
-            "share_search_info": "Search needs at least :min characters — the first :limit matches are shown.",
-            "share_searching": "Searching…",
-            "share_no_results": "No users found.",
-            "share_search_failed": "The user search failed.",
-            "share_can_edit": "Can edit",
-            "share_copy_link": "Share via link",
-            "share_link_copied": "Link copied to clipboard.",
-            "share_copy_failed": "The link could not be copied.",
-            "share_save": "Save shares",
-            "share_saved": "Shares saved.",
-            "share_save_failed": "The shares could not be saved.",
-            "share_link_label": "Share link",
-            "share_link_placeholder": "Creating link…",
-            "share_link_copy": "Copy link",
-            "share_link_expires": "Valid until :date. Anyone signed in who opens it gets access.",
-            "share_link_create_failed": "The share link could not be created.",
-            "share_link_can_edit": "Link recipients can edit",
-            "share_link_view_only": "Link recipients can only view",
-            "share_link_invalidate": "Revoke all share links",
-            "share_link_invalidated": "The share link has been revoked.",
-            "share_link_invalidate_failed": "The share link could not be revoked.",
-            "share_link_redeemed": "The assistant has been shared with you.",
-            "share_link_invalid": "This share link is invalid or has expired."
+            "review_decided_on": "Decided on :date"
         },
         "feedback": {
             "feedback_to": "Feedback to",
@@ -387,6 +362,8 @@
                     "draft_description": "Continue editing later; nothing gets published.",
                     "private_label": "Save as private assistant",
                     "private_description": "Visible only to you, no approval needed.",
+                    "exclusive_label": "Share exclusively",
+                    "exclusive_description": "Only the people you pick can use it. Not listed in the store. Needs approval.",
                     "organizational_label": "Share within your university",
                     "organizational_description": "For release within your university.",
                     "federated_label": "Share across the federation",
@@ -395,6 +372,7 @@
                 "status": {
                     "draft": "Draft",
                     "private": "Private",
+                    "exclusive": "In review",
                     "organizational": "In review",
                     "federated": "In review",
                     "denied": "Denied",
@@ -403,6 +381,7 @@
                 "status_hint": {
                     "draft": "Not published yet",
                     "private": "Visible only to you",
+                    "exclusive": "Reviewed, then shared with selected people",
                     "organizational": "Reviewed by your university",
                     "federated": "Reviewed across the federation",
                     "denied": "Contact your administrator",
@@ -591,6 +570,24 @@
                 "continue_to": "Continue to :step",
                 "submit": "Submit"
             }
+        },
+        "share": {
+            "search_ph": "Search name, username or email…",
+            "search_info": "Search needs at least :min characters — the first :limit matches are shown.",
+            "searching": "Searching…",
+            "no_results": "No users found.",
+            "search_failed": "The user search failed.",
+            "load_failed": "The list could not be loaded.",
+            "save_failed": "The change could not be saved.",
+            "remove": "Remove :name",
+            "empty": "Nobody added yet.",
+            "audience_title": "People with access",
+            "audience_hint": "They can use the assistant once the review approves it, but cannot edit it.",
+            "co_authors_toggle": "Add co-authors",
+            "co_authors_description": "Co-authors can edit this assistant with you. Publishing stays with you.",
+            "co_authors_title": "Co-authors",
+            "audience_empty": "Add at least one person to share the assistant exclusively.",
+            "co_authors_hint": "They see and edit the same assistant; changes are saved for everyone."
         }
     }
 }

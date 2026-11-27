@@ -6,28 +6,23 @@ namespace App\Services\Assistant\Repositories;
 
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantSharedUser;
-use App\Models\Assistants\AssistantShareLink;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Assistant\Exceptions\UnshareableUserException;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\AssistantShare;
-use App\Services\Assistant\Values\AssistantShareGrant;
+use App\Services\Assistant\Values\AssistantShareRole;
 use App\Services\Storage\Values\StoredFileIdentifier;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
-use App\Services\System\Time\CarbonClockInterface;
 use App\Services\Users\Repositories\UserRepository;
-use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Str;
 
 #[UseModel(Assistant::class)]
 class AssistantRepository extends AbstractRepository
 {
     public function __construct(
         private readonly UserRepository $users,
-        private readonly CarbonClockInterface $clock,
     ) {
     }
 
@@ -46,10 +41,10 @@ class AssistantRepository extends AbstractRepository
 
     public function filterVisibleForUser(Builder $query, User $user): Builder
     {
-        return $query->where(static function ($q) use ($user): void {
+        return $query->where(function (Builder $q) use ($user): void {
             $q->whereIn('release_stage', AssistantReleaseStage::publiclyVisibleValues())
                 ->orWhere('creator_id', $user->id)
-                ->orWhereHas('sharedUsers', static fn ($sq) => $sq->where('user_id', $user->id));
+                ->orWhere(fn (Builder $sq) => $this->whereSharedWith($sq, $user));
         });
     }
 
@@ -72,18 +67,55 @@ class AssistantRepository extends AbstractRepository
             return true;
         }
 
-        return $assistant->sharedUsers()
-            ->where('user_id', $user->id)
-            ->exists();
+        return $this->isSharedWith($assistant, $user);
     }
 
     /**
-     * Assistants another user shared with the given one (the `sharedUsers`
-     * pivot), independent of their release stage.
+     * Assistants another user shared with the given one: those they co-author
+     * at any stage, and approved exclusive ones whose audience they are in.
      */
     public function filterSharedWithUser(Builder $query, User $user): Builder
     {
-        return $query->whereHas('sharedUsers', static fn ($q) => $q->where('user_id', $user->id));
+        return $query->where(fn (Builder $q) => $this->whereSharedWith($q, $user));
+    }
+
+    /**
+     * Query form of {@see isSharedWith()}. Runs on the pivot model, so the
+     * User model's access scope never hides a share.
+     */
+    private function whereSharedWith(Builder $query, User $user): Builder
+    {
+        return $query
+            ->whereHas('sharedUserPivots', static fn (Builder $q) => $q->where('user_id', $user->id)->where('can_edit', true))
+            ->orWhere(static function (Builder $q) use ($user): void {
+                $q->where('release_stage', AssistantReleaseStage::EXCLUSIVE->value)
+                    ->whereHas('sharedUserPivots', static fn (Builder $pq) => $pq->where('user_id', $user->id));
+            });
+    }
+
+    /**
+     * Co-authors see the assistant at every stage; its audience only once the
+     * exclusive stage is approved (until then it waits as private).
+     */
+    private function isSharedWith(Assistant $assistant, User $user): bool
+    {
+        $pivot = $assistant->relationLoaded('sharedUserPivots')
+            ? $assistant->sharedUserPivots->firstWhere('user_id', $user->id)
+            : $assistant->sharedUserPivots()->where('user_id', $user->id)->first();
+
+        if (null === $pivot) {
+            return false;
+        }
+
+        return $pivot->can_edit || AssistantReleaseStage::EXCLUSIVE === $assistant->release_stage;
+    }
+
+    /**
+     * Whether the assistant has anyone in the given share list.
+     */
+    public function hasShares(Assistant $assistant, AssistantShareRole $role): bool
+    {
+        return $assistant->sharedUserPivots()->where('can_edit', $role->canEdit())->exists();
     }
 
     /**
@@ -105,10 +137,9 @@ class AssistantRepository extends AbstractRepository
 
     /**
      * "Privileged" tier (M): the assistant's creator, an admin of the
-     * assistant's organization, or a user the assistant is shared with under
-     * the edit grant. Used for sensitive relationships (assistant_tags,
-     * assistant_feedback, assistant_review, assistant_setting_values,
-     * ai_tools).
+     * assistant's organization, or one of its co-authors. Used for sensitive
+     * relationships (assistant_tags, assistant_feedback, assistant_review,
+     * assistant_setting_values, ai_tools).
      */
     public function isPrivileged(User $user, Assistant $assistant): bool
     {
@@ -127,7 +158,7 @@ class AssistantRepository extends AbstractRepository
      * Query scope equivalent of the privileged tier, for scoping collections of
      * assistants (or child resources via whereHas('assistant', ...)) to those the
      * user may manage: assistants they created, that belong to an organization
-     * they administer, or that are shared with them under the edit grant.
+     * they administer, or that they co-author.
      */
     public function filterPrivilegedForUser(Builder $query, User $user): Builder
     {
@@ -139,15 +170,14 @@ class AssistantRepository extends AbstractRepository
                             ->where('organization_user.role', 'admin');
                     });
                 })
-                ->orWhereHas('sharedUsers', static function (Builder $shareQuery) use ($user): void {
-                    $shareQuery->where('user_id', $user->id)
-                        ->where('assistant_shared_users.can_edit', true);
+                ->orWhereHas('sharedUserPivots', static function (Builder $shareQuery) use ($user): void {
+                    $shareQuery->where('user_id', $user->id)->where('can_edit', true);
                 });
         });
     }
 
     /**
-     * Whether the assistant is shared with the user under the edit grant.
+     * Whether the user is a co-author of the assistant.
      * Uses the schema-eager-loaded pivots when present, else one exists()
      * query (see AssistantSchema::with()).
      */
@@ -159,14 +189,14 @@ class AssistantRepository extends AbstractRepository
             );
         }
 
-        return $assistant->sharedUsers()
+        return $assistant->sharedUserPivots()
             ->where('user_id', $user->id)
-            ->where('assistant_shared_users.can_edit', true)
+            ->where('can_edit', true)
             ->exists();
     }
 
     /**
-     * The assistant's current share list, newest share first.
+     * One of the assistant's share lists, newest share first.
      *
      * Deliberately without the User model's global scopes: the `access`
      * scope would hide freshly shared strangers from the very list that
@@ -174,10 +204,11 @@ class AssistantRepository extends AbstractRepository
      *
      * @return list<AssistantShare>
      */
-    public function listShares(Assistant $assistant): array
+    public function listShares(Assistant $assistant, AssistantShareRole $role): array
     {
         return $assistant->sharedUsers()
             ->withoutGlobalScopes()
+            ->wherePivot('can_edit', $role->canEdit())
             ->orderByPivot('created_at', 'desc')
             ->orderByPivot('user_id')
             ->get()
@@ -185,99 +216,46 @@ class AssistantRepository extends AbstractRepository
                 userId: $user->id,
                 displayName: $user->name ?: $user->username,
                 username: $user->username,
-                canEdit: (bool) ($user->getRelation('pivot')->can_edit ?? false),
                 avatar: StoredFileIdentifier::tryFromUserAvatar($user)?->__toString(),
             ))
             ->all();
     }
 
     /**
-     * Replaces the assistant's share list with the given set — attach new,
-     * update changed `can_edit` flags, detach absent. Returns the resulting
-     * list so callers need no follow-up fetch.
+     * Replaces one share list with the given users and leaves the other list
+     * alone. A co-author already has every right the audience grants, so
+     * co-authors in an audience payload are skipped; a co-author payload
+     * promotes audience members instead. Returns the resulting list.
      *
-     * @param list<AssistantShareGrant> $shares
+     * @param list<int> $userIds
      * @return list<AssistantShare>
      * @throws UnshareableUserException when a target cannot be shared with
      */
-    public function syncShares(Assistant $assistant, array $shares): array
+    public function syncShares(Assistant $assistant, AssistantShareRole $role, array $userIds): array
     {
-        $pivotData = [];
-        foreach ($shares as $share) {
-            $pivotData[$share->userId] = ['can_edit' => $share->canEdit];
-        }
+        $this->assertShareableTargets($assistant, $userIds);
 
-        $this->assertShareableTargets($assistant, array_keys($pivotData));
+        $pivots = AssistantSharedUser::query()->where('assistant_id', $assistant->id);
 
-        $assistant->sharedUsers()->sync($pivotData);
-
-        return $this->listShares($assistant);
-    }
-
-    /**
-     * Adds one user to the share list, as a share link redemption does. An
-     * existing grant is only ever widened, never narrowed; the creator is a no-op.
-     *
-     * @throws UnshareableUserException when the user cannot be shared with
-     */
-    public function grantShare(Assistant $assistant, int $userId, bool $canEdit): void
-    {
-        if ($assistant->creator_id === $userId) {
-            return;
-        }
-
-        $this->assertShareableTargets($assistant, [$userId]);
-
-        $pivot = AssistantSharedUser::query()->firstOrNew([
-            'assistant_id' => $assistant->id,
-            'user_id' => $userId,
-        ]);
-        $pivot->can_edit = $pivot->can_edit || $canEdit;
-        $pivot->save();
-    }
-
-    /**
-     * Stores a new share link and returns its plain token; only the hash is persisted.
-     */
-    public function createShareLink(Assistant $assistant, User $creator, bool $canEdit, CarbonInterface $expiresAt): string
-    {
-        $token = Str::random(48);
-
-        AssistantShareLink::query()->create([
-            'assistant_id' => $assistant->id,
-            'created_by' => $creator->id,
-            'token_hash' => self::hashShareToken($token),
-            'can_edit' => $canEdit,
-            'expires_at' => $expiresAt,
-        ]);
-
-        return $token;
-    }
-
-    public function findRedeemableShareLink(string $token): ?AssistantShareLink
-    {
-        return AssistantShareLink::query()
-            ->with('assistant')
-            ->where('token_hash', self::hashShareToken($token))
-            ->where('expires_at', '>', $this->clock->now())
-            ->first();
-    }
-
-    /**
-     * Deletes every share link of the assistant. Plain tokens are never
-     * stored, so revocation is all-or-nothing — one action kills all links
-     * minted so far, whatever grant they carry.
-     */
-    public function invalidateShareLinks(Assistant $assistant): int
-    {
-        return AssistantShareLink::query()
-            ->where('assistant_id', $assistant->id)
+        (clone $pivots)
+            ->where('can_edit', $role->canEdit())
+            ->whereNotIn('user_id', $userIds)
             ->delete();
-    }
 
-    private static function hashShareToken(string $token): string
-    {
-        return hash('sha256', $token);
+        $coAuthorIds = (clone $pivots)->where('can_edit', true)->pluck('user_id')->all();
+
+        foreach ($userIds as $userId) {
+            if (!$role->canEdit() && \in_array($userId, $coAuthorIds, true)) {
+                continue;
+            }
+
+            AssistantSharedUser::query()->updateOrCreate(
+                ['assistant_id' => $assistant->id, 'user_id' => $userId],
+                ['can_edit' => $role->canEdit()],
+            );
+        }
+
+        return $this->listShares($assistant, $role);
     }
 
     /**

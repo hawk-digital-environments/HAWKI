@@ -33,18 +33,4 @@ return [
     'builder' => [
         'guide_model' => env('ASSISTANT_GUIDE_MODEL', env('DEFAULT_MODEL', 'gpt-6.1-terra')),
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Share Links
-    |--------------------------------------------------------------------------
-    |
-    | How long a generated share link stays redeemable. Every copy mints a
-    | new link; expired links are removed by the scheduled model:prune.
-    |
-     */
-
-    'share_links' => [
-        'ttl_hours' => (int) env('ASSISTANT_SHARE_LINK_TTL_HOURS', 24),
-    ],
 ];

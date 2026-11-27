@@ -12,7 +12,7 @@ export const ReviewStatusSchema = z.enum(['pending', 'approved', 'denied', 'need
 export type ReviewStatus = z.infer<typeof ReviewStatusSchema>;
 
 /** `App\Services\Assistant\Values\AssistantReleaseStage` on the wire. */
-export const ReleaseStageSchema = z.enum(['draft', 'private', 'organizational', 'federated']);
+export const ReleaseStageSchema = z.enum(['draft', 'private', 'exclusive', 'organizational', 'federated']);
 export type ReleaseStage = z.infer<typeof ReleaseStageSchema>;
 
 /** The `assistant` include of a review row — just enough for the queue. */

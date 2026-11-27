@@ -36,7 +36,7 @@ class ClientSchemaGenerator
      */
     private const DB_ENUMS = [
         'assistants' => [
-            'release_stage' => ['draft', 'private', 'organizational', 'federated'],
+            'release_stage' => ['draft', 'private', 'exclusive', 'organizational', 'federated'],
         ],
         'ai-tools' => [
             'type' => ['mcp', 'function'],

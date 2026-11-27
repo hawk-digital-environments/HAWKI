@@ -4,6 +4,8 @@
     import {assistantOptionsStore} from "$plugins/assistants/stores/AssistantOptionsStore.svelte";
     import {useTranslator} from "$lib/app/hooks/useTranslator.svelte";
     import AvatarBuilderPanel from "$plugins/assistants/components/avatarBuilder/AvatarBuilderPanel.svelte";
+    import SharePanel from "$plugins/assistants/modules/builder/components/SharePanel.svelte";
+    import {useBuilderContext} from "$plugins/assistants/modules/builder/contexts/BuilderContext.svelte.js";
 
     /**
      * The kernel's route renderer instantiates page components without passing
@@ -16,6 +18,7 @@
     const {}: Props = $props();
 
     const {__} = useTranslator();
+    const builder = useBuilderContext();
 </script>
 
 <div class="page-wrapper">
@@ -72,6 +75,16 @@
         <TagInput
                 label={__('assistants.builder.general.input_tags')}
                 hint={__('assistants.builder.general.input_tags_hint')}/>
+
+        {#if builder.draft.actionPermissions?.listCoAuthors === true}
+            <SharePanel
+                    list="co-authors"
+                    toggleLabel={__('assistants.share.co_authors_toggle')}
+                    toggleDescription={__('assistants.share.co_authors_description')}
+                    title={__('assistants.share.co_authors_title')}
+                    hint={__('assistants.share.co_authors_hint')}
+                    emptyText={__('assistants.share.empty')}/>
+        {/if}
     </div>
 
 </div>

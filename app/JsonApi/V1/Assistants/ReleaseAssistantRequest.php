@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\JsonApi\V1\Assistants;
 
 use App\Models\Assistants\Assistant;
+use App\Services\Assistant\Repositories\AssistantRepository;
 use App\Services\Assistant\Values\AssistantReleaseStage;
 use App\Services\Assistant\Values\AssistantReviewStatus;
+use App\Services\Assistant\Values\AssistantShareRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -31,18 +33,22 @@ class ReleaseAssistantRequest extends FormRequest
                 'string',
                 Rule::enum(AssistantReleaseStage::class),
                 static function (string $attribute, mixed $value, \Closure $fail) use ($assistant): void {
-                    if (!\in_array(
-                        $value,
-                        [AssistantReleaseStage::ORGANIZATIONAL->value, AssistantReleaseStage::FEDERATED->value],
-                        true,
-                    )) {
+                    $stage = AssistantReleaseStage::tryFrom((string) $value);
+                    if (null === $stage || !$stage->requiresReview() || null === $assistant) {
                         return;
                     }
 
-                    $review = $assistant?->assistantReview;
+                    $review = $assistant->assistantReview;
 
                     if (null !== $review && AssistantReviewStatus::DENIED === $review->status) {
                         $fail('The assistant has a denied review and cannot be submitted for publication until an admin clears the denial.');
+
+                        return;
+                    }
+
+                    if (AssistantReleaseStage::EXCLUSIVE === $stage
+                        && !app(AssistantRepository::class)->hasShares($assistant, AssistantShareRole::AUDIENCE)) {
+                        $fail('Add at least one person to share the assistant with before sharing it exclusively.');
                     }
                 },
             ],

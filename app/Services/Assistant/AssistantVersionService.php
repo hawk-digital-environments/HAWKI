@@ -198,7 +198,7 @@ readonly class AssistantVersionService
             $review = $assistant->assistantReview()->lockForUpdate()->first();
             $pendingReview = null !== $review && AssistantReviewStatus::PENDING === $review->status;
 
-            if ($assistant->release_stage->isPublic() || $pendingReview) {
+            if ($assistant->release_stage->requiresReview() || $pendingReview) {
                 // The rollback is itself a submission: freeze the target state and (re)open the review.
                 $this->freeze($assistant, "Rollback to version {$target}", $version->payload);
                 $this->reviewRepository->updateOrCreateForAssistant($assistant->id, [
